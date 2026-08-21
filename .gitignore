@@ -1,0 +1,23 @@
+# Node
+node_modules/
+dist/
+*.zip
+npm-debug.log*
+
+# Environment
+.env
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/crash.log
+infra/override.tf
+infra/override.tf.json
+infra/*.tfvars
+
+# Editor swap files
+*.swp
+
+# macOS
+.DS_Store

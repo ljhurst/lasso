@@ -1,0 +1,28 @@
+---
+repos:
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        args: [--strict]
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.108.1
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+
+  - repo: local
+    hooks:
+      - id: biome-lint
+        name: biome lint
+        entry: npm run lint
+        language: system
+        files: ^(src|test|scripts)/.*\.ts$
+        pass_filenames: false
+      - id: biome-format
+        name: biome format --check
+        entry: npm run format:check
+        language: system
+        files: ^(src|test|scripts)/.*\.ts$
+        pass_filenames: false
