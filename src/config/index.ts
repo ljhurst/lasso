@@ -4,7 +4,6 @@ import { clients } from './clients.ts';
 import { getJwks } from './jwks.ts';
 import { getResourceServerInfo } from './resources.ts';
 
-// Single hardcoded user (DESIGN §6) — no signup, no multi-tenant lookup.
 async function findAccount(_ctx: unknown, sub: string): Promise<Account> {
   return {
     accountId: sub,

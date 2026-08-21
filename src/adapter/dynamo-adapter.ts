@@ -13,9 +13,6 @@ import { type LassoItem, primaryKey, toItem, uidIndexKey } from './keys.ts';
 
 const BATCH_WRITE_LIMIT = 25;
 
-// Implements oidc-provider's Adapter contract (upsert/find/findByUserCode/
-// findByUid/consume/destroy/revokeByGrantId) against a single DynamoDB
-// table (DESIGN §5) — no maintained npm package exists for this pairing.
 export class DynamoAdapter implements Adapter {
   private readonly name: string;
 
@@ -79,8 +76,6 @@ export class DynamoAdapter implements Adapter {
   }
 
   async revokeByGrantId(grantId: string): Promise<void> {
-    // Unscoped by model: a grant's tokens span AccessToken, AuthorizationCode,
-    // RefreshToken, DeviceCode, and BackchannelAuthenticationRequest items.
     const result = await docClient.send(
       new QueryCommand({
         TableName: env.tableName,
