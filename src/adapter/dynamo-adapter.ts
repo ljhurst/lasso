@@ -63,7 +63,8 @@ export class DynamoAdapter implements Adapter {
       new UpdateCommand({
         TableName: env.tableName,
         Key: { pk: primaryKey(this.name, id) },
-        UpdateExpression: 'SET consumed = :true',
+        UpdateExpression: 'SET #consumed = :true',
+        ExpressionAttributeNames: { '#consumed': 'consumed' },
         ExpressionAttributeValues: { ':true': true },
       }),
     );

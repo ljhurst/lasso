@@ -1,4 +1,9 @@
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+  UpdateCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -49,5 +54,19 @@ describe('DynamoAdapter', () => {
     const adapter = new DynamoAdapter('Client');
 
     expect(await adapter.find('missing')).toBeUndefined();
+  });
+
+  it('aliases "consumed" via ExpressionAttributeNames, since it is a DynamoDB reserved word', async () => {
+    ddbMock.on(UpdateCommand).resolves({});
+    const adapter = new DynamoAdapter('AuthorizationCode');
+
+    await adapter.consume('code-1');
+
+    const [call] = ddbMock.commandCalls(UpdateCommand);
+    expect(call?.args[0].input).toMatchObject({
+      Key: { pk: 'AuthorizationCode#code-1' },
+      UpdateExpression: 'SET #consumed = :true',
+      ExpressionAttributeNames: { '#consumed': 'consumed' },
+    });
   });
 });
