@@ -10,4 +10,13 @@ export const clients: ClientMetadata[] = [
     response_types: ['code'],
     application_type: 'web',
   },
+  {
+    client_id: 'mcp-inspector',
+    client_name: 'MCP Inspector (local dev)',
+    redirect_uris: ['http://127.0.0.1:6274/oauth/callback'],
+    token_endpoint_auth_method: 'none',
+    grant_types: ['authorization_code', 'refresh_token'],
+    response_types: ['code'],
+    application_type: 'native',
+  },
 ];

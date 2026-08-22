@@ -20,11 +20,10 @@ audience-scoped tokens per app. Built on
 
 ## Status
 
-This is a scaffold, not a deployed system. The client registered in
-`src/config/clients.ts` (Claude) and the resource in
-`src/config/resources.ts` (Porto) are placeholders pending real
-registration once Porto exists to verify tokens. JWKS keypair generation
-and the issuer domain (DESIGN §8) are still open.
+Deployed. The client registered in `src/config/clients.ts` (Claude) and
+the resources in `src/config/resources.ts` (Porto, victoria) are live.
+The issuer domain (DESIGN §8) is still open — Lasso runs on its raw
+Lambda Function URL for now.
 
 ## Requirements
 

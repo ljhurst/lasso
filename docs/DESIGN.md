@@ -62,7 +62,7 @@ flowchart TB
     subgraph clients["Relying parties (register as OAuth clients)"]
         claude["Claude<br/>(custom connector → Porto)"]
         porto["Porto<br/>(MCP gateway, resource server)"]
-        victoria["victoria<br/>(future — real OAuth instead of IAM shortcut)"]
+        victoria["victoria<br/>(replaced its static_headers bearer token — DESIGN §5)"]
     end
 
     subgraph lasso["Lasso — Lambda Function URL"]
@@ -76,7 +76,7 @@ flowchart TB
     claude -- "1. Authorization Code + PKCE<br/>resource=https://porto.example.com" --> adapter
     oidc --> ddb
     porto -- "verifies tokens via JWKS" --> oidc
-    victoria -.->|"phase 2"| oidc
+    victoria -- "verifies tokens via JWKS" --> oidc
 ```
 
 Flow for the Porto case (the first consumer): Claude starts the OAuth
@@ -87,8 +87,14 @@ management), issues a token audience-bound to Porto via
 `resource=<porto-resource-id>`. Porto verifies that token against Lasso's
 JWKS on every request. Porto's own *outbound* legs to sommething/victoria
 are unrelated to this (see porto's `docs/DESIGN.md` §5) — Lasso only
-covers the inbound Claude→Porto leg for now, with victoria as an explicit
-phase 2 consumer.
+covers the inbound Claude→Porto leg for now.
+
+victoria (the second consumer) is the same shape: Claude is again the
+OAuth client, this time doing the dance directly against victoria's MCP
+server rather than through a gateway. victoria declares Lasso as its
+authorization server via `.well-known/oauth-protected-resource` and
+verifies Bearer JWTs against Lasso's JWKS with its own resource
+identifier as the expected audience — see victoria's `docs/DESIGN.md` §5.
 
 ## 5. Deployment shape
 
@@ -134,9 +140,10 @@ via `resource=...`). Concretely for the Porto case:
 - **Client**: registered for Claude's fixed redirect URI,
   `https://claude.ai/api/mcp/auth_callback`.
 
-victoria (phase 2) would add its own resource identifier the same way, no
-changes to Porto's registration needed — this is the payoff of doing it
-once here instead of per-project.
+victoria adds its own resource identifier (its Lambda Function URL) the
+same way, reusing the same `claude-mcp` client — no changes to Porto's
+registration needed. This is the payoff of doing it once here instead of
+per-project.
 
 ## 8. Open questions
 
