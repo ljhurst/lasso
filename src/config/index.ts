@@ -20,6 +20,7 @@ export async function buildConfiguration(): Promise<Configuration> {
     findAccount,
     jwks: await getJwks(),
     features: {
+      devInteractions: { enabled: false },
       resourceIndicators: {
         enabled: true,
         defaultResource: () => '',

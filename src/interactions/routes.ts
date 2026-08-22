@@ -1,17 +1,65 @@
 import Router from '@koa/router';
+import type Koa from 'koa';
 import koaBody from 'koa-body';
 import type Provider from 'oidc-provider';
 
 import { verifyCredentials } from './credentials.ts';
 import { renderLogin } from './views/login.ts';
 
+interface ConsentPromptDetails {
+  missingOIDCScope?: string[];
+  missingOIDCClaims?: string[];
+  missingResourceScopes?: Record<string, string[]>;
+}
+
+async function grantConsent(provider: Provider, ctx: Koa.Context): Promise<void> {
+  const details = await provider.interactionDetails(ctx.req, ctx.res);
+  const { session, params, grantId, prompt } = details;
+  if (!session?.accountId) {
+    throw new Error('consent requested without an authenticated session');
+  }
+
+  const grant = grantId
+    ? await provider.Grant.find(grantId)
+    : new provider.Grant({
+        accountId: session.accountId,
+        clientId: params.client_id as string,
+      });
+  if (!grant) {
+    throw new Error(`grant ${grantId} not found`);
+  }
+
+  const { missingOIDCScope, missingOIDCClaims, missingResourceScopes } =
+    prompt.details as ConsentPromptDetails;
+  if (missingOIDCScope) {
+    grant.addOIDCScope(missingOIDCScope.join(' '));
+  }
+  if (missingOIDCClaims) {
+    grant.addOIDCClaims(missingOIDCClaims);
+  }
+  if (missingResourceScopes) {
+    for (const [indicator, scope] of Object.entries(missingResourceScopes)) {
+      grant.addResourceScope(indicator, scope.join(' '));
+    }
+  }
+
+  const result = { consent: { grantId: await grant.save() } };
+  await provider.interactionFinished(ctx.req, ctx.res, result, { mergeWithLastSubmission: true });
+}
+
 export function buildInteractionRouter(provider: Provider): Router {
   const router = new Router();
 
   router.get('/interaction/:uid', async (ctx) => {
-    const { uid } = await provider.interactionDetails(ctx.req, ctx.res);
+    const details = await provider.interactionDetails(ctx.req, ctx.res);
+
+    if (details.prompt.name === 'consent') {
+      await grantConsent(provider, ctx);
+      return;
+    }
+
     ctx.type = 'html';
-    ctx.body = renderLogin(uid);
+    ctx.body = renderLogin(details.uid);
   });
 
   router.post('/interaction/:uid/login', koaBody(), async (ctx) => {
