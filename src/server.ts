@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 
 import Provider from 'oidc-provider';
 
+import { buildAdminRouter } from './admin/routes.ts';
 import { buildConfiguration } from './config/index.ts';
 import { env } from './env.ts';
 import { buildInteractionRouter } from './interactions/routes.ts';
@@ -13,8 +14,12 @@ async function main(): Promise<void> {
   provider.proxy = true;
 
   const interactions = buildInteractionRouter(provider);
-  provider.app.use(interactions.routes());
-  provider.app.use(interactions.allowedMethods());
+  provider.use(interactions.routes());
+  provider.use(interactions.allowedMethods());
+
+  const admin = buildAdminRouter(provider);
+  provider.use(admin.routes());
+  provider.use(admin.allowedMethods());
 
   createServer(provider.callback()).listen(env.port, () => {
     console.log(`lasso listening on :${env.port}`);

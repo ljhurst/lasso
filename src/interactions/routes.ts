@@ -4,7 +4,7 @@ import koaBody from 'koa-body';
 import type Provider from 'oidc-provider';
 
 import { verifyCredentials } from './credentials.ts';
-import { renderLogin } from './views/login.ts';
+import { LoginPage } from './views/login.tsx';
 
 interface ConsentPromptDetails {
   missingOIDCScope?: string[];
@@ -59,7 +59,7 @@ export function buildInteractionRouter(provider: Provider): Router {
     }
 
     ctx.type = 'html';
-    ctx.body = renderLogin(details.uid);
+    ctx.body = await LoginPage({ uid: details.uid });
   });
 
   router.post('/interaction/:uid/login', koaBody(), async (ctx) => {
@@ -68,7 +68,7 @@ export function buildInteractionRouter(provider: Provider): Router {
 
     if (!username || !password || !(await verifyCredentials(username, password))) {
       ctx.type = 'html';
-      ctx.body = renderLogin(uid, 'Invalid username or password');
+      ctx.body = await LoginPage({ uid, error: 'Invalid username or password' });
       return;
     }
 

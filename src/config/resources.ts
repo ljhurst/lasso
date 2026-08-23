@@ -6,7 +6,7 @@ const PORTO_RESOURCE_INDICATOR =
 const VICTORIA_RESOURCE_INDICATOR =
   'https://diozeathy56roah5fxesmhji640ugrkn.lambda-url.us-east-1.on.aws/';
 
-const resources: Record<string, ResourceServer> = {
+export const resources: Record<string, ResourceServer> = {
   [PORTO_RESOURCE_INDICATOR]: {
     scope: 'porto:read porto:write',
     accessTokenFormat: 'jwt',

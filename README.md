@@ -6,43 +6,99 @@ audience-scoped tokens per app. Built on
 [`oidc-provider`](https://github.com/panva/node-oidc-provider). See
 [`docs/DESIGN.md`](docs/DESIGN.md) for the full design.
 
-## Repo structure
+## Table of Contents
 
-- [`docs/DESIGN.md`](docs/DESIGN.md) — architecture and design decisions
+- [Repo Structure](#repo-structure)
+- [Features](#features)
+- [Usage](#usage)
+- [Requirements](#requirements)
+- [Local Development](#local-development)
+- [Deploy](#deploy)
+
+## Repo Structure
+
+- [`docs/`](docs/) — Technical documentation
 - [`src/`](src/) — the Node/TypeScript Lambda service
-  - `adapter/` — the DynamoDB `Adapter` implementation for oidc-provider
-  - `config/` — oidc-provider `Configuration`: clients, resources, JWKS
-  - `interactions/` — the single-user login flow
 - [`infra/`](infra/) — Terraform for the AWS resources (Lambda, DynamoDB,
   Secrets Manager, IAM)
-- [`scripts/build_lambda.sh`](scripts/build_lambda.sh) — builds the zipped
-  Lambda deployment package
+- [`scripts/`](scripts/) - Build and bootstrap helpers
 
-## Status
+## Features
 
-Deployed. The client registered in `src/config/clients.ts` (Claude) and
-the resources in `src/config/resources.ts` (Porto, victoria) are live.
-The issuer domain (DESIGN §8) is still open — Lasso runs on its raw
-Lambda Function URL for now.
+- OIDC implementation for OAuth SSO needs
+- Admin portal to view clients, resources, and users
+
+## Usage
+
+View the admin portal
+
+```text
+https://zzspanxrc7v4tvou4acvdq36oi0yjdrz.lambda-url.us-east-1.on.aws/admin
+```
 
 ## Requirements
 
-- Node.js 22+
-- [`pre-commit`](https://pre-commit.com/) — run `pre-commit install` once;
-  hooks cover biome, yamllint, and terraform fmt/validate
+- [fnm](https://github.com/schniz/fnm) - Manage node versions
+- [`pre-commit`](https://pre-commit.com/) — Run `uvx pre-commit install` once; hooks cover biome, yamllint, and terraform fmt/validate
+- [`awscli`](https://aws.amazon.com/cli/) - Run AWS commands
+- [`terraform`](https://developer.hashicorp.com/terraform/install) - Manage infrastructure
 
-## Local development
+## Local Development
+
+Set the environment
+
+```bash
+cp .env.example .env
+. .env
+```
+
+Install node
+
+```bash
+fnm install
+fnm use
+```
+
+Install dependencies
 
 ```bash
 npm install
+```
+
+Run the dev server
+
+```bash
 npm run dev
 ```
 
 ## Deploy
 
+We use Lambda zip + [Terraform](https://developer.hashicorp.com/terraform) to manage infra. First create the Lambda src zip
+
 ```bash
 scripts/build_lambda.sh
-cd infra
-terraform init
+```
+
+Log in via AWS SSO and assume the `lasso-deploy` role
+
+```bash
+aws sso login --profile victoria-deploy
+```
+
+Set the AWS profile
+
+```bash
+export AWS_PROFILE=lasso-deploy
+```
+
+Then from `infra/`
+
+```bash
+terraform plan
+```
+
+And
+
+```bash
 terraform apply
 ```

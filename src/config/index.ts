@@ -13,12 +13,22 @@ async function findAccount(_ctx: unknown, sub: string): Promise<Account> {
   };
 }
 
+const ONE_HOUR = 60 * 60;
+const FOURTEEN_DAYS = 14 * 24 * 60 * 60;
+
 export async function buildConfiguration(): Promise<Configuration> {
   return {
     adapter: DynamoAdapter,
     clients,
     findAccount,
     jwks: await getJwks(),
+    ttl: {
+      AccessToken: ONE_HOUR,
+      IdToken: ONE_HOUR,
+      Interaction: ONE_HOUR,
+      Session: FOURTEEN_DAYS,
+      Grant: FOURTEEN_DAYS,
+    },
     features: {
       devInteractions: { enabled: false },
       resourceIndicators: {

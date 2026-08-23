@@ -5,6 +5,9 @@
   "type": "module",
   "private": true,
   "version": "0.1.0",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "format": "biome format --write .",
     "format:check": "biome format .",
@@ -14,15 +17,16 @@
     "test": "vitest --run",
     "test:watch": "vitest",
     "preflight": "npm run format:check && npm run lint && npm run check && npm run test",
-    "dev": "node --experimental-strip-types src/server.ts",
-    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/server.js --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
-    "generate-jwks": "node --experimental-strip-types scripts/generate-jwks.ts",
-    "set-credential": "node --experimental-strip-types scripts/set-credential.ts"
+    "dev": "node --experimental-strip-types --import ./scripts/dev/jsx-loader.mjs src/server.ts",
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node24 --format=esm --jsx=automatic --jsx-import-source=@kitajs/html --outfile=dist/server.js --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
+    "generate-jwks": "node --experimental-strip-types scripts/bootstrap/generate-jwks.ts",
+    "set-credential": "node --experimental-strip-types scripts/bootstrap/set-credential.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1115.0",
     "@aws-sdk/client-ssm": "^3.1115.0",
     "@aws-sdk/lib-dynamodb": "^3.1115.0",
+    "@kitajs/html": "^4.2.13",
     "@koa/router": "^15.7.0",
     "koa": "^3.2.1",
     "koa-body": "^8.0.0",

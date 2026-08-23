@@ -16,7 +16,8 @@ rm -rf build dist
 mkdir -p build dist
 
 npm ci
-npx esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm \
+npx esbuild src/server.ts --bundle --platform=node --target=node24 --format=esm \
+  --jsx=automatic --jsx-import-source=@kitajs/html \
   --outfile=build/server.js \
   --banner:js="import{createRequire}from'module';const require=createRequire(import.meta.url);"
 

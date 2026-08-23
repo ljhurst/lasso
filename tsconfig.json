@@ -4,6 +4,8 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "lib": ["ES2023"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "@kitajs/html",
     "strict": true,
     "allowImportingTsExtensions": true,
     "noUncheckedIndexedAccess": true,
