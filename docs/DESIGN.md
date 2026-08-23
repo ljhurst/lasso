@@ -127,6 +127,16 @@ hardcoded credential check (env var / Secrets Manager) or a passkey,
 decided during implementation — either way it's dramatically simpler than a
 general-purpose IdP because there's no multi-tenancy to build.
 
+This is the current model, not a permanent constraint. Lasso is a personal
+project first, but a plausible future use case is giving a small,
+manually-provisioned set of other people (friends, family) visibility into
+what's being built — not open signup, not general multi-tenancy, just a
+handful of known accounts. Nothing here needs building ahead of that need,
+but implementation choices (the login mechanic in §8, how the DynamoDB
+adapter models accounts) should avoid hardcoding "exactly one user, no user
+identifier at all" where a lightweight notion of a user id would keep that
+door open cheaply.
+
 ## 7. Clients and resources
 
 Each consuming project registers as an `oidc-provider` **client** (the
@@ -144,6 +154,13 @@ victoria adds its own resource identifier (its Lambda Function URL) the
 same way, reusing the same `claude-mcp` client — no changes to Porto's
 registration needed. This is the payoff of doing it once here instead of
 per-project.
+
+Not every client is Claude acting on a human's behalf, though: Porto's own
+outbound call to victoria has no human present at all, so it registers as
+its own client (`porto-victoria`) using the `client_credentials` grant
+(`features.clientCredentials`) instead of `authorization_code` — a
+confidential client authenticating with its own secret, no login/consent
+interaction involved.
 
 ## 8. Open questions
 

@@ -7,6 +7,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 process.env.LASSO_DYNAMODB_TABLE_NAME ??= 'lj-lasso-test';
 process.env.LASSO_JWKS_SSM_PARAM ??= '/lasso/jwks-test';
 process.env.LASSO_CREDENTIAL_SSM_PARAM ??= '/lasso/login-credential-test';
+process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
+  '/lasso/porto-victoria-client-secret-test';
 process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
 
 const { scryptHash, verifyCredentials } = await import('../../src/interactions/credentials.ts');

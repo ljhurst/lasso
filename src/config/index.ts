@@ -1,8 +1,8 @@
 import type { Account, Configuration } from 'oidc-provider';
 import { DynamoAdapter } from '../adapter/dynamo-adapter.ts';
-import { clients } from './clients.ts';
+import { buildClients } from './clients.ts';
 import { getJwks } from './jwks.ts';
-import { getResourceServerInfo } from './resources.ts';
+import { allResourceScopes, getResourceServerInfo } from './resources.ts';
 
 async function findAccount(_ctx: unknown, sub: string): Promise<Account> {
   return {
@@ -19,9 +19,10 @@ const FOURTEEN_DAYS = 14 * 24 * 60 * 60;
 export async function buildConfiguration(): Promise<Configuration> {
   return {
     adapter: DynamoAdapter,
-    clients,
+    clients: await buildClients(),
     findAccount,
     jwks: await getJwks(),
+    scopes: ['openid', 'offline_access', ...allResourceScopes],
     ttl: {
       AccessToken: ONE_HOUR,
       IdToken: ONE_HOUR,
@@ -37,6 +38,7 @@ export async function buildConfiguration(): Promise<Configuration> {
         getResourceServerInfo: (_ctx, resourceIndicator) =>
           getResourceServerInfo(resourceIndicator),
       },
+      clientCredentials: { enabled: true },
     },
     interactions: {
       url: (_ctx, interaction) => `/interaction/${interaction.uid}`,

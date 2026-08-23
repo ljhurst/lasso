@@ -11,5 +11,8 @@ export const env = {
   tableName: required('LASSO_DYNAMODB_TABLE_NAME'),
   jwksSsmParam: required('LASSO_JWKS_SSM_PARAM'),
   credentialSsmParam: required('LASSO_CREDENTIAL_SSM_PARAM'),
+  clientSecretSsmParams: {
+    portoVictoria: required('LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM'),
+  },
   issuer: required('LASSO_ISSUER'),
 };

@@ -17,6 +17,10 @@ export const resources: Record<string, ResourceServer> = {
   },
 };
 
+export const allResourceScopes = [
+  ...new Set(Object.values(resources).flatMap((r) => r.scope?.split(' ') ?? [])),
+];
+
 export function getResourceServerInfo(resourceIndicator: string): ResourceServer {
   const resource = resources[resourceIndicator];
   if (!resource) {

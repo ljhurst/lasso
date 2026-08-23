@@ -8,8 +8,10 @@
 // collision-resistant, the standard approach rather than a random id.
 import { parseArgs } from 'node:util';
 
-import { GetParameterCommand, PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { PutParameterCommand } from '@aws-sdk/client-ssm';
 import { calculateJwkThumbprint, exportJWK, generateKeyPair } from 'jose';
+
+import { createSsmClient, getExistingValue } from './ssm.ts';
 
 const { values } = parseArgs({
   options: {
@@ -22,18 +24,16 @@ const { values } = parseArgs({
 });
 
 async function main(): Promise<void> {
-  process.env.AWS_PROFILE ??= values.profile;
-  const client = new SSMClient({ region: values.region });
+  const client = createSsmClient(values.profile, values.region);
 
-  if (!values['dry-run'] && !values.force) {
-    const existing = await client
-      .send(new GetParameterCommand({ Name: values['param-name'], WithDecryption: true }))
-      .catch(() => undefined);
-    if (existing?.Parameter?.Value && existing.Parameter.Value !== 'REPLACE_ME_MANUALLY') {
-      throw new Error(
-        `${values['param-name']} already holds a real value — pass --force to overwrite (this invalidates every token signed with the current key).`,
-      );
-    }
+  if (
+    !values['dry-run'] &&
+    !values.force &&
+    (await getExistingValue(client, values['param-name']))
+  ) {
+    throw new Error(
+      `${values['param-name']} already holds a real value — pass --force to overwrite (this invalidates every token signed with the current key).`,
+    );
   }
 
   const { privateKey } = await generateKeyPair('RS256', { modulusLength: 2048, extractable: true });

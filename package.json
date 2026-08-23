@@ -20,7 +20,8 @@
     "dev": "node --experimental-strip-types --import ./scripts/dev/jsx-loader.mjs src/server.ts",
     "build": "esbuild src/server.ts --bundle --platform=node --target=node24 --format=esm --jsx=automatic --jsx-import-source=@kitajs/html --outfile=dist/server.js --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
     "generate-jwks": "node --experimental-strip-types scripts/bootstrap/generate-jwks.ts",
-    "set-credential": "node --experimental-strip-types scripts/bootstrap/set-credential.ts"
+    "set-credential": "node --experimental-strip-types scripts/bootstrap/set-credential.ts",
+    "generate-client-secret": "node --experimental-strip-types scripts/bootstrap/generate-client-secret.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1115.0",

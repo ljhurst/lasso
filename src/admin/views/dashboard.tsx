@@ -1,5 +1,5 @@
 import type { ClientMetadata } from 'oidc-provider';
-import { clients } from '../../config/clients.ts';
+import { buildClients } from '../../config/clients.ts';
 import { resources } from '../../config/resources.ts';
 import { Empty, Layout, List, Table } from './layout.tsx';
 
@@ -20,7 +20,8 @@ function clientRow(client: ClientMetadata) {
   );
 }
 
-export function DashboardPage() {
+export async function DashboardPage() {
+  const clients = await buildClients();
   const resourceEntries = Object.entries(resources);
 
   return (

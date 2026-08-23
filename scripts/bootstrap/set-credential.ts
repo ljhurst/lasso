@@ -15,7 +15,9 @@
 import { randomBytes, scrypt } from 'node:crypto';
 import { parseArgs, promisify } from 'node:util';
 
-import { GetParameterCommand, PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { PutParameterCommand } from '@aws-sdk/client-ssm';
+
+import { createSsmClient, getExistingValue } from './ssm.ts';
 
 const scryptAsync = promisify(scrypt);
 const SCRYPT_KEY_LENGTH = 64;
@@ -110,18 +112,12 @@ function createPipedReader(): LineReader {
 }
 
 async function main(): Promise<void> {
-  process.env.AWS_PROFILE ??= values.profile;
-  const client = new SSMClient({ region: values.region });
+  const client = createSsmClient(values.profile, values.region);
 
-  if (!values.force) {
-    const existing = await client
-      .send(new GetParameterCommand({ Name: values['param-name'], WithDecryption: true }))
-      .catch(() => undefined);
-    if (existing?.Parameter?.Value && existing.Parameter.Value !== 'REPLACE_ME_MANUALLY') {
-      throw new Error(
-        `${values['param-name']} already holds a real value — pass --force to overwrite.`,
-      );
-    }
+  if (!values.force && (await getExistingValue(client, values['param-name']))) {
+    throw new Error(
+      `${values['param-name']} already holds a real value — pass --force to overwrite.`,
+    );
   }
 
   const reader = process.stdin.isTTY ? createTtyReader() : createPipedReader();
