@@ -6,6 +6,8 @@ const PORTO_RESOURCE_INDICATOR =
 const VICTORIA_RESOURCE_INDICATOR =
   'https://diozeathy56roah5fxesmhji640ugrkn.lambda-url.us-east-1.on.aws/';
 
+const FIFE_RESOURCE_INDICATOR = 'https://vxzzln3s2i.execute-api.us-east-1.amazonaws.com/prod';
+
 export const resources: Record<string, ResourceServer> = {
   [PORTO_RESOURCE_INDICATOR]: {
     scope: 'porto:read porto:write',
@@ -13,6 +15,10 @@ export const resources: Record<string, ResourceServer> = {
   },
   [VICTORIA_RESOURCE_INDICATOR]: {
     scope: 'victoria:read victoria:write',
+    accessTokenFormat: 'jwt',
+  },
+  [FIFE_RESOURCE_INDICATOR]: {
+    scope: 'fife:read fife:write',
     accessTokenFormat: 'jwt',
   },
 };

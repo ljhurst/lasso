@@ -1,8 +1,3 @@
-# Single-table design (DESIGN §5): codes, tokens, grants, sessions, and
-# interactions all live here as items keyed by `${modelName}#${id}`. Three
-# sparse GSIs cover oidc-provider's findByUid / findByUserCode /
-# revokeByGrantId lookups (see src/adapter/keys.ts for the key scheme).
-
 resource "aws_dynamodb_table" "lasso" {
   name         = "lj-lasso"
   billing_mode = "PAY_PER_REQUEST"
@@ -61,5 +56,31 @@ resource "aws_dynamodb_table" "lasso" {
   ttl {
     attribute_name = "expiresAt"
     enabled        = true
+  }
+}
+
+resource "aws_dynamodb_table" "lasso_users" {
+  name         = "lj-lasso-users"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "sub"
+
+  attribute {
+    name = "sub"
+    type = "S"
+  }
+
+  attribute {
+    name = "email"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "email-index"
+    projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "email"
+      key_type       = "HASH"
+    }
   }
 }

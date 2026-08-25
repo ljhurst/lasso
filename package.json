@@ -4,7 +4,7 @@
   "author": "Luke Hurst",
   "type": "module",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "engines": {
     "node": ">=24"
   },
@@ -20,7 +20,7 @@
     "dev": "node --experimental-strip-types --import ./scripts/dev/jsx-loader.mjs src/server.ts",
     "build": "esbuild src/server.ts --bundle --platform=node --target=node24 --format=esm --jsx=automatic --jsx-import-source=@kitajs/html --outfile=dist/server.js --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
     "generate-jwks": "node --experimental-strip-types scripts/bootstrap/generate-jwks.ts",
-    "set-credential": "node --experimental-strip-types scripts/bootstrap/set-credential.ts",
+    "add-user": "node --experimental-strip-types scripts/bootstrap/add-user.ts",
     "generate-client-secret": "node --experimental-strip-types scripts/bootstrap/generate-client-secret.ts"
   },
   "dependencies": {

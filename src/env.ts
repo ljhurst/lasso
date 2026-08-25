@@ -8,9 +8,9 @@ function required(name: string): string {
 
 export const env = {
   port: Number(process.env.PORT ?? 8080),
-  tableName: required('LASSO_DYNAMODB_TABLE_NAME'),
+  oidcTableName: required('LASSO_OIDC_TABLE_NAME'),
+  usersTableName: required('LASSO_USERS_TABLE_NAME'),
   jwksSsmParam: required('LASSO_JWKS_SSM_PARAM'),
-  credentialSsmParam: required('LASSO_CREDENTIAL_SSM_PARAM'),
   clientSecretSsmParams: {
     portoVictoria: required('LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM'),
   },
