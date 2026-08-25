@@ -41,9 +41,10 @@ export async function DashboardPage() {
         {resourceEntries.length === 0 ? (
           <Empty>No resources registered.</Empty>
         ) : (
-          <Table columns={['Resource indicator', 'Scope', 'Access token format']}>
+          <Table columns={['Name', 'Resource indicator', 'Scope', 'Access token format']}>
             {resourceEntries.map(([indicator, resource]) => (
               <tr>
+                <td>{resource.name}</td>
                 <td>
                   <code>{indicator}</code>
                 </td>
