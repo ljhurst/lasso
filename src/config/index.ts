@@ -1,5 +1,8 @@
 import type { Account, Configuration } from 'oidc-provider';
 import { DynamoAdapter } from '../adapter/dynamo-adapter.ts';
+import { ErrorPage } from '../interactions/views/error.tsx';
+import { LogoutPage } from '../interactions/views/logout.tsx';
+import { PostLogoutPage } from '../interactions/views/post-logout.tsx';
 import { getUserBySub } from '../users/store.ts';
 import { buildClients } from './clients.ts';
 import { getJwks } from './jwks.ts';
@@ -65,9 +68,24 @@ export async function buildConfiguration(): Promise<Configuration> {
           getResourceServerInfo(resourceIndicator),
       },
       clientCredentials: { enabled: true },
+      rpInitiatedLogout: {
+        enabled: true,
+        logoutSource: async (ctx, form) => {
+          ctx.type = 'html';
+          ctx.body = await LogoutPage({ form, clientName: ctx.oidc.client?.clientName });
+        },
+        postLogoutSuccessSource: async (ctx) => {
+          ctx.type = 'html';
+          ctx.body = await PostLogoutPage({ clientName: ctx.oidc.client?.clientName });
+        },
+      },
     },
     interactions: {
       url: (_ctx, interaction) => `/interaction/${interaction.uid}`,
+    },
+    renderError: async (ctx, out) => {
+      ctx.type = 'html';
+      ctx.body = await ErrorPage({ error: out.error, errorDescription: out.error_description });
     },
   };
 }
