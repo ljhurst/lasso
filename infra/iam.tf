@@ -29,6 +29,7 @@ data "aws_iam_policy_document" "lambda_permissions" {
       "dynamodb:UpdateItem",
       "dynamodb:DeleteItem",
       "dynamodb:Query",
+      "dynamodb:Scan",
       "dynamodb:BatchWriteItem",
     ]
     resources = [
