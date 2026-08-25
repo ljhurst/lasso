@@ -3,7 +3,9 @@ import type Koa from 'koa';
 import koaBody from 'koa-body';
 import type Provider from 'oidc-provider';
 
-import { verifyCredentials } from './credentials.ts';
+import { hashPassword, verifyPassword } from '../users/password.ts';
+import { getUserByEmail, getUserBySub, updatePassword } from '../users/store.ts';
+import { ChangePasswordPage } from './views/change-password.tsx';
 import { LoginPage } from './views/login.tsx';
 
 interface ConsentPromptDetails {
@@ -64,16 +66,63 @@ export function buildInteractionRouter(provider: Provider): Router {
 
   router.post('/interaction/:uid/login', koaBody(), async (ctx) => {
     const { uid } = await provider.interactionDetails(ctx.req, ctx.res);
-    const { username, password } = ctx.request.body as { username?: string; password?: string };
+    const { email, password } = ctx.request.body as { email?: string; password?: string };
 
-    if (!username || !password || !(await verifyCredentials(username, password))) {
+    const user = email ? await getUserByEmail(email) : undefined;
+    const valid =
+      password &&
+      user &&
+      (await verifyPassword(password, { hash: user.passwordHash, salt: user.passwordSalt }));
+
+    if (!valid || !user) {
       ctx.type = 'html';
-      ctx.body = await LoginPage({ uid, error: 'Invalid username or password' });
+      ctx.body = await LoginPage({ uid, error: 'Invalid email or password' });
+      return;
+    }
+
+    if (user.mustChangePassword) {
+      ctx.type = 'html';
+      ctx.body = await ChangePasswordPage({ uid, sub: user.sub });
       return;
     }
 
     const result = {
-      login: { accountId: username },
+      login: { accountId: user.sub },
+    };
+
+    await provider.interactionFinished(ctx.req, ctx.res, result, {
+      mergeWithLastSubmission: false,
+    });
+  });
+
+  router.post('/interaction/:uid/change-password', koaBody(), async (ctx) => {
+    const { uid } = await provider.interactionDetails(ctx.req, ctx.res);
+    const { sub, password, confirm } = ctx.request.body as {
+      sub?: string;
+      password?: string;
+      confirm?: string;
+    };
+
+    if (!sub || !password || password !== confirm) {
+      ctx.type = 'html';
+      ctx.body = await ChangePasswordPage({
+        uid,
+        sub: sub ?? '',
+        error: 'Passwords did not match',
+      });
+      return;
+    }
+
+    const user = await getUserBySub(sub);
+    if (!user) {
+      throw new Error(`no user found for sub ${sub}`);
+    }
+
+    const { hash, salt } = await hashPassword(password);
+    await updatePassword(sub, { hash, salt });
+
+    const result = {
+      login: { accountId: sub },
     };
 
     await provider.interactionFinished(ctx.req, ctx.res, result, {

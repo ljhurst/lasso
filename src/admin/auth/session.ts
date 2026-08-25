@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type Koa from 'koa';
 import type Provider from 'oidc-provider';
+import { getUserBySub } from '../../users/store.ts';
 import { deriveChallenge, generateVerifier, requestOrigin, setPkceCookie } from './pkce.ts';
 
 export const ADMIN_CLIENT_ID = 'lasso-admin';
@@ -33,7 +34,13 @@ export function buildRequireAdminSession(provider: Provider) {
       return;
     }
 
-    ctx.state.adminUsername = session.accountId;
+    const user = await getUserBySub(session.accountId);
+    if (!user?.roles.includes('admin')) {
+      redirectToLogin(ctx);
+      return;
+    }
+
+    ctx.state.adminUser = user;
     await next();
   };
 }

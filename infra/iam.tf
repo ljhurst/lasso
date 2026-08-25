@@ -44,8 +44,22 @@ data "aws_iam_policy_document" "lambda_permissions" {
     actions = ["ssm:GetParameter"]
     resources = [
       aws_ssm_parameter.jwks.arn,
-      aws_ssm_parameter.login_credential.arn,
       aws_ssm_parameter.porto_victoria_client_secret.arn,
+    ]
+  }
+
+  statement {
+    sid    = "UsersTableAccess"
+    effect = "Allow"
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:UpdateItem",
+      "dynamodb:Query",
+    ]
+    resources = [
+      aws_dynamodb_table.lasso_users.arn,
+      "${aws_dynamodb_table.lasso_users.arn}/index/*",
     ]
   }
 

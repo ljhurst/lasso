@@ -22,12 +22,12 @@ export class DynamoAdapter implements Adapter {
 
   async upsert(id: string, payload: AdapterPayload, expiresIn: number): Promise<void> {
     const item = toItem(this.name, id, payload, expiresIn);
-    await docClient.send(new PutCommand({ TableName: env.tableName, Item: item }));
+    await docClient.send(new PutCommand({ TableName: env.oidcTableName, Item: item }));
   }
 
   async find(id: string): Promise<AdapterPayload | undefined> {
     const result = await docClient.send(
-      new GetCommand({ TableName: env.tableName, Key: { pk: primaryKey(this.name, id) } }),
+      new GetCommand({ TableName: env.oidcTableName, Key: { pk: primaryKey(this.name, id) } }),
     );
     return itemToPayload(result.Item as LassoItem | undefined);
   }
@@ -35,7 +35,7 @@ export class DynamoAdapter implements Adapter {
   async findByUserCode(userCode: string): Promise<AdapterPayload | undefined> {
     const result = await docClient.send(
       new QueryCommand({
-        TableName: env.tableName,
+        TableName: env.oidcTableName,
         IndexName: 'user-code-index',
         KeyConditionExpression: 'userCode = :userCode',
         ExpressionAttributeValues: { ':userCode': userCode },
@@ -48,7 +48,7 @@ export class DynamoAdapter implements Adapter {
   async findByUid(uid: string): Promise<AdapterPayload | undefined> {
     const result = await docClient.send(
       new QueryCommand({
-        TableName: env.tableName,
+        TableName: env.oidcTableName,
         IndexName: 'uid-index',
         KeyConditionExpression: 'uid = :uid',
         ExpressionAttributeValues: { ':uid': uidIndexKey(this.name, uid) },
@@ -61,7 +61,7 @@ export class DynamoAdapter implements Adapter {
   async consume(id: string): Promise<void> {
     await docClient.send(
       new UpdateCommand({
-        TableName: env.tableName,
+        TableName: env.oidcTableName,
         Key: { pk: primaryKey(this.name, id) },
         UpdateExpression: 'SET #consumed = :true',
         ExpressionAttributeNames: { '#consumed': 'consumed' },
@@ -72,14 +72,14 @@ export class DynamoAdapter implements Adapter {
 
   async destroy(id: string): Promise<void> {
     await docClient.send(
-      new DeleteCommand({ TableName: env.tableName, Key: { pk: primaryKey(this.name, id) } }),
+      new DeleteCommand({ TableName: env.oidcTableName, Key: { pk: primaryKey(this.name, id) } }),
     );
   }
 
   async revokeByGrantId(grantId: string): Promise<void> {
     const result = await docClient.send(
       new QueryCommand({
-        TableName: env.tableName,
+        TableName: env.oidcTableName,
         IndexName: 'grant-index',
         KeyConditionExpression: 'grantId = :grantId',
         ExpressionAttributeValues: { ':grantId': grantId },
@@ -92,7 +92,7 @@ export class DynamoAdapter implements Adapter {
       await docClient.send(
         new BatchWriteCommand({
           RequestItems: {
-            [env.tableName]: chunk.map((item) => ({
+            [env.oidcTableName]: chunk.map((item) => ({
               DeleteRequest: { Key: { pk: item.pk } },
             })),
           },

@@ -1,3 +1,4 @@
+import type { User } from '../../users/types.ts';
 import type { AccessTokenRow, GrantRow, SessionRow } from '../data.ts';
 import { Empty, Layout, List, Table } from './layout.tsx';
 
@@ -5,20 +6,34 @@ function formatExpiry(expiresAt: number | undefined): string {
   return expiresAt ? new Date(expiresAt * 1000).toISOString() : '—';
 }
 
+function accountLabel(
+  accountId: string | undefined,
+  accountEmails: Record<string, string>,
+): string {
+  if (!accountId) {
+    return '—';
+  }
+  return accountEmails[accountId] ?? accountId;
+}
+
 export function UsersPage(props: {
-  username: string;
+  admin: User;
   sessions: SessionRow[];
   grants: GrantRow[];
   accessTokens: AccessTokenRow[];
+  accountEmails: Record<string, string>;
 }) {
   return (
     <Layout title="Users" active="/admin/users">
       <section>
-        <h2>Account</h2>
-        <Table columns={['Username']}>
+        <h2>Signed in as</h2>
+        <Table columns={['Name', 'Email']}>
           <tr>
             <td>
-              <code>{props.username}</code>
+              {props.admin.givenName} {props.admin.familyName}
+            </td>
+            <td>
+              <code>{props.admin.email}</code>
             </td>
           </tr>
         </Table>
@@ -31,7 +46,7 @@ export function UsersPage(props: {
           <Table columns={['Account', 'Session ID', 'Expires']}>
             {props.sessions.map((session) => (
               <tr>
-                <td>{session.accountId}</td>
+                <td>{accountLabel(session.accountId, props.accountEmails)}</td>
                 <td>
                   <code>{session.id}</code>
                 </td>
@@ -49,7 +64,7 @@ export function UsersPage(props: {
           <Table columns={['Account', 'Client', 'Grant ID', 'Expires']}>
             {props.grants.map((grant) => (
               <tr>
-                <td>{grant.accountId}</td>
+                <td>{accountLabel(grant.accountId, props.accountEmails)}</td>
                 <td>{grant.clientId}</td>
                 <td>
                   <code>{grant.id}</code>
@@ -68,7 +83,7 @@ export function UsersPage(props: {
           <Table columns={['Account', 'Client', 'Scope', 'Expires']}>
             {props.accessTokens.map((token) => (
               <tr>
-                <td>{token.accountId}</td>
+                <td>{accountLabel(token.accountId, props.accountEmails)}</td>
                 <td>{token.clientId}</td>
                 <td>
                   <List items={token.scope?.split(' ') ?? []} mono />

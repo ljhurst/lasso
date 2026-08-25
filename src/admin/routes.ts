@@ -1,9 +1,10 @@
 import Router from '@koa/router';
 import type Provider from 'oidc-provider';
+import type { User } from '../users/types.ts';
 import { handleAdminCallback } from './auth/callback.ts';
 import { buildHandleAdminLogout } from './auth/logout.ts';
 import { buildRequireAdminSession } from './auth/session.ts';
-import { listAccessTokens, listGrants, listSessions } from './data.ts';
+import { listAccessTokens, listGrants, listSessions, resolveAccountEmails } from './data.ts';
 import { DashboardPage } from './views/dashboard.tsx';
 import { UsersPage } from './views/users.tsx';
 
@@ -26,12 +27,19 @@ export function buildAdminRouter(provider: Provider): Router {
       listAccessTokens(),
     ]);
 
+    const accountEmails = await resolveAccountEmails([
+      ...sessions.map((s) => s.accountId),
+      ...grants.map((g) => g.accountId),
+      ...accessTokens.map((t) => t.accountId),
+    ]);
+
     ctx.type = 'html';
     ctx.body = await UsersPage({
-      username: ctx.state.adminUsername as string,
+      admin: ctx.state.adminUser as User,
       sessions,
       grants,
       accessTokens,
+      accountEmails,
     });
   });
 

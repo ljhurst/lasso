@@ -63,3 +63,34 @@ resource "aws_dynamodb_table" "lasso" {
     enabled        = true
   }
 }
+
+# Manually-provisioned user accounts (DESIGN §6) — kept separate from the
+# table above since these records aren't TTL'd and don't fit its key
+# scheme or GSIs. Keyed by a stable UUID sub; email-index supports the
+# login-time lookup (email -> sub).
+
+resource "aws_dynamodb_table" "lasso_users" {
+  name         = "lj-lasso-users"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "sub"
+
+  attribute {
+    name = "sub"
+    type = "S"
+  }
+
+  attribute {
+    name = "email"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "email-index"
+    projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "email"
+      key_type       = "HASH"
+    }
+  }
+}

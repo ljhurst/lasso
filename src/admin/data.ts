@@ -2,6 +2,7 @@ import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../adapter/client.ts';
 import type { LassoItem } from '../adapter/keys.ts';
 import { env } from '../env.ts';
+import { getUserBySub } from '../users/store.ts';
 
 export interface SessionRow {
   id: string;
@@ -28,7 +29,7 @@ export interface AccessTokenRow {
 async function scanByModel(modelName: string): Promise<LassoItem[]> {
   const result = await docClient.send(
     new ScanCommand({
-      TableName: env.tableName,
+      TableName: env.oidcTableName,
       FilterExpression: 'modelName = :modelName',
       ExpressionAttributeValues: { ':modelName': modelName },
     }),
@@ -65,4 +66,21 @@ export async function listAccessTokens(): Promise<AccessTokenRow[]> {
     scope: item.payload.scope as string | undefined,
     expiresAt: item.expiresAt,
   }));
+}
+
+export async function resolveAccountEmails(
+  accountIds: (string | undefined)[],
+): Promise<Record<string, string>> {
+  const distinctSubs = [...new Set(accountIds.filter((id): id is string => id !== undefined))];
+  const users = await Promise.all(
+    distinctSubs.map(async (sub) => [sub, await getUserBySub(sub)] as const),
+  );
+
+  const emailsBySub: Record<string, string> = {};
+  for (const [sub, user] of users) {
+    if (user) {
+      emailsBySub[sub] = user.email;
+    }
+  }
+  return emailsBySub;
 }

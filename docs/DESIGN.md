@@ -119,23 +119,33 @@ AWS-native, Lambda-first pattern across all personal infra:
 - **No API Gateway**, same reasoning as porto/victoria — Function URL is
   free, API Gateway isn't.
 
-## 6. Single-user model
+## 6. Multi-user model
 
-No signup flow, no password reset, no admin UI — Lasso has exactly one
-user. The "login" step in the Authorization Code flow can be as simple as a
-hardcoded credential check (env var / Secrets Manager) or a passkey,
-decided during implementation — either way it's dramatically simpler than a
-general-purpose IdP because there's no multi-tenancy to build.
+Lasso supports a small, manually-provisioned set of known accounts (you,
+plus friends/family) — not open signup, not general multi-tenancy. Accounts
+live in a dedicated DynamoDB table (`lj-lasso-users`, separate from the
+oidc-provider adapter table in §5, since user records aren't TTL'd and
+don't fit that table's key scheme), keyed by a UUID `sub` — never a
+username or email, since those can change and `sub` must not be reassigned
+per the OIDC spec. Email is the login identifier and is looked up via a
+GSI.
 
-This is the current model, not a permanent constraint. Lasso is a personal
-project first, but a plausible future use case is giving a small,
-manually-provisioned set of other people (friends, family) visibility into
-what's being built — not open signup, not general multi-tenancy, just a
-handful of known accounts. Nothing here needs building ahead of that need,
-but implementation choices (the login mechanic in §8, how the DynamoDB
-adapter models accounts) should avoid hardcoding "exactly one user, no user
-identifier at all" where a lightweight notion of a user id would keep that
-door open cheaply.
+There's no signup flow, no email delivery, and no forgot-password flow.
+Accounts are created and reset entirely out of band with
+`scripts/bootstrap/add-user.ts`, run by hand with an AWS profile that can
+write the users table. Creating or resetting an account generates a random
+temporary password, printed once for you to hand off directly (text, call,
+whatever) and sets `mustChangePassword`, which forces the person to set
+their own password on first login before they reach consent. This fits the
+trust model: every account belongs to someone you know personally, so a
+manual reset is simpler and more appropriate than building token-based
+email recovery.
+
+Standard OIDC claims (`given_name`, `family_name`, `name`, `email`,
+`email_verified`) are populated from the user record. Admin access
+(`/admin/*`) is gated by a `roles` field on the user record rather than "is
+someone logged in" — the same field is shaped to support gating which
+clients/apps a user can see later, though that's not built yet.
 
 ## 7. Clients and resources
 
@@ -164,9 +174,6 @@ interaction involved.
 
 ## 8. Open questions
 
-- **Single-user login mechanic** — hardcoded credential vs. passkey vs.
-  something else. Deferred to implementation; low-stakes either way given
-  there's exactly one user.
 - **Custom DynamoDB adapter** — needs writing against `oidc-provider`'s
   `Adapter` interface; no off-the-shelf maintained option exists (see §5).
 - **Does Claude's MCP client actually enforce RFC 8707 strictly**, or
