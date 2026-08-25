@@ -1,4 +1,5 @@
 import type { Children } from '@kitajs/html';
+import pkg from '../../../package.json' with { type: 'json' };
 import { FAVICON_HREF, LassoMark, THEME_STYLES } from '../../branding.tsx';
 
 const AUTH_STYLES = `
@@ -134,6 +135,10 @@ const AUTH_STYLES = `
     color: var(--muted);
   }
 
+  .meta:last-child {
+    margin-top: 20px;
+  }
+
   button .spinner {
     display: none;
   }
@@ -202,6 +207,7 @@ export function AuthLayout(props: {
             ''
           )}
           {props.children}
+          <p class="meta">v{pkg.version}</p>
         </div>
         <script>{SUBMIT_LOADING_SCRIPT}</script>
       </body>

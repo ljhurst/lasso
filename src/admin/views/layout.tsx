@@ -1,4 +1,5 @@
 import type { Children } from '@kitajs/html';
+import pkg from '../../../package.json' with { type: 'json' };
 import { FAVICON_HREF, THEME_STYLES } from '../../branding.tsx';
 
 const NAV_ITEMS = [
@@ -36,6 +37,7 @@ export function Layout(props: { title: string; active: string; children: Childre
             </form>
           </header>
           <main>{props.children}</main>
+          <footer>v{pkg.version}</footer>
         </div>
       </body>
     </html>
@@ -153,6 +155,8 @@ const STYLES = `
   }
 
   .empty, .empty-cell { color: var(--muted); font-size: 0.875rem; }
+
+  footer { margin-top: 24px; color: var(--muted); font-size: 0.75rem; text-align: center; }
 
   section form { display: flex; align-items: center; gap: 8px; }
 
