@@ -153,4 +153,28 @@ const STYLES = `
   }
 
   .empty, .empty-cell { color: var(--muted); font-size: 0.875rem; }
+
+  section form { display: flex; align-items: center; gap: 8px; }
+
+  section form select {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 0.875rem;
+  }
+
+  section form button[type="submit"] {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  section form button[type="submit"]:hover { filter: brightness(1.05); }
 `;

@@ -1,4 +1,5 @@
 import type { ResourceServer } from 'oidc-provider';
+import { env } from '../env.ts';
 
 export interface NamedResourceServer extends ResourceServer {
   name: string;
@@ -11,6 +12,9 @@ const VICTORIA_RESOURCE_INDICATOR =
   'https://diozeathy56roah5fxesmhji640ugrkn.lambda-url.us-east-1.on.aws/';
 
 const FIFE_RESOURCE_INDICATOR = 'https://vxzzln3s2i.execute-api.us-east-1.amazonaws.com/prod';
+
+export const LASSO_RESOURCE_INDICATOR = env.issuer;
+export const LASSO_ADMIN_SCOPE = 'lasso:admin';
 
 export const resources: Record<string, NamedResourceServer> = {
   [PORTO_RESOURCE_INDICATOR]: {
@@ -25,7 +29,12 @@ export const resources: Record<string, NamedResourceServer> = {
   },
   [FIFE_RESOURCE_INDICATOR]: {
     name: 'Fife',
-    scope: 'fife:read fife:write',
+    scope: 'fife:read fife:write fife:admin',
+    accessTokenFormat: 'jwt',
+  },
+  [LASSO_RESOURCE_INDICATOR]: {
+    name: 'Lasso Admin',
+    scope: LASSO_ADMIN_SCOPE,
     accessTokenFormat: 'jwt',
   },
 };

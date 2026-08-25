@@ -14,6 +14,10 @@ interface ConsentPromptDetails {
   missingResourceScopes?: Record<string, string[]>;
 }
 
+export function filterGrantedScope(requestedScope: string[], roles: string[]): string[] {
+  return requestedScope.filter((scope) => roles.includes(scope));
+}
+
 async function grantConsent(provider: Provider, ctx: Koa.Context): Promise<void> {
   const details = await provider.interactionDetails(ctx.req, ctx.res);
   const { session, params, grantId, prompt } = details;
@@ -40,8 +44,16 @@ async function grantConsent(provider: Provider, ctx: Koa.Context): Promise<void>
     grant.addOIDCClaims(missingOIDCClaims);
   }
   if (missingResourceScopes) {
+    const user = await getUserBySub(session.accountId);
+    if (!user) {
+      throw new Error(`no user found for sub ${session.accountId}`);
+    }
+
     for (const [indicator, scope] of Object.entries(missingResourceScopes)) {
-      grant.addResourceScope(indicator, scope.join(' '));
+      const grantedScope = filterGrantedScope(scope, user.roles);
+      if (grantedScope.length > 0) {
+        grant.addResourceScope(indicator, grantedScope.join(' '));
+      }
     }
   }
 

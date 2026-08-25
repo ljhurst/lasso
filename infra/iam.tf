@@ -56,6 +56,7 @@ data "aws_iam_policy_document" "lambda_permissions" {
       "dynamodb:PutItem",
       "dynamodb:UpdateItem",
       "dynamodb:Query",
+      "dynamodb:Scan",
     ]
     resources = [
       aws_dynamodb_table.lasso_users.arn,
