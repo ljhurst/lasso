@@ -105,6 +105,35 @@ const AUTH_STYLES = `
     cursor: default;
   }
 
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  .actions button {
+    margin-top: 0;
+  }
+
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  button.secondary:hover {
+    filter: none;
+    background: var(--bg);
+  }
+
+  .meta {
+    margin: 0;
+    text-align: center;
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
   button .spinner {
     display: none;
   }
