@@ -21,6 +21,7 @@ const { values } = parseArgs({
     'family-name': { type: 'string' },
     admin: { type: 'boolean', default: false },
     reset: { type: 'string' },
+    'grant-role': { type: 'string' },
     table: { type: 'string', default: 'lj-lasso-users' },
     profile: { type: 'string', default: 'lasso-deploy' },
     region: { type: 'string', default: 'us-east-1' },
@@ -74,6 +75,35 @@ async function resetPassword(
   console.log(`Reset password for ${email}. Temporary password: ${tempPassword}`);
 }
 
+async function grantRole(
+  client: ReturnType<typeof createDynamoClient>,
+  table: string,
+  email: string,
+  role: string,
+): Promise<void> {
+  const user = await findByEmail(client, table, email);
+  if (!user) {
+    throw new Error(`no user found with email ${email}`);
+  }
+
+  if (user.roles.includes(role)) {
+    console.log(`${email} already has role ${role}.`);
+    return;
+  }
+
+  await client.send(
+    new UpdateCommand({
+      TableName: table,
+      Key: { sub: user.sub },
+      UpdateExpression: 'SET #roles = :roles',
+      ExpressionAttributeNames: { '#roles': 'roles' },
+      ExpressionAttributeValues: { ':roles': [...user.roles, role] },
+    }),
+  );
+
+  console.log(`Granted ${role} to ${email}.`);
+}
+
 async function createUser(
   client: ReturnType<typeof createDynamoClient>,
   table: string,
@@ -98,7 +128,10 @@ async function createUser(
     passwordHash: hash,
     passwordSalt: salt,
     mustChangePassword: true,
-    roles: values.admin ? ['admin'] : [],
+    // Must match LASSO_ADMIN_SCOPE in src/config/resources.ts — not
+    // imported directly since that module requires the full app env
+    // (issuer, table names, SSM params) just for this one constant.
+    roles: values.admin ? ['lasso:admin'] : [],
     createdAt: new Date().toISOString(),
   };
 
@@ -112,6 +145,14 @@ async function main(): Promise<void> {
 
   if (values.reset) {
     await resetPassword(client, values.table, values.reset);
+    return;
+  }
+
+  if (values['grant-role']) {
+    if (!values.email) {
+      throw new Error('--email is required with --grant-role');
+    }
+    await grantRole(client, values.table, values.email, values['grant-role']);
     return;
   }
 

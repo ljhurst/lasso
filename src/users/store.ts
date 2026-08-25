@@ -1,4 +1,4 @@
-import { GetCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, QueryCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../adapter/client.ts';
 import { env } from '../env.ts';
 import type { User } from './types.ts';
@@ -21,6 +21,31 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
     }),
   );
   return result.Items?.[0] as User | undefined;
+}
+
+export async function listUsers(): Promise<User[]> {
+  const result = await docClient.send(new ScanCommand({ TableName: env.usersTableName }));
+  return (result.Items ?? []) as User[];
+}
+
+export async function addRole(sub: string, role: string): Promise<void> {
+  const user = await getUserBySub(sub);
+  if (!user) {
+    throw new Error(`no user found for sub ${sub}`);
+  }
+  if (user.roles.includes(role)) {
+    return;
+  }
+
+  await docClient.send(
+    new UpdateCommand({
+      TableName: env.usersTableName,
+      Key: { sub },
+      UpdateExpression: 'SET #roles = :roles',
+      ExpressionAttributeNames: { '#roles': 'roles' },
+      ExpressionAttributeValues: { ':roles': [...user.roles, role] },
+    }),
+  );
 }
 
 export async function updatePassword(
