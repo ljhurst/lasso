@@ -1,5 +1,5 @@
 import type { ResourceServer } from 'oidc-provider';
-import { env } from '../env.ts';
+import { env } from '#src/env.ts';
 
 export const AppType = {
   Web: 'web',

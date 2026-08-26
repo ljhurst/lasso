@@ -7,7 +7,7 @@ process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
   '/lasso/porto-victoria-client-secret-test';
 process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
 
-const { hasAdminScope } = await import('../../../src/portal/auth/session.ts');
+const { hasAdminScope } = await import('#src/portal/auth/session.ts');
 
 describe('hasAdminScope', () => {
   it('returns false for an empty scope', () => {

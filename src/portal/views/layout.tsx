@@ -1,6 +1,6 @@
 import type { Children } from '@kitajs/html';
-import pkg from '../../../package.json' with { type: 'json' };
-import { FAVICON_HREF, LassoMark, THEME_STYLES } from '../../branding.tsx';
+import pkg from '#package.json' with { type: 'json' };
+import { FAVICON_HREF, LassoMark, THEME_STYLES } from '#src/branding.tsx';
 
 const BASE_NAV_ITEMS = [{ href: '/apps', label: 'My Apps' }];
 const ADMIN_NAV_ITEMS = [

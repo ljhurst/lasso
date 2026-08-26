@@ -1,7 +1,7 @@
 import Router from '@koa/router';
 import type Provider from 'oidc-provider';
-import { handlePortalCallback } from './auth/callback.ts';
-import { buildHandlePortalLogout } from './auth/logout.ts';
+import { handlePortalCallback } from '#src/portal/auth/callback.ts';
+import { buildHandlePortalLogout } from '#src/portal/auth/logout.ts';
 
 export function buildPortalRouter(provider: Provider): Router {
   const router = new Router({ prefix: '/portal' });

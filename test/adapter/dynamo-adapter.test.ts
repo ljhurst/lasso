@@ -14,7 +14,7 @@ process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
   '/lasso/porto-victoria-client-secret-test';
 process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
 
-const { DynamoAdapter } = await import('../../src/adapter/dynamo-adapter.ts');
+const { DynamoAdapter } = await import('#src/adapter/dynamo-adapter.ts');
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 

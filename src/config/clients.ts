@@ -1,7 +1,7 @@
 import type { ClientMetadata } from 'oidc-provider';
 
-import { getClientSecret } from './client-secrets.ts';
-import { env } from '../env.ts';
+import { getClientSecret } from '#src/config/client-secrets.ts';
+import { env } from '#src/env.ts';
 
 export async function buildClients(): Promise<ClientMetadata[]> {
   return [

@@ -1,4 +1,4 @@
-import { AuthLayout, SubmitButton } from '../../interactions/views/layout.tsx';
+import { AuthLayout, SubmitButton } from '#src/interactions/views/layout.tsx';
 
 export function NoAccessPage() {
   return (

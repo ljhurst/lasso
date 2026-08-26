@@ -1,5 +1,5 @@
-import type { User } from '../../../users/types.ts';
-import { Empty, Layout, List, Table } from '../../views/layout.tsx';
+import type { User } from '#src/users/types.ts';
+import { Empty, Layout, List, Table } from '#src/portal/views/layout.tsx';
 
 export function UsersListPage(props: { users: User[] }) {
   return (

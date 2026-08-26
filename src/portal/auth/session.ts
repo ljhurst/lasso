@@ -1,15 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import type Koa from 'koa';
 import type Provider from 'oidc-provider';
-import {
-  deriveChallenge,
-  generateVerifier,
-  requestOrigin,
-  setPkceCookie,
-} from '../../auth/pkce.ts';
-import { LASSO_ADMIN_SCOPE, LASSO_RESOURCE_INDICATOR } from '../../config/resources.ts';
-import { getUserBySub } from '../../users/store.ts';
-import { NoAccessPage } from '../views/no-access.tsx';
+import { deriveChallenge, generateVerifier, requestOrigin, setPkceCookie } from '#src/auth/pkce.ts';
+import { LASSO_ADMIN_SCOPE, LASSO_RESOURCE_INDICATOR } from '#src/config/resources.ts';
+import { getUserBySub } from '#src/users/store.ts';
+import { NoAccessPage } from '#src/portal/views/no-access.tsx';
 
 export const PORTAL_CLIENT_ID = 'lasso-portal';
 export const PORTAL_PKCE_AREA = { cookieName: 'portal_pkce', path: '/portal' };

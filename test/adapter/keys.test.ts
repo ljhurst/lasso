@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { primaryKey, toItem, uidIndexKey } from '../../src/adapter/keys.ts';
+import { primaryKey, toItem, uidIndexKey } from '#src/adapter/keys.ts';
 
 describe('primaryKey', () => {
   it('namespaces the id by model name', () => {

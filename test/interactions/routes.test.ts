@@ -7,7 +7,7 @@ process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
   '/lasso/porto-victoria-client-secret-test';
 process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
 
-const { filterGrantedScope } = await import('../../src/interactions/routes.ts');
+const { filterGrantedScope } = await import('#src/interactions/routes.ts');
 
 describe('filterGrantedScope', () => {
   it('grants every requested scope the account has a matching role for', () => {

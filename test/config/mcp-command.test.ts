@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMcpAddCommand, buildMcpInspectorCommand } from '../../src/config/mcp-command.ts';
+import { buildMcpAddCommand, buildMcpInspectorCommand } from '#src/config/mcp-command.ts';
 
 describe('buildMcpAddCommand', () => {
   it('lower-cases the name for the CLI label', () => {

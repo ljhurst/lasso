@@ -1,12 +1,12 @@
 import type { Account, Configuration } from 'oidc-provider';
-import { DynamoAdapter } from '../adapter/dynamo-adapter.ts';
-import { ErrorPage } from '../interactions/views/error.tsx';
-import { LogoutPage } from '../interactions/views/logout.tsx';
-import { PostLogoutPage } from '../interactions/views/post-logout.tsx';
-import { getUserBySub } from '../users/store.ts';
-import { buildClients } from './clients.ts';
-import { getJwks } from './jwks.ts';
-import { allResourceScopes, getResourceServerInfo } from './resources.ts';
+import { DynamoAdapter } from '#src/adapter/dynamo-adapter.ts';
+import { ErrorPage } from '#src/interactions/views/error.tsx';
+import { LogoutPage } from '#src/interactions/views/logout.tsx';
+import { PostLogoutPage } from '#src/interactions/views/post-logout.tsx';
+import { getUserBySub } from '#src/users/store.ts';
+import { buildClients } from '#src/config/clients.ts';
+import { getJwks } from '#src/config/jwks.ts';
+import { allResourceScopes, getResourceServerInfo } from '#src/config/resources.ts';
 
 interface AccountClaims {
   [key: string]: unknown;

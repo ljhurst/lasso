@@ -16,7 +16,7 @@ process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
 process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
 
 const { getUserBySub, getUserByEmail, listUsers, addRole, updatePassword } = await import(
-  '../../src/users/store.ts'
+  '#src/users/store.ts'
 );
 
 const ddbMock = mockClient(DynamoDBDocumentClient);

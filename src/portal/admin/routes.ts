@@ -1,13 +1,13 @@
 import Router from '@koa/router';
 import koaBody from 'koa-body';
 import type Provider from 'oidc-provider';
-import { allResourceScopes } from '../../config/resources.ts';
-import { addRole, getUserBySub, listUsers } from '../../users/store.ts';
-import { buildRequirePortalSession, requireAdmin } from '../auth/session.ts';
-import { listAccessTokens, listGrants, listSessions } from './data.ts';
-import { DashboardPage } from './views/dashboard.tsx';
-import { UserDetailPage } from './views/user-detail.tsx';
-import { UsersListPage } from './views/users.tsx';
+import { allResourceScopes } from '#src/config/resources.ts';
+import { addRole, getUserBySub, listUsers } from '#src/users/store.ts';
+import { buildRequirePortalSession, requireAdmin } from '#src/portal/auth/session.ts';
+import { listAccessTokens, listGrants, listSessions } from '#src/portal/admin/data.ts';
+import { DashboardPage } from '#src/portal/admin/views/dashboard.tsx';
+import { UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
+import { UsersListPage } from '#src/portal/admin/views/users.tsx';
 
 export function buildAdminRouter(provider: Provider): Router {
   const router = new Router({ prefix: '/admin' });

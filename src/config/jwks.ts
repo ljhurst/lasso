@@ -1,6 +1,6 @@
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 
-import { env } from '../env.ts';
+import { env } from '#src/env.ts';
 
 interface Jwks {
   keys: Record<string, unknown>[];

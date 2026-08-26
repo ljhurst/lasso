@@ -1,6 +1,6 @@
-import type { User } from '../../../users/types.ts';
-import type { AccessTokenRow, GrantRow, SessionRow } from '../data.ts';
-import { Empty, Layout, List, Table } from '../../views/layout.tsx';
+import type { User } from '#src/users/types.ts';
+import type { AccessTokenRow, GrantRow, SessionRow } from '#src/portal/admin/data.ts';
+import { Empty, Layout, List, Table } from '#src/portal/views/layout.tsx';
 
 function formatExpiry(expiresAt: number | undefined): string {
   return expiresAt ? new Date(expiresAt * 1000).toISOString() : '—';

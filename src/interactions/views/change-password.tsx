@@ -1,4 +1,4 @@
-import { AuthLayout, SubmitButton } from './layout.tsx';
+import { AuthLayout, SubmitButton } from '#src/interactions/views/layout.tsx';
 
 export function ChangePasswordPage(props: { uid: string; sub: string; error?: string }) {
   return (

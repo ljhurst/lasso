@@ -1,7 +1,7 @@
 import { GetCommand, QueryCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '../adapter/client.ts';
-import { env } from '../env.ts';
-import type { User } from './types.ts';
+import { docClient } from '#src/adapter/client.ts';
+import { env } from '#src/env.ts';
+import type { User } from '#src/users/types.ts';
 
 export async function getUserBySub(sub: string): Promise<User | undefined> {
   const result = await docClient.send(

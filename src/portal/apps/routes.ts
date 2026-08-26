@@ -4,11 +4,11 @@ import {
   LASSO_RESOURCE_INDICATOR,
   type NamedResourceServer,
   resources,
-} from '../../config/resources.ts';
-import { filterGrantedScope } from '../../interactions/routes.ts';
-import type { User } from '../../users/types.ts';
-import { buildRequirePortalSession } from '../auth/session.ts';
-import { DashboardPage } from './views/dashboard.tsx';
+} from '#src/config/resources.ts';
+import { filterGrantedScope } from '#src/interactions/routes.ts';
+import type { User } from '#src/users/types.ts';
+import { buildRequirePortalSession } from '#src/portal/auth/session.ts';
+import { DashboardPage } from '#src/portal/apps/views/dashboard.tsx';
 
 export interface UserApp {
   indicator: string;

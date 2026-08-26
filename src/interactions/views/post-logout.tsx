@@ -1,4 +1,4 @@
-import { AuthLayout } from './layout.tsx';
+import { AuthLayout } from '#src/interactions/views/layout.tsx';
 
 export function PostLogoutPage(props: { clientName?: string }) {
   return (

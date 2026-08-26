@@ -1,4 +1,4 @@
-import { AuthLayout } from './layout.tsx';
+import { AuthLayout } from '#src/interactions/views/layout.tsx';
 
 export function ErrorPage(props: { error: string; errorDescription?: string }) {
   return (

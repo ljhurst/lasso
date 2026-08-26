@@ -7,9 +7,9 @@ import {
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 import type { Adapter, AdapterPayload } from 'oidc-provider';
-import { env } from '../env.ts';
-import { docClient } from './client.ts';
-import { type LassoItem, primaryKey, toItem, uidIndexKey } from './keys.ts';
+import { env } from '#src/env.ts';
+import { docClient } from '#src/adapter/client.ts';
+import { type LassoItem, primaryKey, toItem, uidIndexKey } from '#src/adapter/keys.ts';
 
 const BATCH_WRITE_LIMIT = 25;
 

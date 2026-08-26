@@ -3,10 +3,10 @@ import type Koa from 'koa';
 import koaBody from 'koa-body';
 import type Provider from 'oidc-provider';
 
-import { hashPassword, verifyPassword } from '../users/password.ts';
-import { getUserByEmail, getUserBySub, updatePassword } from '../users/store.ts';
-import { ChangePasswordPage } from './views/change-password.tsx';
-import { LoginPage } from './views/login.tsx';
+import { hashPassword, verifyPassword } from '#src/users/password.ts';
+import { getUserByEmail, getUserBySub, updatePassword } from '#src/users/store.ts';
+import { ChangePasswordPage } from '#src/interactions/views/change-password.tsx';
+import { LoginPage } from '#src/interactions/views/login.tsx';
 
 interface ConsentPromptDetails {
   missingOIDCScope?: string[];

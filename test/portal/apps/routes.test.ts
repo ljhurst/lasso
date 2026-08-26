@@ -7,7 +7,7 @@ process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
   '/lasso/porto-victoria-client-secret-test';
 process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
 
-const { getUserApps } = await import('../../../src/portal/apps/routes.ts');
+const { getUserApps } = await import('#src/portal/apps/routes.ts');
 
 describe('getUserApps', () => {
   it('returns nothing for a user with no roles', () => {
