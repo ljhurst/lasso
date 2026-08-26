@@ -1,6 +1,6 @@
 import type { Children } from '@kitajs/html';
 import pkg from '#package.json' with { type: 'json' };
-import { FAVICON_HREF, LassoMark, THEME_STYLES } from '#src/branding.tsx';
+import { APPLE_TOUCH_ICON_HREF, FAVICON_HREF, LassoMark, THEME_STYLES } from '#src/branding.tsx';
 
 const AUTH_STYLES = `
   body {
@@ -190,6 +190,8 @@ export function AuthLayout(props: {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Lasso — {props.title}</title>
         <link rel="icon" type="image/svg+xml" href={FAVICON_HREF} />
+        <link rel="apple-touch-icon" href={APPLE_TOUCH_ICON_HREF} />
+        <meta name="apple-mobile-web-app-title" content="Lasso" />
         <style>{THEME_STYLES + AUTH_STYLES}</style>
       </head>
       <body>

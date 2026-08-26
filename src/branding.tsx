@@ -1,3 +1,5 @@
+export { APPLE_TOUCH_ICON_HREF } from '#src/assets/apple-touch-icon.ts';
+
 export function LassoMark() {
   return (
     <svg width="52" height="52" viewBox="0 0 64 64" fill="none" aria-hidden="true">
