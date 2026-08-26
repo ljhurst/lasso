@@ -30,11 +30,16 @@ audience-scoped tokens per app. Built on
 
 ## Usage
 
-View the admin portal
+View the portal
 
 ```text
-https://zzspanxrc7v4tvou4acvdq36oi0yjdrz.lambda-url.us-east-1.on.aws/admin
+https://zzspanxrc7v4tvou4acvdq36oi0yjdrz.lambda-url.us-east-1.on.aws/
 ```
+
+Agents can use the skills for
+
+- [Registering a resource server](.claude/skills/lasso-connect-resource/)
+- [Registering a client](.claude/skills/lasso-connect-client/)
 
 ## Requirements
 
