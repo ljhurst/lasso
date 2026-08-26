@@ -2,10 +2,12 @@ import { createServer } from 'node:http';
 
 import Provider from 'oidc-provider';
 
-import { buildAdminRouter } from './admin/routes.ts';
 import { buildConfiguration } from './config/index.ts';
 import { env } from './env.ts';
 import { buildInteractionRouter } from './interactions/routes.ts';
+import { buildAdminRouter } from './portal/admin/routes.ts';
+import { buildAppsRouter } from './portal/apps/routes.ts';
+import { buildPortalRouter } from './portal/routes.ts';
 
 async function main(): Promise<void> {
   const configuration = await buildConfiguration();
@@ -16,6 +18,14 @@ async function main(): Promise<void> {
   const interactions = buildInteractionRouter(provider);
   provider.use(interactions.routes());
   provider.use(interactions.allowedMethods());
+
+  const portal = buildPortalRouter(provider);
+  provider.use(portal.routes());
+  provider.use(portal.allowedMethods());
+
+  const apps = buildAppsRouter(provider);
+  provider.use(apps.routes());
+  provider.use(apps.allowedMethods());
 
   const admin = buildAdminRouter(provider);
   provider.use(admin.routes());

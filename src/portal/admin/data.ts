@@ -1,7 +1,7 @@
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '../adapter/client.ts';
-import type { LassoItem } from '../adapter/keys.ts';
-import { env } from '../env.ts';
+import { docClient } from '../../adapter/client.ts';
+import type { LassoItem } from '../../adapter/keys.ts';
+import { env } from '../../env.ts';
 
 export interface SessionRow {
   id: string;

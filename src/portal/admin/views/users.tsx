@@ -1,9 +1,9 @@
-import type { User } from '../../users/types.ts';
-import { Empty, Layout, List, Table } from './layout.tsx';
+import type { User } from '../../../users/types.ts';
+import { Empty, Layout, List, Table } from '../../views/layout.tsx';
 
 export function UsersListPage(props: { users: User[] }) {
   return (
-    <Layout title="Users" active="/admin/users">
+    <Layout title="Users" active="/admin/users" isAdmin={true}>
       <section>
         <h2>Users ({props.users.length})</h2>
         {props.users.length === 0 ? (

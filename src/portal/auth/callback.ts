@@ -1,10 +1,10 @@
 import type Koa from 'koa';
-import { clearPkceCookie, readPkceCookie, requestOrigin } from './pkce.ts';
-import { ADMIN_CLIENT_ID } from './session.ts';
+import { clearPkceCookie, readPkceCookie, requestOrigin } from '../../auth/pkce.ts';
+import { PORTAL_CLIENT_ID, PORTAL_PKCE_AREA } from './session.ts';
 
-export async function handleAdminCallback(ctx: Koa.Context): Promise<void> {
-  const pkce = readPkceCookie(ctx);
-  clearPkceCookie(ctx);
+export async function handlePortalCallback(ctx: Koa.Context): Promise<void> {
+  const pkce = readPkceCookie(ctx, PORTAL_PKCE_AREA);
+  clearPkceCookie(ctx, PORTAL_PKCE_AREA);
 
   const { code, state } = ctx.query as { code?: string; state?: string };
 
@@ -22,8 +22,8 @@ export async function handleAdminCallback(ctx: Koa.Context): Promise<void> {
     body: new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: `${origin}/admin/callback`,
-      client_id: ADMIN_CLIENT_ID,
+      redirect_uri: `${origin}/portal/callback`,
+      client_id: PORTAL_CLIENT_ID,
       code_verifier: pkce.verifier,
     }),
   });
