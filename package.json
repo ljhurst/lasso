@@ -4,7 +4,7 @@
   "author": "Luke Hurst",
   "type": "module",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.5.0",
   "engines": {
     "node": ">=24"
   },
@@ -21,7 +21,7 @@
     "test": "vitest --run",
     "test:watch": "vitest",
     "preflight": "npm run format:check && npm run lint && npm run check && npm run test",
-    "dev": "node --experimental-strip-types --import ./scripts/dev/jsx-loader.mjs src/server.ts",
+    "dev": "node --experimental-strip-types --watch --import ./scripts/dev/jsx-loader.mjs src/server.ts",
     "build": "esbuild src/server.ts --bundle --platform=node --target=node24 --format=esm --jsx=automatic --jsx-import-source=@kitajs/html --outfile=dist/server.js --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
     "generate-jwks": "node --experimental-strip-types scripts/bootstrap/generate-jwks.ts",
     "add-user": "node --experimental-strip-types scripts/bootstrap/add-user.ts",

@@ -7,7 +7,7 @@ import { env } from '#src/env.ts';
 import { buildInteractionRouter } from '#src/interactions/routes.ts';
 import { buildAdminRouter } from '#src/portal/admin/routes.ts';
 import { buildAppsRouter } from '#src/portal/apps/routes.ts';
-import { buildPortalRouter } from '#src/portal/routes.ts';
+import { buildPortalRouter, buildRootRouter } from '#src/portal/routes.ts';
 
 async function main(): Promise<void> {
   const configuration = await buildConfiguration();
@@ -18,6 +18,10 @@ async function main(): Promise<void> {
   const interactions = buildInteractionRouter(provider);
   provider.use(interactions.routes());
   provider.use(interactions.allowedMethods());
+
+  const root = buildRootRouter();
+  provider.use(root.routes());
+  provider.use(root.allowedMethods());
 
   const portal = buildPortalRouter(provider);
   provider.use(portal.routes());

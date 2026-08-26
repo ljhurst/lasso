@@ -11,3 +11,13 @@ export function buildPortalRouter(provider: Provider): Router {
 
   return router;
 }
+
+export function buildRootRouter(): Router {
+  const router = new Router();
+
+  router.get('/', (ctx) => {
+    ctx.redirect('/apps');
+  });
+
+  return router;
+}
