@@ -1,6 +1,6 @@
-import type { User } from '../../users/types.ts';
+import type { User } from '../../../users/types.ts';
 import type { AccessTokenRow, GrantRow, SessionRow } from '../data.ts';
-import { Empty, Layout, List, Table } from './layout.tsx';
+import { Empty, Layout, List, Table } from '../../views/layout.tsx';
 
 function formatExpiry(expiresAt: number | undefined): string {
   return expiresAt ? new Date(expiresAt * 1000).toISOString() : '—';
@@ -14,7 +14,7 @@ export function UserDetailPage(props: {
   grantableRoles: string[];
 }) {
   return (
-    <Layout title={props.user.email} active="/admin/users">
+    <Layout title={props.user.email} active="/admin/users" isAdmin={true}>
       <section>
         <h2>
           {props.user.givenName} {props.user.familyName}

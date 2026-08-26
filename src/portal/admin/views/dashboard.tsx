@@ -1,7 +1,7 @@
 import type { ClientMetadata } from 'oidc-provider';
-import { buildClients } from '../../config/clients.ts';
-import { resources } from '../../config/resources.ts';
-import { Empty, Layout, List, Table } from './layout.tsx';
+import { buildClients } from '../../../config/clients.ts';
+import { resources } from '../../../config/resources.ts';
+import { Empty, Layout, List, Table } from '../../views/layout.tsx';
 
 function clientRow(client: ClientMetadata) {
   return (
@@ -25,7 +25,7 @@ export async function DashboardPage() {
   const resourceEntries = Object.entries(resources);
 
   return (
-    <Layout title="Clients & resources" active="/admin">
+    <Layout title="Clients & resources" active="/admin" isAdmin={true}>
       <section>
         <h2>Clients ({clients.length})</h2>
         {clients.length === 0 ? (

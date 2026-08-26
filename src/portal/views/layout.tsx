@@ -1,19 +1,27 @@
 import type { Children } from '@kitajs/html';
 import pkg from '../../../package.json' with { type: 'json' };
-import { FAVICON_HREF, THEME_STYLES } from '../../branding.tsx';
+import { FAVICON_HREF, LassoMark, THEME_STYLES } from '../../branding.tsx';
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [{ href: '/apps', label: 'My Apps' }];
+const ADMIN_NAV_ITEMS = [
   { href: '/admin', label: 'Clients & resources' },
   { href: '/admin/users', label: 'Users' },
 ];
 
-export function Layout(props: { title: string; active: string; children: Children }) {
+export function Layout(props: {
+  title: string;
+  active: string;
+  isAdmin: boolean;
+  children: Children;
+}) {
+  const navItems = props.isAdmin ? [...BASE_NAV_ITEMS, ...ADMIN_NAV_ITEMS] : BASE_NAV_ITEMS;
+
   return (
     <html lang="en">
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Lasso admin — {props.title}</title>
+        <title>Lasso — {props.title}</title>
         <link rel="icon" type="image/svg+xml" href={FAVICON_HREF} />
         <style>{THEME_STYLES + STYLES}</style>
       </head>
@@ -21,16 +29,19 @@ export function Layout(props: { title: string; active: string; children: Childre
         <div class="shell">
           <header>
             <div class="brand">
+              <span class="mark">
+                <LassoMark />
+              </span>
               <h1>Lasso</h1>
               <nav>
-                {NAV_ITEMS.map((item) => (
+                {navItems.map((item) => (
                   <a href={item.href} class={item.href === props.active ? 'active' : ''}>
                     {item.label}
                   </a>
                 ))}
               </nav>
             </div>
-            <form method="post" action="/admin/logout">
+            <form method="post" action="/portal/logout">
               <button type="submit" class="logout">
                 Log out
               </button>
@@ -82,6 +93,8 @@ const STYLES = `
   header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 32px; }
 
   .brand { display: flex; align-items: baseline; gap: 24px; }
+
+  .mark { display: flex; align-items: center; color: var(--accent); position: relative; top: 3px; }
 
   h1 { font-size: 1.25rem; margin: 0; color: var(--accent); }
 
@@ -181,4 +194,168 @@ const STYLES = `
   }
 
   section form button[type="submit"]:hover { filter: brightness(1.05); }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .app-tile {
+    padding: 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .tile-header { display: flex; align-items: center; gap: 12px; }
+
+  .tile-heading { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+  .app-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+
+  .app-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .app-name { font-weight: 600; font-size: 0.9375rem; }
+
+  .app-type {
+    margin-left: -5px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+
+  .tile-action {
+    margin-top: auto;
+    align-self: stretch;
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  a.tile-action {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border-color: transparent;
+  }
+
+  a.tile-action:hover { filter: brightness(1.05); }
+
+  button.tile-action:hover { background: var(--bg); }
+
+  .tile-action.disabled {
+    border-style: dashed;
+    color: var(--muted);
+    cursor: default;
+  }
+
+  dialog.connect-modal {
+    width: 100%;
+    max-width: 480px;
+    padding: 24px;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.35);
+  }
+
+  dialog.connect-modal::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  dialog.connect-modal h2 {
+    margin: 0 0 16px;
+    font-size: 1.0625rem;
+  }
+
+  .command-block { margin-bottom: 16px; }
+
+  .command-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .command-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 4px 4px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .command-row code {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+    background: none;
+    padding: 6px 0;
+  }
+
+  .copy-icon-button {
+    flex-shrink: 0;
+    display: flex;
+    padding: 6px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .copy-icon-button:hover { background: var(--card); color: var(--text); }
+
+  .modal-close {
+    margin-top: 8px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .modal-close:hover { filter: brightness(1.05); }
 `;

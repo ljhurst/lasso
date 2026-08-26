@@ -1,11 +1,9 @@
 import Router from '@koa/router';
 import koaBody from 'koa-body';
 import type Provider from 'oidc-provider';
-import { allResourceScopes } from '../config/resources.ts';
-import { addRole, getUserBySub, listUsers } from '../users/store.ts';
-import { handleAdminCallback } from './auth/callback.ts';
-import { buildHandleAdminLogout } from './auth/logout.ts';
-import { buildRequireAdminSession } from './auth/session.ts';
+import { allResourceScopes } from '../../config/resources.ts';
+import { addRole, getUserBySub, listUsers } from '../../users/store.ts';
+import { buildRequirePortalSession, requireAdmin } from '../auth/session.ts';
 import { listAccessTokens, listGrants, listSessions } from './data.ts';
 import { DashboardPage } from './views/dashboard.tsx';
 import { UserDetailPage } from './views/user-detail.tsx';
@@ -13,24 +11,23 @@ import { UsersListPage } from './views/users.tsx';
 
 export function buildAdminRouter(provider: Provider): Router {
   const router = new Router({ prefix: '/admin' });
-  const requireAdminSession = buildRequireAdminSession(provider);
+  const requirePortalSession = buildRequirePortalSession(provider);
 
-  router.get('/callback', handleAdminCallback);
-  router.post('/logout', buildHandleAdminLogout(provider));
+  router.use(requirePortalSession, requireAdmin);
 
-  router.get('/', requireAdminSession, async (ctx) => {
+  router.get('/', async (ctx) => {
     ctx.type = 'html';
     ctx.body = await DashboardPage();
   });
 
-  router.get('/users', requireAdminSession, async (ctx) => {
+  router.get('/users', async (ctx) => {
     const users = await listUsers();
 
     ctx.type = 'html';
     ctx.body = await UsersListPage({ users });
   });
 
-  router.get('/users/:sub', requireAdminSession, async (ctx) => {
+  router.get('/users/:sub', async (ctx) => {
     const user = ctx.params.sub ? await getUserBySub(ctx.params.sub) : undefined;
     if (!user) {
       ctx.redirect('/admin/users');
@@ -53,7 +50,7 @@ export function buildAdminRouter(provider: Provider): Router {
     });
   });
 
-  router.post('/users/:sub/roles', requireAdminSession, koaBody(), async (ctx) => {
+  router.post('/users/:sub/roles', koaBody(), async (ctx) => {
     const { sub } = ctx.params;
     const { role } = ctx.request.body as { role?: string };
     if (sub && role && allResourceScopes.includes(role)) {
