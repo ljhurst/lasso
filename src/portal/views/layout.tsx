@@ -59,16 +59,18 @@ export function Layout(props: {
 
 export function Table(props: { columns: string[]; children: Children }) {
   return (
-    <table>
-      <thead>
-        <tr>
-          {props.columns.map((column) => (
-            <th>{column}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>{props.children}</tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            {props.columns.map((column) => (
+              <th>{column}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{props.children}</tbody>
+      </table>
+    </div>
   );
 }
 
@@ -92,18 +94,25 @@ export function List(props: { items: readonly string[]; mono?: boolean }) {
 const STYLES = `
   .shell { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
 
-  header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 32px; }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    row-gap: 12px;
+    margin-bottom: 32px;
+  }
 
-  .brand { display: flex; align-items: baseline; gap: 24px; }
+  .brand { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; row-gap: 8px; }
 
-  .mark { display: flex; align-items: center; color: var(--accent); position: relative; top: 3px; }
+  .mark { display: flex; align-items: center; color: var(--accent); }
 
   h1 { font-size: 1.25rem; margin: 0; color: var(--accent); }
 
   nav { display: flex; gap: 4px; }
 
   nav a {
-    padding: 6px 12px;
+    padding: 10px 14px;
     border-radius: 8px;
     color: var(--muted);
     text-decoration: none;
@@ -114,7 +123,7 @@ const STYLES = `
   nav a.active { background: var(--card); color: var(--text); border: 1px solid var(--border); }
 
   button.logout {
-    padding: 6px 12px;
+    padding: 10px 14px;
     border-radius: 8px;
     border: none;
     background: none;
@@ -131,8 +140,11 @@ const STYLES = `
 
   h2 { font-size: 1rem; margin: 0 0 12px; }
 
+  .table-scroll { overflow-x: auto; }
+
   table {
     width: 100%;
+    min-width: 480px;
     border-collapse: collapse;
     background: var(--card);
     border: 1px solid var(--border);
@@ -258,7 +270,7 @@ const STYLES = `
     margin-top: auto;
     align-self: stretch;
     text-align: center;
-    padding: 8px 12px;
+    padding: 12px;
     border-radius: 8px;
     border: 1px solid var(--border);
     background: transparent;
@@ -287,8 +299,7 @@ const STYLES = `
   }
 
   dialog.connect-modal {
-    width: 100%;
-    max-width: 480px;
+    width: min(480px, calc(100vw - 48px));
     padding: 24px;
     background: var(--card);
     color: var(--text);
@@ -337,7 +348,7 @@ const STYLES = `
   .copy-icon-button {
     flex-shrink: 0;
     display: flex;
-    padding: 6px;
+    padding: 10px;
     border-radius: 6px;
     border: none;
     background: transparent;
