@@ -33,6 +33,15 @@ export async function buildClients(): Promise<ClientMetadata[]> {
       scope: 'victoria:read victoria:write',
     },
     {
+      client_id: 'victoria-viewer',
+      client_name: 'Victoria Viewer',
+      redirect_uris: ['http://localhost:8000/auth/callback'],
+      token_endpoint_auth_method: 'none',
+      grant_types: ['authorization_code', 'refresh_token'],
+      response_types: ['code'],
+      application_type: 'web',
+    },
+    {
       client_id: 'lasso-portal',
       client_name: 'Lasso Portal',
       redirect_uris: [
