@@ -26,6 +26,9 @@ const PORTO_RESOURCE_INDICATOR =
 const VICTORIA_RESOURCE_INDICATOR =
   'https://diozeathy56roah5fxesmhji640ugrkn.lambda-url.us-east-1.on.aws/';
 
+const VICTORIA_VIEWER_RESOURCE_INDICATOR =
+  'https://s4wndhtrbjoflmoqeb4zvvmeim0cyodv.lambda-url.us-east-1.on.aws/';
+
 const FIFE_RESOURCE_INDICATOR = 'https://fi37z0j9pg.execute-api.us-east-1.amazonaws.com/prod';
 const FIFE_APP_URL = 'https://d3de9r2gorcf05.cloudfront.net/';
 
@@ -44,6 +47,12 @@ export const resources: Record<string, NamedResourceServer> = {
     scope: 'victoria:read victoria:write',
     accessTokenFormat: 'jwt',
     app: { type: AppType.Mcp, url: VICTORIA_RESOURCE_INDICATOR },
+  },
+  [VICTORIA_VIEWER_RESOURCE_INDICATOR]: {
+    name: 'Victoria Viewer',
+    scope: 'victoria:read',
+    accessTokenFormat: 'jwt',
+    app: { type: AppType.Web, url: VICTORIA_VIEWER_RESOURCE_INDICATOR },
   },
   [FIFE_RESOURCE_INDICATOR]: {
     name: 'Fife',

@@ -35,7 +35,14 @@ export async function buildClients(): Promise<ClientMetadata[]> {
     {
       client_id: 'victoria-viewer',
       client_name: 'Victoria Viewer',
-      redirect_uris: ['http://localhost:8000/auth/callback'],
+      redirect_uris: [
+        'http://localhost:8000/auth/callback',
+        'https://s4wndhtrbjoflmoqeb4zvvmeim0cyodv.lambda-url.us-east-1.on.aws/auth/callback',
+      ],
+      post_logout_redirect_uris: [
+        'http://localhost:8000/logged-out',
+        'https://s4wndhtrbjoflmoqeb4zvvmeim0cyodv.lambda-url.us-east-1.on.aws/logged-out',
+      ],
       token_endpoint_auth_method: 'none',
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],

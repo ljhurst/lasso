@@ -168,11 +168,14 @@ const AUTH_STYLES = `
   }
 `;
 
+// Disable the submit button *after* the browser has serialized the form —
+// disabling it synchronously drops the clicked button's own name/value from
+// the POST, which breaks the logout page's "logout=yes".
 const SUBMIT_LOADING_SCRIPT = `
-  document.querySelector('form').addEventListener('submit', function () {
-    var btn = document.querySelector('button[type="submit"]');
-    btn.disabled = true;
+  document.querySelector('form').addEventListener('submit', function (e) {
+    var btn = e.submitter || document.querySelector('button[type="submit"]');
     btn.classList.add('loading');
+    setTimeout(function () { btn.disabled = true; }, 0);
   });
 `;
 
