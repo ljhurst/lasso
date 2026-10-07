@@ -10,7 +10,7 @@ resource "aws_lambda_function" "lasso" {
   architectures = ["arm64"]
   layers        = [var.lwa_layer_arn]
 
-  memory_size = 256
+  memory_size = 512
   timeout     = 15
 
   environment {

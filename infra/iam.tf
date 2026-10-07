@@ -41,7 +41,7 @@ data "aws_iam_policy_document" "lambda_permissions" {
   statement {
     sid     = "ReadLassoSsmParameters"
     effect  = "Allow"
-    actions = ["ssm:GetParameter"]
+    actions = ["ssm:GetParameters"]
     resources = [
       aws_ssm_parameter.jwks.arn,
       aws_ssm_parameter.porto_victoria_client_secret.arn,

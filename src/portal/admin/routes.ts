@@ -1,7 +1,7 @@
 import Router from '@koa/router';
-import koaBody from 'koa-body';
 import type Provider from 'oidc-provider';
 import { allResourceScopes } from '#src/config/resources.ts';
+import { readForm } from '#src/form-body.ts';
 import { addRole, getUserBySub, listUsers } from '#src/users/store.ts';
 import { buildRequirePortalSession, requireAdmin } from '#src/portal/auth/session.ts';
 import { listAccessTokens, listGrants, listSessions } from '#src/portal/admin/data.ts';
@@ -50,9 +50,9 @@ export function buildAdminRouter(provider: Provider): Router {
     });
   });
 
-  router.post('/users/:sub/roles', koaBody(), async (ctx) => {
+  router.post('/users/:sub/roles', async (ctx) => {
     const { sub } = ctx.params;
-    const { role } = ctx.request.body as { role?: string };
+    const role = (await readForm(ctx)).get('role');
     if (sub && role && allResourceScopes.includes(role)) {
       await addRole(sub, role);
     }

@@ -10,7 +10,9 @@ import { buildAppsRouter } from '#src/portal/apps/routes.ts';
 import { buildPortalRouter, buildRootRouter } from '#src/portal/routes.ts';
 
 async function main(): Promise<void> {
+  const configStart = performance.now();
   const configuration = await buildConfiguration();
+  const configMs = performance.now() - configStart;
   const provider = new Provider(env.issuer, configuration);
 
   provider.proxy = true;
@@ -36,7 +38,10 @@ async function main(): Promise<void> {
   provider.use(admin.allowedMethods());
 
   createServer(provider.callback()).listen(env.port, () => {
-    console.log(`lasso listening on :${env.port}`);
+    const startupMs = performance.now();
+    console.log(
+      `lasso listening on :${env.port} (startup ${startupMs.toFixed(0)} ms, config ${configMs.toFixed(0)} ms)`,
+    );
   });
 }
 

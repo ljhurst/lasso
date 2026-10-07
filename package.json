@@ -35,7 +35,6 @@
     "@kitajs/html": "^4.2.13",
     "@koa/router": "^15.7.0",
     "koa": "^3.2.1",
-    "koa-body": "^8.0.0",
     "oidc-provider": "^9.11.3"
   },
   "devDependencies": {

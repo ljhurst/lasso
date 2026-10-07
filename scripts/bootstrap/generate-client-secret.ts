@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // One-time bootstrap: generates a random client_credentials secret for an
 // M2M oidc-provider client (DESIGN §7) and writes it to SSM Parameter
-// Store. src/config/clients.ts reads it via getClientSecret and hands it
+// Store. src/config/clients.ts reads it at startup and hands it
 // to oidc-provider verbatim for client_secret_basic comparison — unlike
 // the login credential, this is not hashed.
 import { randomBytes } from 'node:crypto';
