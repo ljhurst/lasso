@@ -1,6 +1,6 @@
 import type { ClientMetadata } from 'oidc-provider';
 
-import { getClientSecret } from '#src/config/client-secrets.ts';
+import { getParameter } from '#src/config/ssm.ts';
 import { env } from '#src/env.ts';
 
 export async function buildClients(): Promise<ClientMetadata[]> {
@@ -26,7 +26,7 @@ export async function buildClients(): Promise<ClientMetadata[]> {
     {
       client_id: 'porto-victoria',
       client_name: 'Porto to Victoria',
-      client_secret: await getClientSecret(env.clientSecretSsmParams.portoVictoria),
+      client_secret: await getParameter(env.clientSecretSsmParams.portoVictoria),
       token_endpoint_auth_method: 'client_secret_basic',
       grant_types: ['client_credentials'],
       response_types: [],

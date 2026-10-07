@@ -7,6 +7,8 @@ import { getUserBySub } from '#src/users/store.ts';
 import { buildClients } from '#src/config/clients.ts';
 import { getJwks } from '#src/config/jwks.ts';
 import { allResourceScopes, getResourceServerInfo } from '#src/config/resources.ts';
+import { getParameters } from '#src/config/ssm.ts';
+import { env } from '#src/env.ts';
 
 interface AccountClaims {
   [key: string]: unknown;
@@ -42,6 +44,10 @@ const ONE_HOUR = 60 * 60;
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60;
 
 export async function buildConfiguration(): Promise<Configuration> {
+  // Fetch every secret the config reads in one round trip up front, since
+  // each sequential network call at startup adds directly to cold-start time.
+  await getParameters([env.jwksSsmParam, ...Object.values(env.clientSecretSsmParams)]);
+
   return {
     adapter: DynamoAdapter,
     clients: await buildClients(),

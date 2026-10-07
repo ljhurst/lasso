@@ -1,8 +1,8 @@
 import Router from '@koa/router';
 import type Koa from 'koa';
-import koaBody from 'koa-body';
 import type Provider from 'oidc-provider';
 
+import { readForm } from '#src/form-body.ts';
 import { hashPassword, verifyPassword } from '#src/users/password.ts';
 import { getUserByEmail, getUserBySub, updatePassword } from '#src/users/store.ts';
 import { ChangePasswordPage } from '#src/interactions/views/change-password.tsx';
@@ -76,9 +76,11 @@ export function buildInteractionRouter(provider: Provider): Router {
     ctx.body = await LoginPage({ uid: details.uid });
   });
 
-  router.post('/interaction/:uid/login', koaBody(), async (ctx) => {
+  router.post('/interaction/:uid/login', async (ctx) => {
     const { uid } = await provider.interactionDetails(ctx.req, ctx.res);
-    const { email, password } = ctx.request.body as { email?: string; password?: string };
+    const form = await readForm(ctx);
+    const email = form.get('email');
+    const password = form.get('password');
 
     const user = email ? await getUserByEmail(email) : undefined;
     const valid =
@@ -107,13 +109,12 @@ export function buildInteractionRouter(provider: Provider): Router {
     });
   });
 
-  router.post('/interaction/:uid/change-password', koaBody(), async (ctx) => {
+  router.post('/interaction/:uid/change-password', async (ctx) => {
     const { uid } = await provider.interactionDetails(ctx.req, ctx.res);
-    const { sub, password, confirm } = ctx.request.body as {
-      sub?: string;
-      password?: string;
-      confirm?: string;
-    };
+    const form = await readForm(ctx);
+    const sub = form.get('sub');
+    const password = form.get('password');
+    const confirm = form.get('confirm');
 
     if (!sub || !password || password !== confirm) {
       ctx.type = 'html';
