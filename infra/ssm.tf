@@ -1,19 +1,10 @@
-resource "aws_ssm_parameter" "jwks" {
-  name  = "/lasso/jwks"
-  type  = "SecureString"
-  value = "REPLACE_ME_MANUALLY"
+# Secret values are written by scripts/bootstrap and never managed here:
+# Terraform refreshes every attribute into state, including decrypted values.
+locals {
+  jwks_ssm_param                  = "/lasso/jwks"
+  porto_victoria_secret_ssm_param = "/lasso/client/porto-victoria-secret"
 
-  lifecycle {
-    ignore_changes = [value]
-  }
+  ssm_param_arn_prefix = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter"
 }
 
-resource "aws_ssm_parameter" "porto_victoria_client_secret" {
-  name  = "/lasso/client/porto-victoria-secret"
-  type  = "SecureString"
-  value = "REPLACE_ME_MANUALLY"
-
-  lifecycle {
-    ignore_changes = [value]
-  }
-}
+data "aws_caller_identity" "current" {}

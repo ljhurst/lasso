@@ -63,8 +63,10 @@ For the confidential-client case, also:
 - Generate the secret with `scripts/bootstrap/generate-client-secret.ts` and
   store it in SSM per that script's usage — mirrors how
   `portoVictoria`'s secret is provisioned.
-- Wire the new Terraform SSM param / IAM access in `infra/` the same way the
-  existing client secret param is wired.
+- Add the parameter name to the `locals` in `infra/ssm.tf`, and its ARN to
+  the `ssm:GetParameters` statement in `infra/iam.tf`. Don't add an
+  `aws_ssm_parameter` resource: Terraform would read the secret value into
+  state.
 
 Commit, then deploy Lasso (`scripts/build_lambda.sh` + `terraform apply`
 from `infra/`, per the root README).

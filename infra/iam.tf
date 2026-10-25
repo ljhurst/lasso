@@ -43,8 +43,8 @@ data "aws_iam_policy_document" "lambda_permissions" {
     effect  = "Allow"
     actions = ["ssm:GetParameters"]
     resources = [
-      aws_ssm_parameter.jwks.arn,
-      aws_ssm_parameter.porto_victoria_client_secret.arn,
+      "${local.ssm_param_arn_prefix}${local.jwks_ssm_param}",
+      "${local.ssm_param_arn_prefix}${local.porto_victoria_secret_ssm_param}",
     ]
   }
 
