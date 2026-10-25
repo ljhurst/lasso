@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   terraform:
-    uses: ljhurst/stych/.github/workflows/terraform.yml@feat/terraform-workflow
+    uses: ljhurst/stych/.github/workflows/terraform.yml@v1
     with:
       plan-role-arn: arn:aws:iam::755958650241:role/stych/lasso-ci-plan
       apply-role-arn: arn:aws:iam::755958650241:role/stych/lasso-ci-apply
