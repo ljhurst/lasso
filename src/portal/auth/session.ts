@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type Koa from 'koa';
 import type Provider from 'oidc-provider';
-import { deriveChallenge, generateVerifier, requestOrigin, setPkceCookie } from '#src/auth/pkce.ts';
+import { deriveChallenge, generateVerifier, issuerOrigin, setPkceCookie } from '#src/auth/pkce.ts';
 import { LASSO_ADMIN_SCOPE, LASSO_RESOURCE_INDICATOR } from '#src/config/resources.ts';
 import { getUserBySub } from '#src/users/store.ts';
 import { NoAccessPage } from '#src/portal/views/no-access.tsx';
@@ -16,9 +16,9 @@ export function hasAdminScope(scope: string[]): boolean {
 function redirectToLogin(ctx: Koa.Context): void {
   const verifier = generateVerifier();
   const state = randomBytes(16).toString('base64url');
-  const origin = requestOrigin(ctx);
+  const origin = issuerOrigin();
 
-  setPkceCookie(ctx, PORTAL_PKCE_AREA, { verifier, state, returnTo: ctx.href });
+  setPkceCookie(ctx, PORTAL_PKCE_AREA, { verifier, state, returnTo: ctx.originalUrl });
 
   const authorizeUrl = new URL('/auth', origin);
   authorizeUrl.searchParams.set('client_id', PORTAL_CLIENT_ID);
