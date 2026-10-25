@@ -37,11 +37,26 @@ export function UserDetailPage(props: {
         ) : (
           <form method="post" action={`/admin/users/${props.user.sub}/roles`}>
             <select name="role">
-              {props.grantableRoles.map((role) => (
+              {props.grantableRoles.toSorted().map((role) => (
                 <option value={role}>{role}</option>
               ))}
             </select>
             <button type="submit">Grant</button>
+          </form>
+        )}
+      </section>
+      <section>
+        <h2>Remove a role</h2>
+        {props.user.roles.length === 0 ? (
+          <Empty>No roles to remove.</Empty>
+        ) : (
+          <form method="post" action={`/admin/users/${props.user.sub}/roles/remove`}>
+            <select name="role">
+              {props.user.roles.toSorted().map((role) => (
+                <option value={role}>{role}</option>
+              ))}
+            </select>
+            <button type="submit">Remove</button>
           </form>
         )}
       </section>

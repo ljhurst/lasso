@@ -26,14 +26,21 @@ export interface AccessTokenRow {
 }
 
 async function scanByModel(modelName: string): Promise<LassoItem[]> {
-  const result = await docClient.send(
-    new ScanCommand({
-      TableName: env.oidcTableName,
-      FilterExpression: 'modelName = :modelName',
-      ExpressionAttributeValues: { ':modelName': modelName },
-    }),
-  );
-  return (result.Items ?? []) as LassoItem[];
+  const items: LassoItem[] = [];
+  let startKey: Record<string, unknown> | undefined;
+  do {
+    const result = await docClient.send(
+      new ScanCommand({
+        TableName: env.oidcTableName,
+        FilterExpression: 'modelName = :modelName',
+        ExpressionAttributeValues: { ':modelName': modelName },
+        ExclusiveStartKey: startKey,
+      }),
+    );
+    items.push(...((result.Items ?? []) as LassoItem[]));
+    startKey = result.LastEvaluatedKey;
+  } while (startKey);
+  return items;
 }
 
 export async function listSessions(): Promise<SessionRow[]> {

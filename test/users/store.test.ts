@@ -15,9 +15,8 @@ process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
   '/lasso/porto-victoria-client-secret-test';
 process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
 
-const { getUserBySub, getUserByEmail, listUsers, addRole, updatePassword } = await import(
-  '#src/users/store.ts'
-);
+const { getUserBySub, getUserByEmail, listUsers, addRole, removeRole, updatePassword } =
+  await import('#src/users/store.ts');
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 
@@ -97,6 +96,33 @@ describe('addRole', () => {
     ddbMock.on(GetCommand).resolves({});
 
     await expect(addRole('missing', 'porto:read')).rejects.toThrow('no user found');
+  });
+});
+
+describe('removeRole', () => {
+  it('does nothing when the user does not have the role', async () => {
+    ddbMock.on(GetCommand).resolves({ Item: { ...user, roles: ['porto:read'] } });
+
+    await removeRole('sub-1', 'victoria:read');
+
+    expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(0);
+  });
+
+  it('drops the role and writes the remaining list back', async () => {
+    ddbMock.on(GetCommand).resolves({ Item: { ...user, roles: ['porto:read', 'victoria:read'] } });
+    ddbMock.on(UpdateCommand).resolves({});
+
+    await removeRole('sub-1', 'porto:read');
+
+    const call = ddbMock.commandCalls(UpdateCommand)[0]?.args[0].input;
+    expect(call?.Key).toEqual({ sub: 'sub-1' });
+    expect(call?.ExpressionAttributeValues).toEqual({ ':roles': ['victoria:read'] });
+  });
+
+  it('throws when the user does not exist', async () => {
+    ddbMock.on(GetCommand).resolves({});
+
+    await expect(removeRole('missing', 'porto:read')).rejects.toThrow('no user found');
   });
 });
 

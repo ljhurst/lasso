@@ -55,11 +55,8 @@ export function buildRequirePortalSession(provider: Provider) {
       return;
     }
 
-    const grant = await provider.Grant.find(grantId);
-    const grantedScope = grant?.getResourceScope(LASSO_RESOURCE_INDICATOR).split(' ') ?? [];
-
     ctx.state.user = user;
-    ctx.state.isAdmin = hasAdminScope(grantedScope);
+    ctx.state.isAdmin = hasAdminScope(user.roles);
     await next();
   };
 }
