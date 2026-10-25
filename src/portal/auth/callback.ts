@@ -1,5 +1,5 @@
 import type Koa from 'koa';
-import { clearPkceCookie, readPkceCookie, requestOrigin } from '#src/auth/pkce.ts';
+import { clearPkceCookie, readPkceCookie, issuerOrigin } from '#src/auth/pkce.ts';
 import { PORTAL_CLIENT_ID, PORTAL_PKCE_AREA } from '#src/portal/auth/session.ts';
 
 export async function handlePortalCallback(ctx: Koa.Context): Promise<void> {
@@ -14,7 +14,7 @@ export async function handlePortalCallback(ctx: Koa.Context): Promise<void> {
     return;
   }
 
-  const origin = requestOrigin(ctx);
+  const origin = issuerOrigin();
 
   const tokenResponse = await fetch(new URL('/token', origin), {
     method: 'POST',

@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type Koa from 'koa';
+import { env } from '#src/env.ts';
 
 const PKCE_COOKIE_TTL_MS = 5 * 60 * 1000;
 
@@ -14,8 +15,8 @@ interface PkceArea {
   path: string;
 }
 
-export function requestOrigin(ctx: Koa.Context): string {
-  return `${ctx.protocol}://${ctx.host}`;
+export function issuerOrigin(): string {
+  return new URL(env.issuer).origin;
 }
 
 export function generateVerifier(): string {
