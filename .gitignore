@@ -11,10 +11,10 @@ npm-debug.log*
 infra/.terraform/
 infra/*.tfstate
 infra/*.tfstate.backup
+infra/*.tfplan
 infra/crash.log
 infra/override.tf
 infra/override.tf.json
-infra/*.tfvars
 
 # Editor swap files
 *.swp

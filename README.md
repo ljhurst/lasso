@@ -78,32 +78,16 @@ npm run dev
 
 ## Deploy
 
-We use Lambda zip + [Terraform](https://developer.hashicorp.com/terraform) to manage infra. First create the Lambda src zip
+Merging to `main` deploys. The [Terraform workflow](https://github.com/ljhurst/stych)
+from stych builds the Lambda zip and applies `infra/` as `lasso-ci-apply`. Every PR
+gets the plan as a comment, made as the read-only `lasso-ci-plan`.
+
+To deploy by hand (break-glass only), build the zip and apply as `lasso-deploy`:
 
 ```bash
 scripts/build_lambda.sh
-```
-
-Log in via AWS SSO and assume the `lasso-deploy` role
-
-```bash
-aws sso login --profile victoria-deploy
-```
-
-Set the AWS profile
-
-```bash
+aws sso login --profile lasso-deploy
 export AWS_PROFILE=lasso-deploy
-```
-
-Then from `infra/`
-
-```bash
-terraform plan
-```
-
-And
-
-```bash
-terraform apply
+terraform -chdir=infra plan -out=lasso.tfplan
+terraform -chdir=infra apply lasso.tfplan
 ```
