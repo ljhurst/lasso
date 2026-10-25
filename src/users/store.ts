@@ -48,6 +48,26 @@ export async function addRole(sub: string, role: string): Promise<void> {
   );
 }
 
+export async function removeRole(sub: string, role: string): Promise<void> {
+  const user = await getUserBySub(sub);
+  if (!user) {
+    throw new Error(`no user found for sub ${sub}`);
+  }
+  if (!user.roles.includes(role)) {
+    return;
+  }
+
+  await docClient.send(
+    new UpdateCommand({
+      TableName: env.usersTableName,
+      Key: { sub },
+      UpdateExpression: 'SET #roles = :roles',
+      ExpressionAttributeNames: { '#roles': 'roles' },
+      ExpressionAttributeValues: { ':roles': user.roles.filter((r) => r !== role) },
+    }),
+  );
+}
+
 export async function updatePassword(
   sub: string,
   password: { hash: string; salt: string },
