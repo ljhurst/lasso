@@ -15,8 +15,9 @@ data "aws_iam_policy_document" "lambda_assume_role" {
 }
 
 resource "aws_iam_role" "lambda" {
-  name               = "lasso-lambda"
-  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+  name                 = "lasso-lambda"
+  assume_role_policy   = data.aws_iam_policy_document.lambda_assume_role.json
+  permissions_boundary = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/stych/lasso-boundary"
 }
 
 data "aws_iam_policy_document" "lambda_permissions" {
