@@ -1,51 +1,44 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { buildClients } from '#src/config/clients.ts';
-import { allResourceScopes, getResourceServerInfo, resources } from '#src/config/resources.ts';
+import { allResourceScopes, getResourceServerInfo } from '#src/config/resources.ts';
 import { getUserApps } from '#src/portal/apps/routes.ts';
 
 vi.mock('#src/config/ssm.ts', () => ({
   getParameter: vi.fn().mockResolvedValue('client-secret'),
 }));
 
-const PORTO_ALIAS = 'https://porto.bylukehurst.com/';
-
-const portoLambdaUrl = () =>
-  Object.keys(resources).find(
-    (indicator) => indicator.includes('.lambda-url.') && resources[indicator]?.name === 'Porto',
-  );
+const PORTO = 'https://porto.bylukehurst.com/';
 
 describe('custom domain resources', () => {
-  it('accepts the porto alias with the same scopes as its Lambda URL', () => {
-    const original = portoLambdaUrl();
-
-    expect(original).toBeDefined();
-    expect(getResourceServerInfo(PORTO_ALIAS)).toMatchObject({
-      name: 'Porto',
-      scope: resources[original as string]?.scope,
-      accessTokenFormat: 'jwt',
-    });
-  });
-
-  it('keeps the porto Lambda URL working', () => {
-    expect(getResourceServerInfo(portoLambdaUrl() as string)).toMatchObject({
-      scope: 'porto:read porto:write',
-    });
-  });
+  it.each([
+    [PORTO, 'Porto', 'porto:read porto:write', `${PORTO}mcp`],
+    [
+      'https://victoria-mcp.bylukehurst.com/',
+      'Victoria',
+      'victoria:read victoria:write',
+      'https://victoria-mcp.bylukehurst.com/mcp',
+    ],
+    [
+      'https://victoria-viewer.bylukehurst.com/',
+      'Victoria Viewer',
+      'victoria:read',
+      'https://victoria-viewer.bylukehurst.com/',
+    ],
+  ])(
+    'serves %s with its scopes and a portal link to the endpoint',
+    (indicator, name, scope, url) => {
+      expect(getResourceServerInfo(indicator)).toMatchObject({
+        name,
+        scope,
+        accessTokenFormat: 'jwt',
+        app: { url },
+      });
+    },
+  );
 
   it.each([
-    ['https://victoria-mcp.bylukehurst.com/', 'Victoria', 'victoria:read victoria:write'],
-    ['https://victoria-viewer.bylukehurst.com/', 'Victoria Viewer', 'victoria:read'],
-  ])('serves %s with its scopes and portal link', (indicator, name, scope) => {
-    expect(getResourceServerInfo(indicator)).toMatchObject({
-      name,
-      scope,
-      accessTokenFormat: 'jwt',
-      app: { url: indicator },
-    });
-  });
-
-  it.each([
+    'https://dpuc6r44q5s4rn2kj24rmgrxga0uxwgr.lambda-url.us-east-1.on.aws/',
     'https://diozeathy56roah5fxesmhji640ugrkn.lambda-url.us-east-1.on.aws/',
     'https://s4wndhtrbjoflmoqeb4zvvmeim0cyodv.lambda-url.us-east-1.on.aws/',
   ])('no longer accepts the retired Function URL %s', (indicator) => {
@@ -60,16 +53,16 @@ describe('custom domain resources', () => {
 });
 
 describe('portal listings', () => {
-  it('lists each app once and never an alias', () => {
-    const apps = getUserApps([...allResourceScopes]);
-    const names = apps.map((app) => app.resource.name);
+  it('lists each app once', () => {
+    const names = getUserApps([...allResourceScopes]).map((app) => app.resource.name);
 
     expect(new Set(names).size).toBe(names.length);
-    expect(apps.map((app) => app.indicator)).not.toContain(PORTO_ALIAS);
   });
 
-  it('keeps the aliases out of the registry the portal lists', () => {
-    expect(Object.keys(resources)).not.toContain(PORTO_ALIAS);
+  it('links porto to its MCP endpoint, not its resource indicator', () => {
+    const porto = getUserApps([...allResourceScopes]).find((app) => app.indicator === PORTO);
+
+    expect(porto?.resource.app?.url).toBe(`${PORTO}mcp`);
   });
 });
 
