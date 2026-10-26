@@ -34,16 +34,17 @@ export function setPkceCookie(ctx: Koa.Context, area: PkceArea, value: PkceState
     secure: ctx.secure,
     maxAge: PKCE_COOKIE_TTL_MS,
     path: area.path,
+    signed: true,
   });
 }
 
 export function readPkceCookie(ctx: Koa.Context, area: PkceArea): PkceState | undefined {
-  const raw = ctx.cookies.get(area.cookieName);
+  const raw = ctx.cookies.get(area.cookieName, { signed: true });
   if (!raw) {
     return undefined;
   }
   try {
-    return JSON.parse(Buffer.from(raw, 'base64url').toString('utf8')) as PkceState;
+    return parsePkceState(JSON.parse(Buffer.from(raw, 'base64url').toString('utf8')));
   } catch {
     return undefined;
   }
@@ -51,4 +52,23 @@ export function readPkceCookie(ctx: Koa.Context, area: PkceArea): PkceState | un
 
 export function clearPkceCookie(ctx: Koa.Context, area: PkceArea): void {
   ctx.cookies.set(area.cookieName, null, { path: area.path });
+}
+
+function parsePkceState(value: unknown): PkceState | undefined {
+  if (typeof value !== 'object' || value === null) {
+    return undefined;
+  }
+  const { verifier, state, returnTo } = value as Record<string, unknown>;
+  if (!isNonEmptyString(verifier) || !isNonEmptyString(state) || !isNonEmptyString(returnTo)) {
+    return undefined;
+  }
+  return isLocalPath(returnTo) ? { verifier, state, returnTo } : undefined;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0;
+}
+
+function isLocalPath(value: string): boolean {
+  return /^\/(?![/\\])/.test(value) && !/\p{Cc}/u.test(value);
 }
