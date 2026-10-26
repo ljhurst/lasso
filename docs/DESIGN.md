@@ -133,6 +133,15 @@ username or email, since those can change and `sub` must not be reassigned
 per the OIDC spec. Email is the login identifier and is looked up via a
 GSI.
 
+Failed logins are throttled per account and client address: 5 attempts in a
+15-minute window, then that pair is locked until the window ends. The counts
+live in their own table (`lj-lasso-throttle`, TTL'd), because the admin
+dashboard and users list scan the other two tables and throttle rows would
+slow or pollute them. The address comes from the request context the
+Lambda Web Adapter passes on, never from `X-Forwarded-For`, which a client
+controls. A locked account gets the same "Invalid email or password" as a
+wrong password, so lockout doesn't reveal which emails exist.
+
 There's no signup flow, no email delivery, and no forgot-password flow.
 Accounts are created and reset entirely out of band with
 `scripts/bootstrap/add-user.ts`, run by hand with an AWS profile that can

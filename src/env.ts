@@ -10,6 +10,7 @@ export const env = {
   port: Number(process.env.PORT ?? 8080),
   oidcTableName: required('LASSO_OIDC_TABLE_NAME'),
   usersTableName: required('LASSO_USERS_TABLE_NAME'),
+  throttleTableName: required('LASSO_THROTTLE_TABLE_NAME'),
   jwksSsmParam: required('LASSO_JWKS_SSM_PARAM'),
   cookieKeySsmParam: required('LASSO_COOKIE_KEY_SSM_PARAM'),
   clientSecretSsmParams: {

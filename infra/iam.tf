@@ -67,6 +67,13 @@ data "aws_iam_policy_document" "lambda_permissions" {
   }
 
   statement {
+    sid       = "LoginThrottleTable"
+    effect    = "Allow"
+    actions   = ["dynamodb:UpdateItem", "dynamodb:DeleteItem"]
+    resources = [aws_dynamodb_table.lasso_throttle.arn]
+  }
+
+  statement {
     sid       = "CloudWatchLogs"
     effect    = "Allow"
     actions   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]

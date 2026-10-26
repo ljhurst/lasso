@@ -2,6 +2,7 @@ import Router from '@koa/router';
 import type Koa from 'koa';
 import type Provider from 'oidc-provider';
 
+import { clientIp } from '#src/auth/client-ip.ts';
 import { readForm } from '#src/form-body.ts';
 import {
   hashPassword,
@@ -9,6 +10,7 @@ import {
   rejectPassword,
   verifyPassword,
 } from '#src/users/password.ts';
+import { clearLoginAttempts, reserveLoginAttempt } from '#src/users/login-throttle.ts';
 import { getUserByEmail, getUserBySub, updatePassword } from '#src/users/store.ts';
 import type { User } from '#src/users/types.ts';
 import { ChangePasswordPage } from '#src/interactions/views/change-password.tsx';
@@ -88,7 +90,7 @@ export function buildInteractionRouter(provider: Provider): Router {
     const email = form.get('email');
     const password = form.get('password');
 
-    const user = await authenticate(email, password);
+    const user = await authenticate(email, password, clientIp(ctx));
 
     if (!user) {
       ctx.type = 'html';
@@ -119,7 +121,7 @@ export function buildInteractionRouter(provider: Provider): Router {
     const password = form.get('password');
     const confirm = form.get('confirm');
 
-    const user = await authenticate(email, current);
+    const user = await authenticate(email, current, clientIp(ctx));
     if (!user) {
       ctx.type = 'html';
       ctx.body = await ChangePasswordPage({
@@ -171,11 +173,22 @@ export function buildInteractionRouter(provider: Provider): Router {
 async function authenticate(
   email: string | null,
   password: string | null,
+  ip: string,
 ): Promise<User | undefined> {
   const user = email ? await getUserByEmail(email) : undefined;
   const candidate = password ?? '';
-  const valid = user
-    ? await verifyPassword(candidate, { hash: user.passwordHash, salt: user.passwordSalt })
-    : await rejectPassword(candidate);
-  return valid ? user : undefined;
+  if (!user || !(await reserveLoginAttempt(user.sub, ip))) {
+    await rejectPassword(candidate);
+    return undefined;
+  }
+
+  const valid = await verifyPassword(candidate, {
+    hash: user.passwordHash,
+    salt: user.passwordSalt,
+  });
+  if (!valid) {
+    return undefined;
+  }
+  await clearLoginAttempts(user.sub, ip);
+  return user;
 }
