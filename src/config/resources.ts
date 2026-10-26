@@ -20,8 +20,7 @@ export interface NamedResourceServer extends ResourceServer {
   app?: AppInfo;
 }
 
-const PORTO_RESOURCE_INDICATOR =
-  'https://dpuc6r44q5s4rn2kj24rmgrxga0uxwgr.lambda-url.us-east-1.on.aws/';
+const PORTO_RESOURCE_INDICATOR = 'https://porto.bylukehurst.com/';
 
 const VICTORIA_RESOURCE_INDICATOR = 'https://victoria-mcp.bylukehurst.com/';
 
@@ -33,22 +32,18 @@ const FIFE_APP_URL = 'https://d3de9r2gorcf05.cloudfront.net/';
 export const LASSO_RESOURCE_INDICATOR = env.issuer;
 export const LASSO_ADMIN_SCOPE = 'lasso:admin';
 
-const CUSTOM_DOMAIN_ALIASES: Record<string, string> = {
-  'https://porto.bylukehurst.com/': PORTO_RESOURCE_INDICATOR,
-};
-
 export const resources: Record<string, NamedResourceServer> = {
   [PORTO_RESOURCE_INDICATOR]: {
     name: 'Porto',
     scope: 'porto:read porto:write',
     accessTokenFormat: 'jwt',
-    app: { type: AppType.Mcp, url: PORTO_RESOURCE_INDICATOR },
+    app: { type: AppType.Mcp, url: `${PORTO_RESOURCE_INDICATOR}mcp` },
   },
   [VICTORIA_RESOURCE_INDICATOR]: {
     name: 'Victoria',
     scope: 'victoria:read victoria:write',
     accessTokenFormat: 'jwt',
-    app: { type: AppType.Mcp, url: VICTORIA_RESOURCE_INDICATOR },
+    app: { type: AppType.Mcp, url: `${VICTORIA_RESOURCE_INDICATOR}mcp` },
   },
   [VICTORIA_VIEWER_RESOURCE_INDICATOR]: {
     name: 'Victoria Viewer',
@@ -69,31 +64,14 @@ export const resources: Record<string, NamedResourceServer> = {
   },
 };
 
-const resourceAliases = customDomainAliases(resources);
-
 export const allResourceScopes = [
   ...new Set(Object.values(resources).flatMap((r) => r.scope?.split(' ') ?? [])),
 ];
 
 export function getResourceServerInfo(resourceIndicator: string): ResourceServer {
-  const resource = resources[resourceIndicator] ?? resourceAliases[resourceIndicator];
+  const resource = resources[resourceIndicator];
   if (!resource) {
     throw new Error(`unknown resource indicator: ${resourceIndicator}`);
   }
   return resource;
-}
-
-function customDomainAliases(
-  registered: Record<string, NamedResourceServer>,
-): Record<string, NamedResourceServer> {
-  return Object.fromEntries(
-    Object.entries(CUSTOM_DOMAIN_ALIASES).map(([alias, original]) => {
-      const resource = registered[original];
-      if (!resource) {
-        throw new Error(`unknown resource for alias: ${alias}`);
-      }
-      const { name, scope, accessTokenFormat } = resource;
-      return [alias, { name, scope, accessTokenFormat }];
-    }),
-  );
 }
