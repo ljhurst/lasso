@@ -1,4 +1,5 @@
 import { AuthLayout, SubmitButton } from '#src/interactions/views/layout.tsx';
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '#src/users/password.ts';
 
 export function ChangePasswordPage(props: { uid: string; email: string; error?: string }) {
   return (
@@ -19,7 +20,15 @@ export function ChangePasswordPage(props: { uid: string; email: string; error?: 
           required
         />
         <label for="password">New password</label>
-        <input type="password" id="password" name="password" autocomplete="new-password" required />
+        <input
+          type="password"
+          id="password"
+          name="password"
+          autocomplete="new-password"
+          minlength={MIN_PASSWORD_LENGTH}
+          maxlength={MAX_PASSWORD_LENGTH}
+          required
+        />
         <label for="confirm">Confirm new password</label>
         <input type="password" id="confirm" name="confirm" autocomplete="new-password" required />
         <SubmitButton label="Set password" />
