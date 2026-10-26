@@ -19,7 +19,12 @@ const store = vi.hoisted(() => ({
 }));
 vi.mock('#src/users/store.ts', () => store);
 
-const { hashPassword } = await import('#src/users/password.ts');
+vi.mock('#src/users/password.ts', async (importOriginal) => {
+  const original = await importOriginal<typeof import('#src/users/password.ts')>();
+  return { ...original, rejectPassword: vi.fn(original.rejectPassword) };
+});
+
+const { hashPassword, rejectPassword } = await import('#src/users/password.ts');
 const { buildInteractionRouter } = await import('#src/interactions/routes.ts');
 
 const TEMP_PASSWORD = 'temporary-password';
@@ -161,7 +166,31 @@ describe('POST /interaction/:uid/change-password', () => {
   });
 });
 
+describe('POST /interaction/:uid/change-password password policy', () => {
+  it('rejects a new password shorter than 12 characters', async () => {
+    await changePassword({
+      email: VICTIM_EMAIL,
+      current: TEMP_PASSWORD,
+      password: 'short-pw',
+      confirm: 'short-pw',
+    });
+
+    expect(store.updatePassword).not.toHaveBeenCalled();
+    expect(interactionFinished).not.toHaveBeenCalled();
+  });
+});
+
 describe('POST /interaction/:uid/login', () => {
+  it('spends a password check on an unknown email', async () => {
+    const response = await post('/interaction/uid1/login', {
+      email: 'nobody@example.com',
+      password: 'whatever-it-is',
+    });
+
+    expect(await response.text()).toContain('Invalid email or password');
+    expect(rejectPassword).toHaveBeenCalledOnce();
+  });
+
   it('shows the change form with the email and without the sub', async () => {
     const response = await post('/interaction/uid1/login', {
       email: VICTIM_EMAIL,
@@ -170,6 +199,7 @@ describe('POST /interaction/:uid/login', () => {
     const html = await response.text();
 
     expect(html).toContain(`value="${VICTIM_EMAIL}"`);
+    expect(html).toContain('minlength="12" maxlength="256"');
     expect(html).not.toContain(VICTIM_SUB);
     expect(interactionFinished).not.toHaveBeenCalled();
   });

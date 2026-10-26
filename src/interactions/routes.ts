@@ -3,7 +3,12 @@ import type Koa from 'koa';
 import type Provider from 'oidc-provider';
 
 import { readForm } from '#src/form-body.ts';
-import { hashPassword, verifyPassword } from '#src/users/password.ts';
+import {
+  hashPassword,
+  passwordPolicyError,
+  rejectPassword,
+  verifyPassword,
+} from '#src/users/password.ts';
 import { getUserByEmail, getUserBySub, updatePassword } from '#src/users/store.ts';
 import type { User } from '#src/users/types.ts';
 import { ChangePasswordPage } from '#src/interactions/views/change-password.tsx';
@@ -130,24 +135,22 @@ export function buildInteractionRouter(provider: Provider): Router {
       return;
     }
 
-    if (!password || password !== confirm) {
+    const rejectNewPassword = async (error: string): Promise<void> => {
       ctx.type = 'html';
-      ctx.body = await ChangePasswordPage({
-        uid,
-        email: user.email,
-        error: 'Passwords did not match',
-      });
-      return;
+      ctx.body = await ChangePasswordPage({ uid, email: user.email, error });
+    };
+
+    if (!password || password !== confirm) {
+      return rejectNewPassword('Passwords did not match');
+    }
+
+    const policyError = passwordPolicyError(password);
+    if (policyError) {
+      return rejectNewPassword(policyError);
     }
 
     if (password === current) {
-      ctx.type = 'html';
-      ctx.body = await ChangePasswordPage({
-        uid,
-        email: user.email,
-        error: 'Choose a password different from the temporary one',
-      });
-      return;
+      return rejectNewPassword('Choose a password different from the temporary one');
     }
 
     const { hash, salt } = await hashPassword(password);
@@ -170,9 +173,9 @@ async function authenticate(
   password: string | null,
 ): Promise<User | undefined> {
   const user = email ? await getUserByEmail(email) : undefined;
-  const valid =
-    password &&
-    user &&
-    (await verifyPassword(password, { hash: user.passwordHash, salt: user.passwordSalt }));
+  const candidate = password ?? '';
+  const valid = user
+    ? await verifyPassword(candidate, { hash: user.passwordHash, salt: user.passwordSalt })
+    : await rejectPassword(candidate);
   return valid ? user : undefined;
 }
