@@ -35,7 +35,13 @@ const FIFE_APP_URL = 'https://d3de9r2gorcf05.cloudfront.net/';
 export const LASSO_RESOURCE_INDICATOR = env.issuer;
 export const LASSO_ADMIN_SCOPE = 'lasso:admin';
 
-export const resources: Record<string, NamedResourceServer> = {
+const CUSTOM_DOMAIN_ALIASES: Record<string, string> = {
+  'https://porto.bylukehurst.com/': PORTO_RESOURCE_INDICATOR,
+  'https://victoria-mcp.bylukehurst.com/': VICTORIA_RESOURCE_INDICATOR,
+  'https://victoria-viewer.bylukehurst.com/': VICTORIA_VIEWER_RESOURCE_INDICATOR,
+};
+
+const registeredResources: Record<string, NamedResourceServer> = {
   [PORTO_RESOURCE_INDICATOR]: {
     name: 'Porto',
     scope: 'porto:read porto:write',
@@ -67,6 +73,11 @@ export const resources: Record<string, NamedResourceServer> = {
   },
 };
 
+export const resources: Record<string, NamedResourceServer> = {
+  ...registeredResources,
+  ...customDomainAliases(registeredResources),
+};
+
 export const allResourceScopes = [
   ...new Set(Object.values(resources).flatMap((r) => r.scope?.split(' ') ?? [])),
 ];
@@ -77,4 +88,19 @@ export function getResourceServerInfo(resourceIndicator: string): ResourceServer
     throw new Error(`unknown resource indicator: ${resourceIndicator}`);
   }
   return resource;
+}
+
+function customDomainAliases(
+  registered: Record<string, NamedResourceServer>,
+): Record<string, NamedResourceServer> {
+  return Object.fromEntries(
+    Object.entries(CUSTOM_DOMAIN_ALIASES).map(([alias, original]) => {
+      const resource = registered[original];
+      if (!resource) {
+        throw new Error(`unknown resource for alias: ${alias}`);
+      }
+      const { name, scope, accessTokenFormat } = resource;
+      return [alias, { name, scope, accessTokenFormat }];
+    }),
+  );
 }
