@@ -139,10 +139,11 @@ Accounts are created and reset entirely out of band with
 write the users table. Creating or resetting an account generates a random
 temporary password, printed once for you to hand off directly (text, call,
 whatever) and sets `mustChangePassword`, which forces the person to set
-their own password on first login before they reach consent. This fits the
-trust model: every account belongs to someone you know personally, so a
-manual reset is simpler and more appropriate than building token-based
-email recovery.
+their own password on first login before they reach consent. The change form
+re-checks the temporary password, so it can't be used to set someone else's.
+This fits the trust model: every account belongs to someone you know
+personally, so a manual reset is simpler and more appropriate than building
+token-based email recovery.
 
 Standard OIDC claims (`given_name`, `family_name`, `name`, `email`,
 `email_verified`) are populated from the user record. Admin access
