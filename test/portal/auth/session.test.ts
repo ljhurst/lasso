@@ -1,17 +1,7 @@
 import type Koa from 'koa';
 import type Provider from 'oidc-provider';
 import { describe, expect, it, vi } from 'vitest';
-
-process.env.LASSO_OIDC_TABLE_NAME ??= 'lj-lasso-test';
-process.env.LASSO_USERS_TABLE_NAME ??= 'lj-lasso-users-test';
-process.env.LASSO_JWKS_SSM_PARAM ??= '/lasso/jwks-test';
-process.env.LASSO_COOKIE_KEY_SSM_PARAM ??= '/lasso/cookie-key-test';
-process.env.LASSO_THROTTLE_TABLE_NAME ??= 'lj-lasso-throttle-test';
-process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
-  '/lasso/porto-victoria-client-secret-test';
-process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
-
-const { buildRequirePortalSession, hasAdminScope } = await import('#src/portal/auth/session.ts');
+import { buildRequirePortalSession, hasAdminScope } from '#src/portal/auth/session.ts';
 
 describe('hasAdminScope', () => {
   it('returns false for an empty scope', () => {

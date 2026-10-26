@@ -1,17 +1,10 @@
-import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import Koa from 'koa';
 import type Provider from 'oidc-provider';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-
-process.env.LASSO_OIDC_TABLE_NAME ??= 'lj-lasso-test';
-process.env.LASSO_USERS_TABLE_NAME ??= 'lj-lasso-users-test';
-process.env.LASSO_JWKS_SSM_PARAM ??= '/lasso/jwks-test';
-process.env.LASSO_COOKIE_KEY_SSM_PARAM ??= '/lasso/cookie-key-test';
-process.env.LASSO_THROTTLE_TABLE_NAME ??= 'lj-lasso-throttle-test';
-process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
-  '/lasso/porto-victoria-client-secret-test';
-process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
+import { buildInteractionRouter } from '#src/interactions/routes.ts';
+import { hashPassword, rejectPassword } from '#src/users/password.ts';
 
 const store = vi.hoisted(() => ({
   getUserByEmail: vi.fn(),
@@ -30,9 +23,6 @@ vi.mock('#src/users/password.ts', async (importOriginal) => {
   const original = await importOriginal<typeof import('#src/users/password.ts')>();
   return { ...original, rejectPassword: vi.fn(original.rejectPassword) };
 });
-
-const { hashPassword, rejectPassword } = await import('#src/users/password.ts');
-const { buildInteractionRouter } = await import('#src/interactions/routes.ts');
 
 const TEMP_PASSWORD = 'temporary-password';
 const VICTIM_SUB = 'victim-sub';

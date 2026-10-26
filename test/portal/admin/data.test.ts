@@ -1,18 +1,8 @@
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it } from 'vitest';
-
-process.env.LASSO_OIDC_TABLE_NAME ??= 'lj-lasso-test';
-process.env.LASSO_USERS_TABLE_NAME ??= 'lj-lasso-users-test';
-process.env.LASSO_JWKS_SSM_PARAM ??= '/lasso/jwks-test';
-process.env.LASSO_COOKIE_KEY_SSM_PARAM ??= '/lasso/cookie-key-test';
-process.env.LASSO_THROTTLE_TABLE_NAME ??= 'lj-lasso-throttle-test';
-process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
-  '/lasso/porto-victoria-client-secret-test';
-process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
-
-const { listGrants } = await import('#src/portal/admin/data.ts');
-const { primaryKey } = await import('#src/adapter/keys.ts');
+import { primaryKey } from '#src/adapter/keys.ts';
+import { listGrants } from '#src/portal/admin/data.ts';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 
