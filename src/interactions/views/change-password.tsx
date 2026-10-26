@@ -1,6 +1,6 @@
 import { AuthLayout, SubmitButton } from '#src/interactions/views/layout.tsx';
 
-export function ChangePasswordPage(props: { uid: string; sub: string; error?: string }) {
+export function ChangePasswordPage(props: { uid: string; email: string; error?: string }) {
   return (
     <AuthLayout
       title="Set a new password"
@@ -9,7 +9,15 @@ export function ChangePasswordPage(props: { uid: string; sub: string; error?: st
       error={props.error}
     >
       <form method="post" action={`/interaction/${props.uid}/change-password`}>
-        <input type="hidden" name="sub" value={props.sub} />
+        <input type="hidden" name="email" value={props.email} />
+        <label for="current">Temporary password</label>
+        <input
+          type="password"
+          id="current"
+          name="current"
+          autocomplete="current-password"
+          required
+        />
         <label for="password">New password</label>
         <input type="password" id="password" name="password" autocomplete="new-password" required />
         <label for="confirm">Confirm new password</label>

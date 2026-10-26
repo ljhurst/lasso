@@ -5,6 +5,7 @@ import type Provider from 'oidc-provider';
 import { readForm } from '#src/form-body.ts';
 import { hashPassword, verifyPassword } from '#src/users/password.ts';
 import { getUserByEmail, getUserBySub, updatePassword } from '#src/users/store.ts';
+import type { User } from '#src/users/types.ts';
 import { ChangePasswordPage } from '#src/interactions/views/change-password.tsx';
 import { LoginPage } from '#src/interactions/views/login.tsx';
 
@@ -82,13 +83,9 @@ export function buildInteractionRouter(provider: Provider): Router {
     const email = form.get('email');
     const password = form.get('password');
 
-    const user = email ? await getUserByEmail(email) : undefined;
-    const valid =
-      password &&
-      user &&
-      (await verifyPassword(password, { hash: user.passwordHash, salt: user.passwordSalt }));
+    const user = await authenticate(email, password);
 
-    if (!valid || !user) {
+    if (!user) {
       ctx.type = 'html';
       ctx.body = await LoginPage({ uid, error: 'Invalid email or password' });
       return;
@@ -96,7 +93,7 @@ export function buildInteractionRouter(provider: Provider): Router {
 
     if (user.mustChangePassword) {
       ctx.type = 'html';
-      ctx.body = await ChangePasswordPage({ uid, sub: user.sub });
+      ctx.body = await ChangePasswordPage({ uid, email: user.email });
       return;
     }
 
@@ -112,30 +109,52 @@ export function buildInteractionRouter(provider: Provider): Router {
   router.post('/interaction/:uid/change-password', async (ctx) => {
     const { uid } = await provider.interactionDetails(ctx.req, ctx.res);
     const form = await readForm(ctx);
-    const sub = form.get('sub');
+    const email = form.get('email');
+    const current = form.get('current');
     const password = form.get('password');
     const confirm = form.get('confirm');
 
-    if (!sub || !password || password !== confirm) {
+    const user = await authenticate(email, current);
+    if (!user) {
       ctx.type = 'html';
       ctx.body = await ChangePasswordPage({
         uid,
-        sub: sub ?? '',
+        email: email ?? '',
+        error: 'Invalid email or temporary password',
+      });
+      return;
+    }
+
+    if (!user.mustChangePassword) {
+      ctx.status = 400;
+      return;
+    }
+
+    if (!password || password !== confirm) {
+      ctx.type = 'html';
+      ctx.body = await ChangePasswordPage({
+        uid,
+        email: user.email,
         error: 'Passwords did not match',
       });
       return;
     }
 
-    const user = await getUserBySub(sub);
-    if (!user) {
-      throw new Error(`no user found for sub ${sub}`);
+    if (password === current) {
+      ctx.type = 'html';
+      ctx.body = await ChangePasswordPage({
+        uid,
+        email: user.email,
+        error: 'Choose a password different from the temporary one',
+      });
+      return;
     }
 
     const { hash, salt } = await hashPassword(password);
-    await updatePassword(sub, { hash, salt });
+    await updatePassword(user.sub, { hash, salt });
 
     const result = {
-      login: { accountId: sub },
+      login: { accountId: user.sub },
     };
 
     await provider.interactionFinished(ctx.req, ctx.res, result, {
@@ -144,4 +163,16 @@ export function buildInteractionRouter(provider: Provider): Router {
   });
 
   return router;
+}
+
+async function authenticate(
+  email: string | null,
+  password: string | null,
+): Promise<User | undefined> {
+  const user = email ? await getUserByEmail(email) : undefined;
+  const valid =
+    password &&
+    user &&
+    (await verifyPassword(password, { hash: user.passwordHash, salt: user.passwordSalt }));
+  return valid ? user : undefined;
 }
