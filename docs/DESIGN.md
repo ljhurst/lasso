@@ -115,6 +115,9 @@ AWS-native, Lambda-first pattern across all personal infra:
   shortcut.
 - **Signing keys**: JWKS keypair generated once, stored in Secrets Manager,
   loaded at cold start.
+- **Cookie signing key**: random key in SSM (`/lasso/cookie-key`), generated
+  once with `npm run generate-cookie-key`. Signs the portal login cookie and
+  oidc-provider's own cookies; rotating it logs everyone out.
 - **Region**: `us-east-1`, matching victoria and porto.
 - **No API Gateway**, same reasoning as porto/victoria — Function URL is
   free, API Gateway isn't.

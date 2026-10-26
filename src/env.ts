@@ -11,6 +11,7 @@ export const env = {
   oidcTableName: required('LASSO_OIDC_TABLE_NAME'),
   usersTableName: required('LASSO_USERS_TABLE_NAME'),
   jwksSsmParam: required('LASSO_JWKS_SSM_PARAM'),
+  cookieKeySsmParam: required('LASSO_COOKIE_KEY_SSM_PARAM'),
   clientSecretSsmParams: {
     portoVictoria: required('LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM'),
   },
