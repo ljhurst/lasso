@@ -59,6 +59,22 @@ resource "aws_dynamodb_table" "lasso" {
   }
 }
 
+resource "aws_dynamodb_table" "lasso_throttle" {
+  name         = "lj-lasso-throttle"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "pk"
+
+  attribute {
+    name = "pk"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "expiresAt"
+    enabled        = true
+  }
+}
+
 resource "aws_dynamodb_table" "lasso_users" {
   name         = "lj-lasso-users"
   billing_mode = "PAY_PER_REQUEST"

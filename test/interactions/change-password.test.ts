@@ -8,6 +8,7 @@ process.env.LASSO_OIDC_TABLE_NAME ??= 'lj-lasso-test';
 process.env.LASSO_USERS_TABLE_NAME ??= 'lj-lasso-users-test';
 process.env.LASSO_JWKS_SSM_PARAM ??= '/lasso/jwks-test';
 process.env.LASSO_COOKIE_KEY_SSM_PARAM ??= '/lasso/cookie-key-test';
+process.env.LASSO_THROTTLE_TABLE_NAME ??= 'lj-lasso-throttle-test';
 process.env.LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM ??=
   '/lasso/porto-victoria-client-secret-test';
 process.env.LASSO_ISSUER ??= 'https://lasso.example.com';
@@ -18,6 +19,12 @@ const store = vi.hoisted(() => ({
   updatePassword: vi.fn(),
 }));
 vi.mock('#src/users/store.ts', () => store);
+
+const throttle = vi.hoisted(() => ({
+  reserveLoginAttempt: vi.fn(),
+  clearLoginAttempts: vi.fn(),
+}));
+vi.mock('#src/users/login-throttle.ts', () => throttle);
 
 vi.mock('#src/users/password.ts', async (importOriginal) => {
   const original = await importOriginal<typeof import('#src/users/password.ts')>();
@@ -56,16 +63,27 @@ async function userRecord(mustChangePassword: boolean) {
   };
 }
 
-function post(path: string, fields: Record<string, string>): Promise<Response> {
+function post(
+  path: string,
+  fields: Record<string, string>,
+  headers: Record<string, string> = {},
+): Promise<Response> {
   return fetch(`${baseUrl}${path}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    headers: { 'content-type': 'application/x-www-form-urlencoded', ...headers },
     body: new URLSearchParams(fields),
   });
 }
 
-function changePassword(fields: Record<string, string>): Promise<Response> {
-  return post('/interaction/uid1/change-password', fields);
+function changePassword(
+  fields: Record<string, string>,
+  headers: Record<string, string> = {},
+): Promise<Response> {
+  return post('/interaction/uid1/change-password', fields, headers);
+}
+
+function fromAddress(ip: string): Record<string, string> {
+  return { 'x-amzn-request-context': JSON.stringify({ http: { sourceIp: ip } }) };
 }
 
 beforeAll(async () => {
@@ -82,6 +100,7 @@ afterAll(() => {
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  throttle.reserveLoginAttempt.mockResolvedValue(true);
   const user = await userRecord(true);
   store.getUserByEmail.mockImplementation(async (email: string) =>
     email === VICTIM_EMAIL ? user : undefined,
@@ -201,6 +220,81 @@ describe('POST /interaction/:uid/login', () => {
     expect(html).toContain(`value="${VICTIM_EMAIL}"`);
     expect(html).toContain('minlength="12" maxlength="256"');
     expect(html).not.toContain(VICTIM_SUB);
+    expect(interactionFinished).not.toHaveBeenCalled();
+  });
+});
+
+describe('login throttling', () => {
+  const LOGIN = { email: VICTIM_EMAIL, password: TEMP_PASSWORD };
+
+  it('counts attempts against the account and the address AWS reports', async () => {
+    await post('/interaction/uid1/login', LOGIN, fromAddress('203.0.113.7'));
+
+    expect(throttle.reserveLoginAttempt).toHaveBeenCalledWith(VICTIM_SUB, '203.0.113.7');
+  });
+
+  it('ignores a forged X-Forwarded-For when choosing the address', async () => {
+    await post('/interaction/uid1/login', LOGIN, { 'x-forwarded-for': '198.51.100.1' });
+
+    expect(throttle.reserveLoginAttempt).toHaveBeenCalledWith(VICTIM_SUB, 'unknown');
+  });
+
+  it('rejects the correct password while the pair is locked', async () => {
+    throttle.reserveLoginAttempt.mockResolvedValue(false);
+
+    const response = await post('/interaction/uid1/login', LOGIN, fromAddress('203.0.113.7'));
+
+    expect(await response.text()).toContain('Invalid email or password');
+    expect(interactionFinished).not.toHaveBeenCalled();
+    expect(throttle.clearLoginAttempts).not.toHaveBeenCalled();
+  });
+
+  it('shows a locked account the same page as an unknown one', async () => {
+    throttle.reserveLoginAttempt.mockResolvedValue(false);
+
+    const locked = await post('/interaction/uid1/login', LOGIN);
+    const unknown = await post('/interaction/uid1/login', {
+      email: 'nobody@example.com',
+      password: TEMP_PASSWORD,
+    });
+
+    expect(locked.status).toBe(unknown.status);
+    expect(await locked.text()).toBe(await unknown.text());
+  });
+
+  it('does not count attempts for an unknown email', async () => {
+    await post('/interaction/uid1/login', { email: 'nobody@example.com', password: 'whatever' });
+
+    expect(throttle.reserveLoginAttempt).not.toHaveBeenCalled();
+  });
+
+  it('clears the counter after a correct password', async () => {
+    await post('/interaction/uid1/login', LOGIN, fromAddress('203.0.113.7'));
+
+    expect(throttle.clearLoginAttempts).toHaveBeenCalledWith(VICTIM_SUB, '203.0.113.7');
+  });
+
+  it('keeps the counter after a wrong password', async () => {
+    await post('/interaction/uid1/login', { ...LOGIN, password: 'wrong' });
+
+    expect(throttle.clearLoginAttempts).not.toHaveBeenCalled();
+  });
+
+  it('throttles the temporary password check on change-password too', async () => {
+    throttle.reserveLoginAttempt.mockResolvedValue(false);
+
+    await changePassword(
+      {
+        email: VICTIM_EMAIL,
+        current: TEMP_PASSWORD,
+        password: 'new-password',
+        confirm: 'new-password',
+      },
+      fromAddress('203.0.113.7'),
+    );
+
+    expect(throttle.reserveLoginAttempt).toHaveBeenCalledWith(VICTIM_SUB, '203.0.113.7');
+    expect(store.updatePassword).not.toHaveBeenCalled();
     expect(interactionFinished).not.toHaveBeenCalled();
   });
 });

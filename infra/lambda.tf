@@ -20,6 +20,7 @@ resource "aws_lambda_function" "lasso" {
       PORT                                          = "8080"
       LASSO_OIDC_TABLE_NAME                         = aws_dynamodb_table.lasso.name
       LASSO_USERS_TABLE_NAME                        = aws_dynamodb_table.lasso_users.name
+      LASSO_THROTTLE_TABLE_NAME                     = aws_dynamodb_table.lasso_throttle.name
       LASSO_JWKS_SSM_PARAM                          = local.jwks_ssm_param
       LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM = local.porto_victoria_secret_ssm_param
       LASSO_COOKIE_KEY_SSM_PARAM                    = local.cookie_key_ssm_param
