@@ -25,8 +25,7 @@ const PORTO_RESOURCE_INDICATOR =
 
 const VICTORIA_RESOURCE_INDICATOR = 'https://victoria-mcp.bylukehurst.com/';
 
-const VICTORIA_VIEWER_RESOURCE_INDICATOR =
-  'https://s4wndhtrbjoflmoqeb4zvvmeim0cyodv.lambda-url.us-east-1.on.aws/';
+const VICTORIA_VIEWER_RESOURCE_INDICATOR = 'https://victoria-viewer.bylukehurst.com/';
 
 const FIFE_RESOURCE_INDICATOR = 'https://fi37z0j9pg.execute-api.us-east-1.amazonaws.com/prod';
 const FIFE_APP_URL = 'https://d3de9r2gorcf05.cloudfront.net/';
@@ -36,10 +35,9 @@ export const LASSO_ADMIN_SCOPE = 'lasso:admin';
 
 const CUSTOM_DOMAIN_ALIASES: Record<string, string> = {
   'https://porto.bylukehurst.com/': PORTO_RESOURCE_INDICATOR,
-  'https://victoria-viewer.bylukehurst.com/': VICTORIA_VIEWER_RESOURCE_INDICATOR,
 };
 
-const registeredResources: Record<string, NamedResourceServer> = {
+export const resources: Record<string, NamedResourceServer> = {
   [PORTO_RESOURCE_INDICATOR]: {
     name: 'Porto',
     scope: 'porto:read porto:write',
@@ -71,17 +69,14 @@ const registeredResources: Record<string, NamedResourceServer> = {
   },
 };
 
-export const resources: Record<string, NamedResourceServer> = {
-  ...registeredResources,
-  ...customDomainAliases(registeredResources),
-};
+const resourceAliases = customDomainAliases(resources);
 
 export const allResourceScopes = [
   ...new Set(Object.values(resources).flatMap((r) => r.scope?.split(' ') ?? [])),
 ];
 
 export function getResourceServerInfo(resourceIndicator: string): ResourceServer {
-  const resource = resources[resourceIndicator];
+  const resource = resources[resourceIndicator] ?? resourceAliases[resourceIndicator];
   if (!resource) {
     throw new Error(`unknown resource indicator: ${resourceIndicator}`);
   }
