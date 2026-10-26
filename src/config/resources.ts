@@ -23,8 +23,7 @@ export interface NamedResourceServer extends ResourceServer {
 const PORTO_RESOURCE_INDICATOR =
   'https://dpuc6r44q5s4rn2kj24rmgrxga0uxwgr.lambda-url.us-east-1.on.aws/';
 
-const VICTORIA_RESOURCE_INDICATOR =
-  'https://diozeathy56roah5fxesmhji640ugrkn.lambda-url.us-east-1.on.aws/';
+const VICTORIA_RESOURCE_INDICATOR = 'https://victoria-mcp.bylukehurst.com/';
 
 const VICTORIA_VIEWER_RESOURCE_INDICATOR =
   'https://s4wndhtrbjoflmoqeb4zvvmeim0cyodv.lambda-url.us-east-1.on.aws/';
@@ -37,7 +36,6 @@ export const LASSO_ADMIN_SCOPE = 'lasso:admin';
 
 const CUSTOM_DOMAIN_ALIASES: Record<string, string> = {
   'https://porto.bylukehurst.com/': PORTO_RESOURCE_INDICATOR,
-  'https://victoria-mcp.bylukehurst.com/': VICTORIA_RESOURCE_INDICATOR,
   'https://victoria-viewer.bylukehurst.com/': VICTORIA_VIEWER_RESOURCE_INDICATOR,
 };
 
