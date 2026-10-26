@@ -15,7 +15,6 @@ const lambdaUrl = (name: string) =>
 describe('custom domain resources', () => {
   it.each([
     ['https://porto.bylukehurst.com/', 'Porto'],
-    ['https://victoria-mcp.bylukehurst.com/', 'Victoria'],
     ['https://victoria-viewer.bylukehurst.com/', 'Victoria Viewer'],
   ])('accepts %s with the same scopes as the Lambda URL', (alias, name) => {
     const original = lambdaUrl(name);
@@ -28,20 +27,36 @@ describe('custom domain resources', () => {
     });
   });
 
+  it('serves Victoria under its custom domain with its scopes and portal link', () => {
+    const indicator = 'https://victoria-mcp.bylukehurst.com/';
+
+    expect(getResourceServerInfo(indicator)).toMatchObject({
+      name: 'Victoria',
+      scope: 'victoria:read victoria:write',
+      accessTokenFormat: 'jwt',
+      app: { url: indicator },
+    });
+  });
+
+  it('no longer accepts the retired Victoria Function URL', () => {
+    expect(() =>
+      getResourceServerInfo(
+        'https://diozeathy56roah5fxesmhji640ugrkn.lambda-url.us-east-1.on.aws/',
+      ),
+    ).toThrow('unknown resource indicator');
+  });
+
   it('keeps the Lambda URLs working', () => {
     expect(resources[lambdaUrl('Porto') as string]?.name).toBe('Porto');
   });
 
-  it('does not list the aliases as separate apps', () => {
-    const aliases = Object.keys(resources).filter((indicator) =>
-      indicator.endsWith('.bylukehurst.com/'),
-    );
-
-    expect(aliases).toHaveLength(3);
-    for (const alias of aliases) {
+  it.each(['https://porto.bylukehurst.com/', 'https://victoria-viewer.bylukehurst.com/'])(
+    'does not list the alias %s as a separate app',
+    (alias) => {
+      expect(resources[alias]).toBeDefined();
       expect(resources[alias]?.app).toBeUndefined();
-    }
-  });
+    },
+  );
 
   it('still rejects an unknown resource', () => {
     expect(() => getResourceServerInfo('https://unknown.example.com/')).toThrow(
