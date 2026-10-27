@@ -33,7 +33,7 @@ audience-scoped tokens per app. Built on
 View the portal
 
 ```text
-https://zzspanxrc7v4tvou4acvdq36oi0yjdrz.lambda-url.us-east-1.on.aws/
+https://lasso.bylukehurst.com/
 ```
 
 Agents can use the skills for

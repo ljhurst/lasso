@@ -53,7 +53,7 @@ export async function buildClients(): Promise<ClientMetadata[]> {
       client_name: 'Lasso Portal',
       redirect_uris: [
         'http://localhost:8080/portal/callback',
-        'https://zzspanxrc7v4tvou4acvdq36oi0yjdrz.lambda-url.us-east-1.on.aws/portal/callback',
+        'https://lasso.bylukehurst.com/portal/callback',
       ],
       token_endpoint_auth_method: 'none',
       grant_types: ['authorization_code'],

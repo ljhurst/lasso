@@ -8,5 +8,5 @@ lambda_package_path = "../dist/lasso.zip"
 # https://github.com/awslabs/aws-lambda-web-adapter
 lwa_layer_arn = "arn:aws:lambda:us-east-1:753240598075:layer:LambdaAdapterLayerArm64:29"
 
-# The Lambda Function URL.
-issuer = "https://zzspanxrc7v4tvou4acvdq36oi0yjdrz.lambda-url.us-east-1.on.aws/"
+# Lasso's public hostname, served through CloudFront.
+issuer = "https://lasso.bylukehurst.com/"
