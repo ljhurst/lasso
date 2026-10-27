@@ -85,3 +85,25 @@ describe('victoria-viewer client', () => {
     }
   });
 });
+
+describe('fife', () => {
+  it('links the portal to its own hostname', () => {
+    expect(
+      getResourceServerInfo('https://fi37z0j9pg.execute-api.us-east-1.amazonaws.com/prod'),
+    ).toMatchObject({ name: 'Fife', app: { url: 'https://fife.bylukehurst.com/' } });
+  });
+
+  it('uses its own hostname for callbacks and no CloudFront ones', async () => {
+    const clients = await buildClients();
+    const fife = clients.find((client) => client.client_id === 'fife');
+
+    expect(fife?.redirect_uris).toContain('https://fife.bylukehurst.com/auth/after-login/');
+    expect(fife?.post_logout_redirect_uris).toContain('https://fife.bylukehurst.com/');
+    for (const uri of [
+      ...(fife?.redirect_uris ?? []),
+      ...(fife?.post_logout_redirect_uris ?? []),
+    ]) {
+      expect(uri).not.toContain('.cloudfront.net');
+    }
+  });
+});

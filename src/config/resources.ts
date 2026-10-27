@@ -27,7 +27,7 @@ const VICTORIA_RESOURCE_INDICATOR = 'https://victoria-mcp.bylukehurst.com/';
 const VICTORIA_VIEWER_RESOURCE_INDICATOR = 'https://victoria-viewer.bylukehurst.com/';
 
 const FIFE_RESOURCE_INDICATOR = 'https://fi37z0j9pg.execute-api.us-east-1.amazonaws.com/prod';
-const FIFE_APP_URL = 'https://d3de9r2gorcf05.cloudfront.net/';
+const FIFE_APP_URL = 'https://fife.bylukehurst.com/';
 
 export const LASSO_RESOURCE_INDICATOR = env.issuer;
 export const LASSO_ADMIN_SCOPE = 'lasso:admin';
