@@ -36,9 +36,10 @@ resource "aws_lambda_function_url" "lasso" {
 }
 
 module "front" {
-  source = "git::https://github.com/ljhurst/stych.git//infra/modules/function-url-site?ref=v1.7.0"
+  source = "git::https://github.com/ljhurst/stych.git//infra/modules/function-url-site?ref=v1.8.0"
 
-  domain_name    = "lasso.bylukehurst.com"
-  function_url   = aws_lambda_function_url.lasso.function_url
-  origin_timeout = aws_lambda_function.lasso.timeout
+  domain_name           = "lasso.bylukehurst.com"
+  function_url          = aws_lambda_function_url.lasso.function_url
+  origin_timeout        = aws_lambda_function.lasso.timeout
+  origin_verify_kvs_arn = "arn:aws:cloudfront::755958650241:key-value-store/e65cf756-5106-499a-a651-c690bad8f750"
 }
