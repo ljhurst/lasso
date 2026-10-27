@@ -2,7 +2,9 @@ import { createServer } from 'node:http';
 
 import Provider from 'oidc-provider';
 
+import { originGuard } from '#src/auth/origin-verify.ts';
 import { buildConfiguration } from '#src/config/index.ts';
+import { getParameter } from '#src/config/ssm.ts';
 import { env } from '#src/env.ts';
 import { buildInteractionRouter } from '#src/interactions/routes.ts';
 import { buildAdminRouter } from '#src/portal/admin/routes.ts';
@@ -16,6 +18,10 @@ async function main(): Promise<void> {
   const provider = new Provider(env.issuer, configuration);
 
   provider.proxy = true;
+
+  if (env.originVerifySsmParam) {
+    provider.use(originGuard(await getParameter(env.originVerifySsmParam)));
+  }
 
   const interactions = buildInteractionRouter(provider);
   provider.use(interactions.routes());

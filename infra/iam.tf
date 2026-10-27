@@ -47,6 +47,7 @@ data "aws_iam_policy_document" "lambda_permissions" {
       "${local.ssm_param_arn_prefix}${local.jwks_ssm_param}",
       "${local.ssm_param_arn_prefix}${local.porto_victoria_secret_ssm_param}",
       "${local.ssm_param_arn_prefix}${local.cookie_key_ssm_param}",
+      "${local.ssm_param_arn_prefix}${local.origin_verify_ssm_param}",
     ]
   }
 
