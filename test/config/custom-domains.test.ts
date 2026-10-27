@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { buildClients } from '#src/config/clients.ts';
-import { allResourceScopes, getResourceServerInfo } from '#src/config/resources.ts';
+import { allResourceScopes, getResourceServerInfo, resources } from '#src/config/resources.ts';
 import { getUserApps } from '#src/portal/apps/routes.ts';
 
 vi.mock('#src/config/ssm.ts', () => ({
@@ -105,5 +105,19 @@ describe('fife', () => {
     ]) {
       expect(uri).not.toContain('.cloudfront.net');
     }
+  });
+});
+
+describe('lasso issuer', () => {
+  it('names no Lambda URL in any client redirect or resource', async () => {
+    const clients = await buildClients();
+    const uris = clients.flatMap((client) => [
+      ...(client.redirect_uris ?? []),
+      ...(client.post_logout_redirect_uris ?? []),
+    ]);
+
+    expect(
+      [...uris, ...Object.keys(resources)].filter((uri) => uri.includes('.lambda-url.')),
+    ).toEqual([]);
   });
 });
