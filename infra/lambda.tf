@@ -25,6 +25,7 @@ resource "aws_lambda_function" "lasso" {
       LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM = local.porto_victoria_secret_ssm_param
       LASSO_COOKIE_KEY_SSM_PARAM                    = local.cookie_key_ssm_param
       LASSO_ISSUER                                  = var.issuer
+      LASSO_ORIGIN_VERIFY_SSM_PARAM                 = local.origin_verify_ssm_param
     }
   }
 }
