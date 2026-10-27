@@ -17,3 +17,18 @@ jobs:
       node-version-file: .node-version
       setup-command: npm ci
       terraform-version: "1.17.0"
+
+  test:
+    uses: ljhurst/stych/.github/workflows/test.yml@v1
+    with:
+      command: npm test
+      setup-command: npm ci
+      node-version-file: .node-version
+      paths: |
+        src/**
+        test/**
+        package.json
+        package-lock.json
+        vitest.config.ts
+        tsconfig.json
+        .github/workflows/check.yml
