@@ -34,3 +34,11 @@ resource "aws_lambda_function_url" "lasso" {
   authorization_type = "NONE" # auth happens in-app via oidc-provider, not IAM
   invoke_mode        = "BUFFERED"
 }
+
+module "front" {
+  source = "git::https://github.com/ljhurst/stych.git//infra/modules/function-url-site?ref=v1.7.0"
+
+  domain_name    = "lasso.bylukehurst.com"
+  function_url   = aws_lambda_function_url.lasso.function_url
+  origin_timeout = aws_lambda_function.lasso.timeout
+}
