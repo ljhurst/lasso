@@ -5,7 +5,7 @@ import {
   type NamedResourceServer,
   resources,
 } from '#src/config/resources.ts';
-import { filterGrantedScope } from '#src/interactions/routes.ts';
+import { partitionScopeByRoles } from '#src/interactions/routes.ts';
 import type { User } from '#src/users/types.ts';
 import { buildRequirePortalSession } from '#src/portal/auth/session.ts';
 import { DashboardPage } from '#src/portal/apps/views/dashboard.tsx';
@@ -19,7 +19,8 @@ export function getUserApps(roles: string[]): UserApp[] {
   return Object.entries(resources)
     .filter(([indicator]) => indicator !== LASSO_RESOURCE_INDICATOR)
     .filter(
-      ([, resource]) => filterGrantedScope(resource.scope?.split(' ') ?? [], roles).length > 0,
+      ([, resource]) =>
+        partitionScopeByRoles(resource.scope?.split(' ') ?? [], roles).granted.length > 0,
     )
     .map(([indicator, resource]) => ({ indicator, resource }));
 }

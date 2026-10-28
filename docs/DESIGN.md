@@ -160,6 +160,14 @@ Standard OIDC claims (`given_name`, `family_name`, `name`, `email`,
 someone logged in" — the same field is shaped to support gating which
 clients/apps a user can see later, though that's not built yet.
 
+Roles also decide which resource scopes a token carries. A client that requests
+more scopes than the user's roles allow gets a token with only the allowed ones
+(and the `scope` response parameter says so); the scopes withheld are recorded
+on the grant as rejected so consent is not asked for them again. A user who
+holds none of the requested scopes gets `access_denied`. Adding a role destroys
+the user's grants that rejected it, so those clients re-authorize and pick the
+scope up instead of staying narrowed until the grant expires.
+
 ## 7. Clients and resources
 
 Each consuming project registers as an `oidc-provider` **client** (the
