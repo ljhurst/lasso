@@ -5,7 +5,7 @@ import { readForm } from '#src/form-body.ts';
 import { addRole, getUserBySub, listUsers, removeRole } from '#src/users/store.ts';
 import { buildRequirePortalSession, requireAdmin } from '#src/portal/auth/session.ts';
 import { listAccessTokens, listGrants, listSessions } from '#src/portal/admin/data.ts';
-import { revokeGrantsWithScope } from '#src/portal/admin/revocation.ts';
+import { revokeGrantsRejectingScope, revokeGrantsWithScope } from '#src/portal/admin/revocation.ts';
 import { DashboardPage } from '#src/portal/admin/views/dashboard.tsx';
 import { UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
 import { UsersListPage } from '#src/portal/admin/views/users.tsx';
@@ -21,6 +21,16 @@ export function canRemoveRole(target: User, role: string, actorSub: string): boo
   const isKnown = target.roles.includes(role) || allResourceScopes.includes(role);
   const isSelfLockout = target.sub === actorSub && role === LASSO_ADMIN_SCOPE;
   return isKnown && !isSelfLockout;
+}
+
+/**
+ * Gives `sub` the role, then clears any grant that rejected it. The role goes
+ * first so a login between the two steps sees it; repeating the call retries
+ * a failed revocation because adding a held role is a no-op.
+ */
+export async function assignRole(provider: Provider, sub: string, role: string): Promise<void> {
+  await addRole(sub, role);
+  await revokeGrantsRejectingScope(provider, sub, role);
 }
 
 export function buildAdminRouter(provider: Provider): Router {
@@ -68,7 +78,7 @@ export function buildAdminRouter(provider: Provider): Router {
     const { sub } = ctx.params;
     const role = (await readForm(ctx)).get('role');
     if (sub && role && allResourceScopes.includes(role)) {
-      await addRole(sub, role);
+      await assignRole(provider, sub, role);
     }
     ctx.redirect(`/admin/users/${sub}`);
   });
