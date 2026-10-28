@@ -77,7 +77,7 @@ data "aws_iam_policy_document" "lambda_permissions" {
   statement {
     sid       = "CloudWatchLogs"
     effect    = "Allow"
-    actions   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+    actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["${aws_cloudwatch_log_group.lasso.arn}:*"]
   }
 }
