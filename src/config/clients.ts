@@ -73,5 +73,18 @@ export async function buildClients(): Promise<ClientMetadata[]> {
       response_types: ['code'],
       application_type: 'web',
     },
+    {
+      client_id: 'freal',
+      client_name: 'Freal',
+      redirect_uris: [
+        'http://localhost:4321/auth/callback',
+        'https://freal.bylukehurst.com/auth/callback',
+      ],
+      post_logout_redirect_uris: ['http://localhost:4321/', 'https://freal.bylukehurst.com/'],
+      token_endpoint_auth_method: 'none',
+      grant_types: ['authorization_code', 'refresh_token'],
+      response_types: ['code'],
+      application_type: 'web',
+    },
   ];
 }
