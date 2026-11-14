@@ -29,6 +29,9 @@ const VICTORIA_VIEWER_RESOURCE_INDICATOR = 'https://victoria-viewer.bylukehurst.
 const FIFE_RESOURCE_INDICATOR = 'https://fi37z0j9pg.execute-api.us-east-1.amazonaws.com/prod';
 const FIFE_APP_URL = 'https://fife.bylukehurst.com/';
 
+const FREAL_RESOURCE_INDICATOR = 'https://freal-api.bylukehurst.com/';
+const FREAL_APP_URL = 'https://freal.bylukehurst.com/';
+
 export const LASSO_RESOURCE_INDICATOR = env.issuer;
 export const LASSO_ADMIN_SCOPE = 'lasso:admin';
 
@@ -56,6 +59,12 @@ export const resources: Record<string, NamedResourceServer> = {
     scope: 'fife:read fife:write fife:admin',
     accessTokenFormat: 'jwt',
     app: { type: AppType.Web, url: FIFE_APP_URL },
+  },
+  [FREAL_RESOURCE_INDICATOR]: {
+    name: 'Freal',
+    scope: 'freal:read freal:connect',
+    accessTokenFormat: 'jwt',
+    app: { type: AppType.Web, url: FREAL_APP_URL },
   },
   [LASSO_RESOURCE_INDICATOR]: {
     name: 'Lasso Admin',
