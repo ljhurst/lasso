@@ -1,6 +1,7 @@
 import { GetCommand, QueryCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '#src/adapter/client.ts';
 import { env } from '#src/env.ts';
+import { normalizeEmail } from '#src/users/email.ts';
 import type { User } from '#src/users/types.ts';
 
 export async function getUserBySub(sub: string): Promise<User | undefined> {
@@ -16,7 +17,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
       TableName: env.usersTableName,
       IndexName: 'email-index',
       KeyConditionExpression: 'email = :email',
-      ExpressionAttributeValues: { ':email': email },
+      ExpressionAttributeValues: { ':email': normalizeEmail(email) },
       Limit: 1,
     }),
   );
