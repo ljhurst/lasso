@@ -1,4 +1,4 @@
-import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
+import { randomBytes, randomInt, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 
 const scryptAsync = promisify(scrypt);
@@ -6,6 +6,7 @@ export const MIN_PASSWORD_LENGTH = 12;
 export const MAX_PASSWORD_LENGTH = 256;
 const SCRYPT_KEY_LENGTH = 64;
 const DUMMY_SALT = Buffer.alloc(16);
+const TEMP_PASSWORD_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'; // gitleaks:allow (a character set, not a credential)
 
 export interface PasswordHash {
   hash: string;
@@ -27,6 +28,15 @@ export async function verifyPassword(password: string, stored: PasswordHash): Pr
   const storedHash = Buffer.from(stored.hash, 'hex');
   const candidateHash = await scryptHash(password, salt);
   return candidateHash.length === storedHash.length && timingSafeEqual(candidateHash, storedHash);
+}
+
+/** Twelve characters in dash-separated groups of four, easy to read out and type on a phone. */
+export function generateTempPassword(): string {
+  const chars = Array.from(
+    { length: 12 },
+    () => TEMP_PASSWORD_ALPHABET[randomInt(TEMP_PASSWORD_ALPHABET.length)],
+  );
+  return [chars.slice(0, 4), chars.slice(4, 8), chars.slice(8)].map((g) => g.join('')).join('-');
 }
 
 export function passwordPolicyError(password: string): string | undefined {

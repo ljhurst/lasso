@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  generateTempPassword,
   hashPassword,
   passwordPolicyError,
   rejectPassword,
@@ -47,5 +48,15 @@ describe('passwordPolicyError', () => {
 describe('rejectPassword', () => {
   it('always resolves false', async () => {
     expect(await rejectPassword('anything at all')).toBe(false);
+  });
+});
+
+describe('generateTempPassword', () => {
+  it('produces three lowercase groups of four without lookalike characters', () => {
+    expect(generateTempPassword()).toMatch(/^[a-hjkmnp-z2-9]{4}(-[a-hjkmnp-z2-9]{4}){2}$/);
+  });
+
+  it('differs between calls', () => {
+    expect(generateTempPassword()).not.toBe(generateTempPassword());
   });
 });

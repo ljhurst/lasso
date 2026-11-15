@@ -5,16 +5,17 @@
 // password is generated and printed once — hand it to the person out of
 // band. mustChangePassword forces them to set their own password on first
 // login (src/interactions/routes.ts) before they reach consent.
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
 
 import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
-import { hashPassword } from '../../src/users/password.ts';
+import { normalizeEmail } from '../../src/users/email.ts';
+import { generateTempPassword, hashPassword } from '../../src/users/password.ts';
 import type { User } from '../../src/users/types.ts';
 import { createDynamoClient } from './dynamo.ts';
 
-const { values } = parseArgs({
+const { values: rawValues } = parseArgs({
   options: {
     email: { type: 'string' },
     'given-name': { type: 'string' },
@@ -28,9 +29,11 @@ const { values } = parseArgs({
   },
 });
 
-function generateTempPassword(): string {
-  return randomBytes(12).toString('base64url');
-}
+const values = {
+  ...rawValues,
+  email: rawValues.email && normalizeEmail(rawValues.email),
+  reset: rawValues.reset && normalizeEmail(rawValues.reset),
+};
 
 async function findByEmail(
   client: ReturnType<typeof createDynamoClient>,

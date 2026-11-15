@@ -58,6 +58,14 @@ describe('getUserByEmail', () => {
     expect(call?.IndexName).toBe('email-index');
     expect(call?.ExpressionAttributeValues).toEqual({ ':email': 'friend@example.com' });
   });
+
+  it('matches regardless of case or surrounding whitespace', async () => {
+    ddbMock.on(QueryCommand).resolves({ Items: [user] });
+
+    await getUserByEmail('  Friend@Example.COM ');
+    const call = ddbMock.commandCalls(QueryCommand)[0]?.args[0].input;
+    expect(call?.ExpressionAttributeValues).toEqual({ ':email': 'friend@example.com' });
+  });
 });
 
 describe('listUsers', () => {

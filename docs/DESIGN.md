@@ -142,11 +142,15 @@ Lambda Web Adapter passes on, never from `X-Forwarded-For`, which a client
 controls. A locked account gets the same "Invalid email or password" as a
 wrong password, so lockout doesn't reveal which emails exist.
 
+Emails are trimmed and lowercased on creation and on every lookup, so a phone
+keyboard's capitalization can't lock someone out.
+
 There's no signup flow, no email delivery, and no forgot-password flow.
 Accounts are created and reset entirely out of band with
 `scripts/bootstrap/add-user.ts`, run by hand with an AWS profile that can
 write the users table. Creating or resetting an account generates a random
-temporary password, printed once for you to hand off directly (text, call,
+temporary password (three groups of four lowercase characters, like
+`kfm7-xq9p-tn4w`), printed once for you to hand off directly (text, call,
 whatever) and sets `mustChangePassword`, which forces the person to set
 their own password on first login before they reach consent. The change form
 re-checks the temporary password, so it can't be used to set someone else's.
