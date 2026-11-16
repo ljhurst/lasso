@@ -7,6 +7,8 @@ import { buildConfiguration } from '#src/config/index.ts';
 import { getParameter } from '#src/config/ssm.ts';
 import { env } from '#src/env.ts';
 import { buildInteractionRouter } from '#src/interactions/routes.ts';
+import { attachProviderEvents } from '#src/observability/provider-events.ts';
+import { requestLog } from '#src/observability/request-log.ts';
 import { buildAdminRouter } from '#src/portal/admin/routes.ts';
 import { buildAppsRouter } from '#src/portal/apps/routes.ts';
 import { buildPortalRouter, buildRootRouter } from '#src/portal/routes.ts';
@@ -18,6 +20,9 @@ async function main(): Promise<void> {
   const provider = new Provider(env.issuer, configuration);
 
   provider.proxy = true;
+
+  attachProviderEvents(provider);
+  provider.use(requestLog());
 
   if (env.originVerifySsmParam) {
     provider.use(originGuard(await getParameter(env.originVerifySsmParam)));
