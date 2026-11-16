@@ -1,5 +1,6 @@
 import Router from '@koa/router';
 import type Provider from 'oidc-provider';
+import { requireSameOrigin } from '#src/auth/same-origin.ts';
 import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
 import { readForm } from '#src/form-body.ts';
 import { addRole, getUserBySub, listUsers, removeRole } from '#src/users/store.ts';
@@ -37,7 +38,7 @@ export function buildAdminRouter(provider: Provider): Router {
   const router = new Router({ prefix: '/admin' });
   const requirePortalSession = buildRequirePortalSession(provider);
 
-  router.use(requirePortalSession, requireAdmin);
+  router.use(requireSameOrigin, requirePortalSession, requireAdmin);
 
   router.get('/', async (ctx) => {
     ctx.type = 'html';

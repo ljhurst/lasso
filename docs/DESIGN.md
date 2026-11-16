@@ -170,6 +170,9 @@ Standard OIDC claims (`given_name`, `family_name`, `name`, `email`,
 (`/admin/*`) is gated by a `roles` field on the user record rather than "is
 someone logged in" — the same field is shaped to support gating which
 clients/apps a user can see later, though that's not built yet.
+State-changing admin requests must also come from Lasso's own origin
+(`Sec-Fetch-Site: same-origin`, else a matching `Origin`), because sibling
+subdomains count as the same site for cookies.
 
 Roles also decide which resource scopes a token carries. A client that requests
 more scopes than the user's roles allow gets a token with only the allowed ones
