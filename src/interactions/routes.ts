@@ -4,6 +4,7 @@ import type Provider from 'oidc-provider';
 
 import { clientIp } from '#src/auth/client-ip.ts';
 import { readForm } from '#src/form-body.ts';
+import { logEvent } from '#src/observability/events.ts';
 import {
   hashPassword,
   passwordPolicyError,
@@ -127,20 +128,25 @@ export function buildInteractionRouter(provider: Provider): Router {
     const email = form.get('email');
     const password = form.get('password');
 
-    const user = await authenticate(email, password, clientIp(ctx));
+    const ip = clientIp(ctx);
+    const outcome = await authenticate(email, password, ip);
 
-    if (!user) {
+    if (!outcome.user) {
+      logEvent({ event: 'login_failed', reason: outcome.failure, sub: outcome.sub, ip });
       ctx.type = 'html';
       ctx.body = await LoginPage({ uid, error: 'Invalid email or password' });
       return;
     }
+    const { user } = outcome;
 
     if (user.mustChangePassword) {
+      logEvent({ event: 'temporary_password_accepted', sub: user.sub, ip });
       ctx.type = 'html';
       ctx.body = await ChangePasswordPage({ uid, email: user.email });
       return;
     }
 
+    logEvent({ event: 'login_succeeded', sub: user.sub, ip });
     const result = {
       login: { accountId: user.sub },
     };
@@ -158,8 +164,10 @@ export function buildInteractionRouter(provider: Provider): Router {
     const password = form.get('password');
     const confirm = form.get('confirm');
 
-    const user = await authenticate(email, current, clientIp(ctx));
-    if (!user) {
+    const ip = clientIp(ctx);
+    const outcome = await authenticate(email, current, ip);
+    if (!outcome.user) {
+      logEvent({ event: 'login_failed', reason: outcome.failure, sub: outcome.sub, ip });
       ctx.type = 'html';
       ctx.body = await ChangePasswordPage({
         uid,
@@ -169,6 +177,7 @@ export function buildInteractionRouter(provider: Provider): Router {
       return;
     }
 
+    const { user } = outcome;
     if (!user.mustChangePassword) {
       ctx.status = 400;
       return;
@@ -194,6 +203,7 @@ export function buildInteractionRouter(provider: Provider): Router {
 
     const { hash, salt } = await hashPassword(password);
     await updatePassword(user.sub, { hash, salt });
+    logEvent({ event: 'password_changed', sub: user.sub, ip });
 
     const result = {
       login: { accountId: user.sub },
@@ -207,16 +217,24 @@ export function buildInteractionRouter(provider: Provider): Router {
   return router;
 }
 
+type AuthOutcome =
+  | { user: User }
+  | { user?: undefined; failure: 'unknown_user' | 'throttled' | 'bad_password'; sub?: string };
+
 async function authenticate(
   email: string | null,
   password: string | null,
   ip: string,
-): Promise<User | undefined> {
+): Promise<AuthOutcome> {
   const user = email ? await getUserByEmail(email) : undefined;
   const candidate = password ?? '';
-  if (!user || !(await reserveLoginAttempt(user.sub, ip))) {
+  if (!user) {
     await rejectPassword(candidate);
-    return undefined;
+    return { failure: 'unknown_user' };
+  }
+  if (!(await reserveLoginAttempt(user.sub, ip))) {
+    await rejectPassword(candidate);
+    return { failure: 'throttled', sub: user.sub };
   }
 
   const valid = await verifyPassword(candidate, {
@@ -224,8 +242,8 @@ async function authenticate(
     salt: user.passwordSalt,
   });
   if (!valid) {
-    return undefined;
+    return { failure: 'bad_password', sub: user.sub };
   }
   await clearLoginAttempts(user.sub, ip);
-  return user;
+  return { user };
 }

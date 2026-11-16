@@ -119,6 +119,13 @@ AWS-native, Lambda-first pattern across all personal infra:
   once with `npm run generate-cookie-key`. Signs the portal login cookie and
   oidc-provider's own cookies; rotating it logs everyone out.
 - **Region**: `us-east-1`, matching victoria and porto.
+- **Logging**: one JSON line per request (`event: "request"`: method, path,
+  status, ms, viewer address, client) and one per auth event
+  (`login_succeeded`, `login_failed` with a reason,
+  `temporary_password_accepted`, `password_changed`,
+  `token_issued`, `oidc_error`), in the 30-day CloudWatch group. Query
+  strings, interaction uids, passwords, tokens and typed emails are never
+  logged; failed logins carry the account `sub` only when the account exists.
 - **No API Gateway**, same reasoning as porto/victoria — Function URL is
   free, API Gateway isn't.
 

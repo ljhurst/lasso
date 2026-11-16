@@ -2,7 +2,7 @@ import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import Koa from 'koa';
 import type Provider from 'oidc-provider';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildInteractionRouter } from '#src/interactions/routes.ts';
 import { hashPassword, rejectPassword } from '#src/users/password.ts';
 
@@ -286,5 +286,86 @@ describe('login throttling', () => {
     expect(throttle.reserveLoginAttempt).toHaveBeenCalledWith(VICTIM_SUB, '203.0.113.7');
     expect(store.updatePassword).not.toHaveBeenCalled();
     expect(interactionFinished).not.toHaveBeenCalled();
+  });
+});
+
+describe('auth event logging', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const LOGIN = { email: VICTIM_EMAIL, password: TEMP_PASSWORD };
+  const IP = fromAddress('203.0.113.7');
+
+  function events(spy: { mock: { calls: unknown[][] } }) {
+    return spy.mock.calls.map(([line]) => JSON.parse(line as string));
+  }
+
+  it('logs a successful login with the account and address', async () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    store.getUserByEmail.mockResolvedValue(await userRecord(false));
+
+    await post('/interaction/uid1/login', LOGIN, IP);
+
+    expect(events(spy)).toEqual([{ event: 'login_succeeded', sub: VICTIM_SUB, ip: '203.0.113.7' }]);
+  });
+
+  it('logs accepted temporary-password credentials, not a completed login', async () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    await post('/interaction/uid1/login', LOGIN, IP);
+
+    expect(events(spy)).toEqual([
+      { event: 'temporary_password_accepted', sub: VICTIM_SUB, ip: '203.0.113.7' },
+    ]);
+  });
+
+  it.each([
+    ['unknown_user', { email: 'nobody@example.com', password: 'x' }, true, undefined],
+    ['bad_password', { ...LOGIN, password: 'wrong' }, true, VICTIM_SUB],
+    ['throttled', LOGIN, false, VICTIM_SUB],
+  ])('logs a %s failure with the reason', async (reason, fields, allowed, sub) => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    throttle.reserveLoginAttempt.mockResolvedValue(allowed);
+
+    await post('/interaction/uid1/login', fields, IP);
+
+    expect(events(spy)).toEqual([
+      { event: 'login_failed', reason, ...(sub ? { sub } : {}), ip: '203.0.113.7' },
+    ]);
+  });
+
+  it('logs a password change', async () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    await changePassword(
+      {
+        email: VICTIM_EMAIL,
+        current: TEMP_PASSWORD,
+        password: 'a-new-password',
+        confirm: 'a-new-password',
+      },
+      IP,
+    );
+
+    expect(events(spy)).toEqual([
+      { event: 'password_changed', sub: VICTIM_SUB, ip: '203.0.113.7' },
+    ]);
+  });
+
+  it('never writes the email or a password to the log', async () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    await post('/interaction/uid1/login', { ...LOGIN, password: 'typed-secret' }, IP);
+    await post(
+      '/interaction/uid1/login',
+      { email: 'typo@example.com', password: 'other-secret' },
+      IP,
+    );
+
+    const output = spy.mock.calls.map(([line]) => line).join('\n');
+    for (const secret of [VICTIM_EMAIL, 'typo@example.com', 'typed-secret', 'other-secret']) {
+      expect(output).not.toContain(secret);
+    }
   });
 });
