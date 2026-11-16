@@ -62,7 +62,7 @@ export const resources: Record<string, NamedResourceServer> = {
   },
   [FREAL_RESOURCE_INDICATOR]: {
     name: 'Freal',
-    scope: 'freal:read freal:connect',
+    scope: 'freal:read freal:connect freal:admin',
     accessTokenFormat: 'jwt',
     app: { type: AppType.Web, url: FREAL_APP_URL },
   },
