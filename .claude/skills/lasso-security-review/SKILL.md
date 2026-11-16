@@ -80,9 +80,10 @@ Check these against the code as it stands after the change, whatever the diff
 touches. Answer pass or fail for each, with the file and line that proves it.
 
 1. The origin guard is registered before every router in `src/server.ts`.
-2. Every admin route sits behind the admin check: `router.use(requirePortalSession, requireAdmin)`
-   is the first thing in `buildAdminRouter` (`src/portal/admin/routes.ts`),
-   and no admin route is added outside it.
+2. Every admin route sits behind the same-origin and admin checks:
+   `router.use(requireSameOrigin, requirePortalSession, requireAdmin)` is the
+   first thing in `buildAdminRouter` (`src/portal/admin/routes.ts`), and no
+   admin route is added outside it.
 3. A failed login, whatever the reason, returns the same page and still
    spends a password check (`authenticate` in `src/interactions/routes.ts`).
 4. Consent never grants a scope the account's roles don't hold

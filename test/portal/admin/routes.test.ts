@@ -1,5 +1,31 @@
-import { describe, expect, it } from 'vitest';
-import { canRemoveRole } from '#src/portal/admin/routes.ts';
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import Koa from 'koa';
+import type Provider from 'oidc-provider';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { buildAdminRouter, canRemoveRole } from '#src/portal/admin/routes.ts';
+
+const store = vi.hoisted(() => ({
+  addRole: vi.fn(),
+  removeRole: vi.fn(),
+  getUserBySub: vi.fn(),
+  listUsers: vi.fn(),
+}));
+vi.mock('#src/users/store.ts', () => store);
+
+vi.mock('#src/portal/admin/revocation.ts', () => ({
+  revokeGrantsRejectingScope: vi.fn(),
+  revokeGrantsWithScope: vi.fn(),
+}));
+
+vi.mock('#src/portal/auth/session.ts', () => ({
+  buildRequirePortalSession: () => async (ctx: Koa.Context, next: Koa.Next) => {
+    ctx.state.user = { sub: 'admin' };
+    ctx.state.isAdmin = true;
+    await next();
+  },
+  requireAdmin: async (_ctx: Koa.Context, next: Koa.Next) => next(),
+}));
 
 function user(sub: string, roles: string[]) {
   return {
@@ -39,5 +65,63 @@ describe('canRemoveRole', () => {
 
   it("allows removing someone else's admin role", () => {
     expect(canRemoveRole(user('sub-1', ['lasso:admin']), 'lasso:admin', 'admin')).toBe(true);
+  });
+});
+
+describe('admin role changes', () => {
+  let server: Server;
+  let baseUrl: string;
+
+  beforeAll(() => {
+    const app = new Koa();
+    app.use(buildAdminRouter({} as Provider).routes());
+    server = app.listen(0);
+    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(() => {
+    server.close();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function grantRole(headers: Record<string, string>): Promise<Response> {
+    return fetch(`${baseUrl}/admin/users/sub-1/roles`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', ...headers },
+      body: new URLSearchParams({ role: 'fife:read' }),
+    });
+  }
+
+  it('refuses a role grant sent from a sibling subdomain', async () => {
+    const response = await grantRole({ 'sec-fetch-site': 'same-site' });
+
+    expect(response.status).toBe(403);
+    expect(store.addRole).not.toHaveBeenCalled();
+  });
+
+  it('refuses a role removal sent from another site', async () => {
+    const response = await fetch(`${baseUrl}/admin/users/sub-1/roles/remove`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        'sec-fetch-site': 'cross-site',
+      },
+      body: new URLSearchParams({ role: 'fife:read' }),
+    });
+
+    expect(response.status).toBe(403);
+    expect(store.removeRole).not.toHaveBeenCalled();
+  });
+
+  it('grants a role from the admin page itself', async () => {
+    const response = await grantRole({ 'sec-fetch-site': 'same-origin' });
+
+    expect(response.status).toBe(302);
+    expect(store.addRole).toHaveBeenCalledWith('sub-1', 'fife:read');
   });
 });
