@@ -88,11 +88,21 @@ function appTile(userApp: UserApp) {
         {app?.logo ? (
           <img class="app-logo" src={app.logo} alt="" />
         ) : (
-          <span class="app-badge">{initial}</span>
+          <span class="app-badge" safe>
+            {initial}
+          </span>
         )}
         <div class="tile-heading">
-          <span class="app-name">{resource.name}</span>
-          {app ? <span class="app-type">{appTypeLabel(app.type)}</span> : ''}
+          <span class="app-name" safe>
+            {resource.name}
+          </span>
+          {app ? (
+            <span class="app-type" safe>
+              {appTypeLabel(app.type)}
+            </span>
+          ) : (
+            ''
+          )}
         </div>
       </div>
       {tileAction(userApp)}
@@ -103,7 +113,9 @@ function appTile(userApp: UserApp) {
 function commandRow(id: string, command: string) {
   return (
     <div class="command-row">
-      <code id={id}>{command}</code>
+      <code id={id} safe>
+        {command}
+      </code>
       <button
         type="button"
         class="copy-icon-button"
@@ -143,7 +155,7 @@ function connectModal({ indicator, resource }: UserApp) {
 
   return (
     <dialog id={`modal-${slug}`} class="connect-modal">
-      <h2>Connect to {resource.name}</h2>
+      <h2 safe>Connect to {resource.name}</h2>
       <div class="command-block">
         <div class="command-label">MCP Inspector</div>
         {commandRow(`inspector-cmd-${slug}`, buildMcpInspectorCommand(url))}

@@ -12,11 +12,11 @@ export function UsersListPage(props: { users: User[] }) {
           <Table columns={['Name', 'Email', 'Roles', '']}>
             {props.users.map((user) => (
               <tr>
-                <td>
+                <td safe>
                   {user.givenName} {user.familyName}
                 </td>
                 <td>
-                  <code>{user.email}</code>
+                  <code safe>{user.email}</code>
                 </td>
                 <td>
                   <List items={user.roles} mono />

@@ -191,7 +191,7 @@ export function AuthLayout(props: {
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Lasso — {props.title}</title>
+        <title safe>Lasso — {props.title}</title>
         <link rel="icon" type="image/svg+xml" href={FAVICON_HREF} />
         <link rel="apple-touch-icon" href={APPLE_TOUCH_ICON_HREF} />
         <meta name="apple-mobile-web-app-title" content="Lasso" />
@@ -202,17 +202,25 @@ export function AuthLayout(props: {
           <div class="mark">
             <LassoMark />
           </div>
-          <h1>{props.heading}</h1>
-          {props.subtitle ? <p class="subtitle">{props.subtitle}</p> : ''}
+          <h1 safe>{props.heading}</h1>
+          {props.subtitle ? (
+            <p class="subtitle" safe>
+              {props.subtitle}
+            </p>
+          ) : (
+            ''
+          )}
           {props.error ? (
-            <p class="alert" role="alert">
+            <p class="alert" role="alert" safe>
               {props.error}
             </p>
           ) : (
             ''
           )}
           {props.children}
-          <p class="meta">v{pkg.version}</p>
+          <p class="meta" safe>
+            v{pkg.version}
+          </p>
         </div>
         <script>{SUBMIT_LOADING_SCRIPT}</script>
       </body>
@@ -223,7 +231,9 @@ export function AuthLayout(props: {
 export function SubmitButton(props: { label: string }) {
   return (
     <button type="submit">
-      <span class="label">{props.label}</span>
+      <span class="label" safe>
+        {props.label}
+      </span>
       <span class="spinner" aria-hidden="true" />
     </button>
   );

@@ -1,0 +1,13 @@
+{
+  "name": "lasso-xss-scan",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "scan": "xss-scan -s -p \"$PWD/tsconfig.json\""
+  },
+  "devDependencies": {
+    "@kitajs/html": "4.2.13",
+    "@kitajs/ts-html-plugin": "4.1.4",
+    "typescript": "5.9.3"
+  }
+}

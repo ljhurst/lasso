@@ -1,4 +1,4 @@
-import type { Children } from '@kitajs/html';
+import Html, { type Children } from '@kitajs/html';
 import pkg from '#package.json' with { type: 'json' };
 import { APPLE_TOUCH_ICON_HREF, FAVICON_HREF, LassoMark, THEME_STYLES } from '#src/branding.tsx';
 
@@ -21,7 +21,7 @@ export function Layout(props: {
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Lasso — {props.title}</title>
+        <title safe>Lasso — {props.title}</title>
         <link rel="icon" type="image/svg+xml" href={FAVICON_HREF} />
         <link rel="apple-touch-icon" href={APPLE_TOUCH_ICON_HREF} />
         <meta name="apple-mobile-web-app-title" content="Lasso" />
@@ -37,7 +37,7 @@ export function Layout(props: {
               <h1>Lasso</h1>
               <nav>
                 {navItems.map((item) => (
-                  <a href={item.href} class={item.href === props.active ? 'active' : ''}>
+                  <a href={item.href} class={item.href === props.active ? 'active' : ''} safe>
                     {item.label}
                   </a>
                 ))}
@@ -50,7 +50,7 @@ export function Layout(props: {
             </form>
           </header>
           <main>{props.children}</main>
-          <footer>v{pkg.version}</footer>
+          <footer safe>v{pkg.version}</footer>
         </div>
         <script>{LOCALIZE_TIMES_SCRIPT}</script>
       </body>
@@ -65,7 +65,7 @@ export function Table(props: { columns: string[]; children: Children }) {
         <thead>
           <tr>
             {props.columns.map((column) => (
-              <th>{column}</th>
+              <th safe>{column}</th>
             ))}
           </tr>
         </thead>
@@ -94,7 +94,7 @@ export function Time(props: { seconds: number | undefined }) {
   const date = new Date(props.seconds * 1000);
   const iso = date.toISOString();
   return (
-    <time datetime={iso} title={iso}>
+    <time datetime={iso} title={iso} safe>
       {`${UTC_FORMAT.format(date)} UTC`}
     </time>
   );
@@ -107,7 +107,7 @@ export function List(props: { items: readonly string[]; mono?: boolean }) {
   return (
     <ul class="stacked">
       {props.items.map((item) => (
-        <li>{props.mono ? <code>{item}</code> : item}</li>
+        <li>{props.mono ? <code safe>{item}</code> : Html.escapeHtml(item)}</li>
       ))}
     </ul>
   );
