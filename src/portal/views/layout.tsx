@@ -52,6 +52,7 @@ export function Layout(props: {
           <main>{props.children}</main>
           <footer>v{pkg.version}</footer>
         </div>
+        <script>{LOCALIZE_TIMES_SCRIPT}</script>
       </body>
     </html>
   );
@@ -78,6 +79,27 @@ export function Empty(props: { children: Children }) {
   return <p class="empty">{props.children}</p>;
 }
 
+export function Help(props: { text: string }) {
+  return (
+    <span class="help" tabindex="0" role="note" aria-label={props.text} data-help={props.text}>
+      ?
+    </span>
+  );
+}
+
+export function Time(props: { seconds: number | undefined }) {
+  if (props.seconds === undefined) {
+    return <span class="empty-cell">—</span>;
+  }
+  const date = new Date(props.seconds * 1000);
+  const iso = date.toISOString();
+  return (
+    <time datetime={iso} title={iso}>
+      {`${UTC_FORMAT.format(date)} UTC`}
+    </time>
+  );
+}
+
 export function List(props: { items: readonly string[]; mono?: boolean }) {
   if (props.items.length === 0) {
     return <span class="empty-cell">—</span>;
@@ -90,6 +112,21 @@ export function List(props: { items: readonly string[]; mono?: boolean }) {
     </ul>
   );
 }
+
+const UTC_FORMAT = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'UTC',
+});
+
+const LOCALIZE_TIMES_SCRIPT = `
+  for (const el of document.querySelectorAll('time[datetime]')) {
+    el.textContent = new Date(el.dateTime).toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  }
+`;
 
 const STYLES = `
   .shell { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
@@ -180,6 +217,45 @@ const STYLES = `
     flex-direction: column;
     gap: 4px;
   }
+
+  .help {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 6px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--muted);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    cursor: help;
+    vertical-align: middle;
+  }
+
+  .help:hover, .help:focus { color: var(--text); outline: none; }
+
+  .help:hover::after, .help:focus::after {
+    content: attr(data-help);
+    position: absolute;
+    top: 24px;
+    left: 0;
+    z-index: 1;
+    width: 260px;
+    padding: 10px 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.4;
+    text-align: left;
+  }
+
+  .sub { user-select: all; }
 
   .empty, .empty-cell { color: var(--muted); font-size: 0.875rem; }
 

@@ -6,6 +6,8 @@ import { env } from '#src/env.ts';
 export interface SessionRow {
   id: string;
   accountId?: string;
+  clientIds: string[];
+  loginTs?: number;
   expiresAt?: number;
 }
 
@@ -48,6 +50,8 @@ export async function listSessions(): Promise<SessionRow[]> {
   return items.map((item) => ({
     id: item.id,
     accountId: item.payload.accountId as string | undefined,
+    clientIds: Object.keys((item.payload.authorizations as object | undefined) ?? {}),
+    loginTs: item.payload.loginTs as number | undefined,
     expiresAt: item.expiresAt,
   }));
 }
@@ -72,4 +76,8 @@ export async function listAccessTokens(): Promise<AccessTokenRow[]> {
     scope: item.payload.scope as string | undefined,
     expiresAt: item.expiresAt,
   }));
+}
+
+export function byLatestExpiry<T extends { expiresAt?: number }>(a: T, b: T): number {
+  return (b.expiresAt ?? 0) - (a.expiresAt ?? 0);
 }

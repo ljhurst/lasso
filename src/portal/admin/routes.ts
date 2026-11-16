@@ -1,11 +1,17 @@
 import Router from '@koa/router';
 import type Provider from 'oidc-provider';
 import { requireSameOrigin } from '#src/auth/same-origin.ts';
+import { clientNames } from '#src/config/clients.ts';
 import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
 import { readForm } from '#src/form-body.ts';
 import { addRole, getUserBySub, listUsers, removeRole } from '#src/users/store.ts';
 import { buildRequirePortalSession, requireAdmin } from '#src/portal/auth/session.ts';
-import { listAccessTokens, listGrants, listSessions } from '#src/portal/admin/data.ts';
+import {
+  byLatestExpiry,
+  listAccessTokens,
+  listGrants,
+  listSessions,
+} from '#src/portal/admin/data.ts';
 import { revokeGrantsRejectingScope, revokeGrantsWithScope } from '#src/portal/admin/revocation.ts';
 import { DashboardPage } from '#src/portal/admin/views/dashboard.tsx';
 import { UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
@@ -59,18 +65,20 @@ export function buildAdminRouter(provider: Provider): Router {
       return;
     }
 
-    const [sessions, grants, accessTokens] = await Promise.all([
+    const [sessions, grants, accessTokens, names] = await Promise.all([
       listSessions(),
       listGrants(),
       listAccessTokens(),
+      clientNames(),
     ]);
 
     ctx.type = 'html';
     ctx.body = await UserDetailPage({
       user,
-      sessions: sessions.filter((s) => s.accountId === user.sub),
-      grants: grants.filter((g) => g.accountId === user.sub),
-      accessTokens: accessTokens.filter((t) => t.accountId === user.sub),
+      sessions: sessions.filter((s) => s.accountId === user.sub).sort(byLatestExpiry),
+      grants: grants.filter((g) => g.accountId === user.sub).sort(byLatestExpiry),
+      accessTokens: accessTokens.filter((t) => t.accountId === user.sub).sort(byLatestExpiry),
+      clientNames: names,
       grantableRoles: allResourceScopes.filter((role) => !user.roles.includes(role)),
     });
   });
