@@ -37,7 +37,7 @@ resource "aws_lambda_function_url" "lasso" {
 }
 
 module "front" {
-  source = "git::https://github.com/ljhurst/stych.git//infra/modules/function-url-site?ref=v1.8.0"
+  source = "git::https://github.com/ljhurst/stych.git//infra/modules/function-url-site?ref=v1.11.0"
 
   domain_name           = "lasso.bylukehurst.com"
   function_url          = aws_lambda_function_url.lasso.function_url
