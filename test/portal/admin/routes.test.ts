@@ -13,6 +13,18 @@ const store = vi.hoisted(() => ({
 }));
 vi.mock('#src/users/store.ts', () => store);
 
+const data = vi.hoisted(() => ({
+  listSessions: vi.fn(),
+  listGrants: vi.fn(),
+  listAccessTokens: vi.fn(),
+}));
+vi.mock('#src/portal/admin/data.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#src/portal/admin/data.ts')>()),
+  ...data,
+}));
+
+vi.mock('#src/config/clients.ts', () => ({ clientNames: async () => ({}) }));
+
 vi.mock('#src/portal/admin/revocation.ts', () => ({
   revokeGrantsRejectingScope: vi.fn(),
   revokeGrantsWithScope: vi.fn(),
@@ -123,5 +135,59 @@ describe('admin role changes', () => {
 
     expect(response.status).toBe(302);
     expect(store.addRole).toHaveBeenCalledWith('sub-1', 'fife:read');
+  });
+});
+
+describe('admin user page', () => {
+  let server: Server;
+  let baseUrl: string;
+
+  beforeAll(() => {
+    const app = new Koa();
+    app.use(buildAdminRouter({} as Provider).routes());
+    server = app.listen(0);
+    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(() => {
+    server.close();
+  });
+
+  beforeEach(() => {
+    store.getUserBySub.mockResolvedValue(user('sub-1', []));
+    data.listSessions.mockResolvedValue([
+      { id: 'sess-old', accountId: 'sub-1', clientIds: [], expiresAt: 100 },
+      { id: 'sess-none', accountId: 'sub-1', clientIds: [] },
+      { id: 'sess-new', accountId: 'sub-1', clientIds: [], expiresAt: 300 },
+      { id: 'sess-other', accountId: 'sub-2', clientIds: [], expiresAt: 999 },
+    ]);
+    data.listGrants.mockResolvedValue([
+      { id: 'grant-old', accountId: 'sub-1', expiresAt: 100 },
+      { id: 'grant-new', accountId: 'sub-1', expiresAt: 300 },
+    ]);
+    data.listAccessTokens.mockResolvedValue([
+      { id: 't1', accountId: 'sub-1', scope: 'tok:old', expiresAt: 100 },
+      { id: 't2', accountId: 'sub-1', scope: 'tok:new', expiresAt: 300 },
+    ]);
+  });
+
+  async function page(): Promise<string> {
+    return (await fetch(`${baseUrl}/admin/users/sub-1`)).text();
+  }
+
+  it.each([
+    ['sessions', ['sess-new', 'sess-old', 'sess-none']],
+    ['grants', ['grant-new', 'grant-old']],
+    ['access tokens', ['tok:new', 'tok:old']],
+  ])('lists %s newest first', async (_name, expected) => {
+    const html = await page();
+    const positions = expected.map((marker) => html.indexOf(marker));
+
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((a, b) => a - b));
+  });
+
+  it("leaves out another account's rows", async () => {
+    expect(await page()).not.toContain('sess-other');
   });
 });
