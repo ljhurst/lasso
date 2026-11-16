@@ -7,7 +7,9 @@ export function ErrorPage(props: { error: string; errorDescription?: string }) {
       heading="Something went wrong"
       subtitle={props.errorDescription ?? 'An unexpected error occurred.'}
     >
-      <p class="meta">Error code: {props.error}</p>
+      <p class="meta" safe>
+        Error code: {props.error}
+      </p>
     </AuthLayout>
   );
 }

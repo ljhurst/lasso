@@ -18,6 +18,23 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
+  - package-ecosystem: npm
+    directory: /scripts/xss-scan
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      monthly-batch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: terraform
     directory: /infra
     schedule:

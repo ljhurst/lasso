@@ -26,6 +26,9 @@ function render(overrides: Partial<Parameters<typeof UserDetailPage>[0]> = {}) {
   });
 }
 
+const HOSTILE = '<img src=x onerror=alert(1)>';
+const BREAKOUT = '"><img src=x onerror=alert(1)>';
+
 describe('UserDetailPage', () => {
   it('shows the sub', async () => {
     expect(await render()).toContain(user.sub);
@@ -82,5 +85,29 @@ describe('UserDetailPage', () => {
 
     expect(html).not.toContain('<script>alert(1)</script>');
     expect(html).toContain('&lt;script>');
+  });
+
+  it.each([
+    ['given name', { user: { ...user, givenName: HOSTILE } }],
+    ['email', { user: { ...user, email: HOSTILE } }],
+    ['session id', { sessions: [{ id: HOSTILE, clientIds: [] }] }],
+    ['grant id', { grants: [{ id: HOSTILE, clientId: 'freal' }] }],
+    ['token scope', { accessTokens: [{ id: 't', clientId: 'freal', scope: HOSTILE }] }],
+  ])('escapes a hostile %s', async (_name, overrides) => {
+    const html = await render(overrides);
+
+    expect(html).not.toContain(HOSTILE);
+    expect(html).toContain('&lt;img');
+  });
+
+  it.each([
+    ['held', { user: { ...user, roles: [BREAKOUT] } }],
+    ['to grant', { grantableRoles: [BREAKOUT] }],
+  ])('keeps a role %s inside its attribute and escapes its label', async (_name, overrides) => {
+    const html = await render(overrides);
+
+    expect(html).not.toContain('"><img');
+    expect(html).toContain('&#34;');
+    expect(html).toContain('&lt;img');
   });
 });

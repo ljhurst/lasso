@@ -71,3 +71,9 @@ repos:
         language: system
         files: ^(src|test|scripts)/.*\.ts$
         pass_filenames: false
+      - id: xss-scan
+        name: xss-scan (unescaped values in views)
+        entry: npm run xss-scan
+        language: system
+        files: ^(src/.*\.tsx|scripts/xss-scan/.*)$
+        pass_filenames: false

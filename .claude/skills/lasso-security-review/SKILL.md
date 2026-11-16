@@ -64,7 +64,10 @@ Answer each question against the diff. Skip a question the diff cannot affect.
 - **Admin** (`src/portal/admin/`): the admin role is checked on every
   handler including POSTs, state-changing forms resist CSRF, and revocation
   actually revokes.
-- **Output**: views never put user data into raw or unescaped HTML.
+- **Output**: in these views `{value}` prints raw unless its element has
+  `safe` (`@kitajs/html` has no default escaping). The `xss-scan` hook must
+  pass, and any `as 'safe'` cast must be a constant or the provider's own
+  HTML, never stored or request data.
 - **Logs** (`src/observability/`): no passwords, tokens, codes, typed
   emails, query strings or interaction uids.
 - **Storage** (`src/adapter/`): key construction cannot reach another record

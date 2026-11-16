@@ -6,9 +6,9 @@ import { Empty, Layout, List, Table } from '#src/portal/views/layout.tsx';
 function clientRow(client: ClientMetadata) {
   return (
     <tr>
-      <td>{client.client_name}</td>
+      <td safe>{client.client_name}</td>
       <td>
-        <code>{client.client_id}</code>
+        <code safe>{client.client_id}</code>
       </td>
       <td>
         <List items={client.redirect_uris ?? []} mono />
@@ -44,9 +44,9 @@ export async function DashboardPage() {
           <Table columns={['Name', 'Resource indicator', 'Scope', 'Access token format']}>
             {resourceEntries.map(([indicator, resource]) => (
               <tr>
-                <td>{resource.name}</td>
+                <td safe>{resource.name}</td>
                 <td>
-                  <code>{indicator}</code>
+                  <code safe>{indicator}</code>
                 </td>
                 <td>
                   <List items={resource.scope?.split(' ') ?? []} mono />

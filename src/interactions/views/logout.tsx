@@ -9,7 +9,7 @@ export function LogoutPage(props: { form: string; clientName?: string }) {
         props.clientName ? `Sign out of Lasso for ${props.clientName}?` : 'Sign out of Lasso?'
       }
     >
-      {props.form}
+      {props.form as 'safe'}
       <div class="actions">
         <button autofocus type="submit" form="op.logoutForm" name="logout" value="yes">
           Yes, sign me out

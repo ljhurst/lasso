@@ -13,13 +13,13 @@ export function UserDetailPage(props: {
   return (
     <Layout title={props.user.email} active="/admin/users" isAdmin={true}>
       <section>
-        <h2>
+        <h2 safe>
           {props.user.givenName} {props.user.familyName}
         </h2>
         <Table columns={['Email', 'User ID (sub)', 'Roles']}>
           <tr>
             <td>
-              <code>{props.user.email}</code>
+              <code safe>{props.user.email}</code>
             </td>
             <td>
               <code class="sub" safe>
@@ -40,7 +40,9 @@ export function UserDetailPage(props: {
           <form method="post" action={`/admin/users/${props.user.sub}/roles`}>
             <select name="role">
               {props.grantableRoles.toSorted().map((role) => (
-                <option value={role}>{role}</option>
+                <option value={role} safe>
+                  {role}
+                </option>
               ))}
             </select>
             <button type="submit">Grant</button>
@@ -55,7 +57,9 @@ export function UserDetailPage(props: {
           <form method="post" action={`/admin/users/${props.user.sub}/roles/remove`}>
             <select name="role">
               {props.user.roles.toSorted().map((role) => (
-                <option value={role}>{role}</option>
+                <option value={role} safe>
+                  {role}
+                </option>
               ))}
             </select>
             <button type="submit">Remove</button>
@@ -93,7 +97,7 @@ export function UserDetailPage(props: {
                   <Time seconds={session.expiresAt} />
                 </td>
                 <td>
-                  <code>{session.id}</code>
+                  <code safe>{session.id}</code>
                 </td>
               </tr>
             ))}
@@ -118,7 +122,7 @@ export function UserDetailPage(props: {
                   <Time seconds={grant.expiresAt} />
                 </td>
                 <td>
-                  <code>{grant.id}</code>
+                  <code safe>{grant.id}</code>
                 </td>
               </tr>
             ))}
