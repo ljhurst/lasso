@@ -28,7 +28,7 @@ describe('custom domain resources', () => {
     [
       'https://freal-api.bylukehurst.com/',
       'Freal',
-      'freal:read freal:connect',
+      'freal:read freal:connect freal:admin',
       'https://freal.bylukehurst.com/',
     ],
   ])(
