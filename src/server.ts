@@ -24,6 +24,7 @@ async function main(): Promise<void> {
   attachProviderEvents(provider);
   provider.use(requestLog());
 
+  const guarded = Boolean(env.originVerifySsmParam);
   if (env.originVerifySsmParam) {
     provider.use(originGuard(await getParameter(env.originVerifySsmParam)));
   }
@@ -51,7 +52,7 @@ async function main(): Promise<void> {
   createServer(provider.callback()).listen(env.port, () => {
     const startupMs = performance.now();
     console.log(
-      `lasso listening on :${env.port} (startup ${startupMs.toFixed(0)} ms, config ${configMs.toFixed(0)} ms)`,
+      `lasso listening on :${env.port} (startup ${startupMs.toFixed(0)} ms, config ${configMs.toFixed(0)} ms, origin guard ${guarded ? 'on' : 'off'})`,
     );
   });
 }

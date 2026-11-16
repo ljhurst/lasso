@@ -17,5 +17,7 @@ export const env = {
     portoVictoria: required('LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM'),
   },
   issuer: required('LASSO_ISSUER'),
-  originVerifySsmParam: process.env.LASSO_ORIGIN_VERIFY_SSM_PARAM,
+  originVerifySsmParam: process.env.AWS_LAMBDA_FUNCTION_NAME
+    ? required('LASSO_ORIGIN_VERIFY_SSM_PARAM')
+    : process.env.LASSO_ORIGIN_VERIFY_SSM_PARAM,
 };
