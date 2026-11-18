@@ -1,5 +1,5 @@
 import type Provider from 'oidc-provider';
-import { listGrants } from '#src/portal/admin/data.ts';
+import { listGrants, listSessions } from '#src/portal/admin/data.ts';
 
 type Grant = InstanceType<Provider['Grant']>;
 
@@ -27,6 +27,21 @@ export async function revokeGrantsRejectingScope(
   scope: string,
 ): Promise<void> {
   await revokeGrantsWhere(provider, sub, (grant) => grantRejectsScope(grant, scope));
+}
+
+/**
+ * Ends every browser session the account holds, then revokes every grant and
+ * the tokens issued under it. Sessions go first so no sign-in is left that
+ * could start a new grant.
+ */
+export async function revokeAllAccess(provider: Provider, sub: string): Promise<void> {
+  const sessions = (await listSessions()).filter((row) => row.accountId === sub);
+  for (const row of sessions) {
+    const session = await provider.Session.find(row.id);
+    await session?.destroy();
+  }
+
+  await revokeGrantsWhere(provider, sub, () => true);
 }
 
 async function revokeGrantsWhere(

@@ -15,6 +15,7 @@ export function UserDetailPage(props: {
   accessTokens: AccessTokenRow[];
   roles: HeldRole[];
   grantableRoles: string[];
+  canDelete: boolean;
 }) {
   return (
     <Layout title={props.user.email} active="/admin/users" isAdmin={true}>
@@ -128,6 +129,15 @@ export function UserDetailPage(props: {
           />
         )}
       </section>
+      {props.canDelete ? (
+        <section>
+          <h2>Delete user</h2>
+          <p class="empty">Removes the account and signs them out everywhere.</p>
+          <a class="row-action danger" href={`/admin/users/${props.user.sub}/delete`}>
+            Delete user
+          </a>
+        </section>
+      ) : null}
     </Layout>
   );
 }

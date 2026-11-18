@@ -3,11 +3,19 @@ import type { AddressInfo } from 'node:net';
 import Koa from 'koa';
 import type Provider from 'oidc-provider';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildAdminRouter, buildHeldRoles, canRemoveRole } from '#src/portal/admin/routes.ts';
+import { logEvent } from '#src/observability/events.ts';
+import {
+  buildAdminRouter,
+  buildHeldRoles,
+  canDeleteUser,
+  canRemoveRole,
+} from '#src/portal/admin/routes.ts';
+import { revokeAllAccess } from '#src/portal/admin/revocation.ts';
 
 const store = vi.hoisted(() => ({
   addRole: vi.fn(),
   removeRole: vi.fn(),
+  deleteUser: vi.fn(),
   getUserBySub: vi.fn(),
   listUsers: vi.fn(),
 }));
@@ -23,7 +31,10 @@ vi.mock('#src/portal/admin/data.ts', async (importOriginal) => ({
   ...data,
 }));
 
+vi.mock('#src/observability/events.ts', () => ({ logEvent: vi.fn() }));
+
 vi.mock('#src/portal/admin/revocation.ts', () => ({
+  revokeAllAccess: vi.fn(),
   revokeGrantsRejectingScope: vi.fn(),
   revokeGrantsWithScope: vi.fn(),
 }));
@@ -71,6 +82,16 @@ describe('buildHeldRoles', () => {
 
     expect(own?.blockedReason).toBe("Can't remove your own admin role");
     expect(theirs?.blockedReason).toBeUndefined();
+  });
+});
+
+describe('canDeleteUser', () => {
+  it("allows deleting someone else's account", () => {
+    expect(canDeleteUser(user('sub-1', []), 'admin')).toBe(true);
+  });
+
+  it('refuses an admin deleting their own account', () => {
+    expect(canDeleteUser(user('admin', ['lasso:admin']), 'admin')).toBe(false);
   });
 });
 
@@ -215,5 +236,95 @@ describe('admin user page', () => {
 
   it("leaves out another account's rows", async () => {
     expect(await page()).not.toContain('sess-other');
+  });
+});
+
+describe('admin user deletion', () => {
+  let server: Server;
+  let baseUrl: string;
+
+  beforeAll(() => {
+    const app = new Koa();
+    app.use(buildAdminRouter({} as Provider).routes());
+    server = app.listen(0);
+    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(() => {
+    server.close();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    store.getUserBySub.mockResolvedValue(user('sub-1', []));
+  });
+
+  function postDelete(sub: string, site = 'same-origin'): Promise<Response> {
+    return fetch(`${baseUrl}/admin/users/${sub}/delete`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { 'sec-fetch-site': site },
+    });
+  }
+
+  it('asks for confirmation before deleting anything', async () => {
+    const response = await fetch(`${baseUrl}/admin/users/sub-1/delete`);
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('action="/admin/users/sub-1/delete"');
+    expect(store.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it('ends their access first, then deletes the account', async () => {
+    const response = await postDelete('sub-1');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('/admin/users');
+    expect(revokeAllAccess).toHaveBeenCalledWith(expect.anything(), 'sub-1');
+    expect(store.deleteUser).toHaveBeenCalledWith('sub-1');
+    expect(vi.mocked(revokeAllAccess).mock.invocationCallOrder[0]).toBeLessThan(
+      store.deleteUser.mock.invocationCallOrder[0] as number,
+    );
+  });
+
+  it('logs who deleted whom, without the email', async () => {
+    await postDelete('sub-1');
+
+    expect(logEvent).toHaveBeenCalledWith({ event: 'user_deleted', sub: 'sub-1', by: 'admin' });
+  });
+
+  it('keeps the account when ending their access fails', async () => {
+    vi.mocked(revokeAllAccess).mockRejectedValueOnce(new Error('boom'));
+
+    const response = await postDelete('sub-1');
+
+    expect(response.status).toBe(500);
+    expect(store.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it('refuses to delete your own account', async () => {
+    store.getUserBySub.mockResolvedValue(user('admin', ['lasso:admin']));
+
+    const response = await postDelete('admin');
+
+    expect(response.headers.get('location')).toBe('/admin/users/admin');
+    expect(revokeAllAccess).not.toHaveBeenCalled();
+    expect(store.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it('sends you back to the list for an unknown user', async () => {
+    store.getUserBySub.mockResolvedValue(undefined);
+
+    const response = await postDelete('nobody');
+
+    expect(response.headers.get('location')).toBe('/admin/users');
+    expect(store.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it('refuses a delete sent from another site', async () => {
+    const response = await postDelete('sub-1', 'cross-site');
+
+    expect(response.status).toBe(403);
+    expect(store.deleteUser).not.toHaveBeenCalled();
   });
 });
