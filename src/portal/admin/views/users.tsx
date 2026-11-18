@@ -5,6 +5,7 @@ import { List } from '#src/portal/views/components/list.tsx';
 import { Table } from '#src/portal/views/components/table.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
+import { fullName } from '#src/users/name.ts';
 
 export function UsersListPage(props: { users: User[] }) {
   return (
@@ -23,7 +24,7 @@ export function UsersListPage(props: { users: User[] }) {
             columns={['Name', 'Email', 'Roles', 'Status']}
             rows={props.users.toSorted(byFirstName).map((user) => [
               <a class="name-link" href={adminUrl.user(user.sub)} safe>
-                {user.givenName} {user.familyName}
+                {fullName(user)}
               </a>,
               <code safe>{user.email}</code>,
               <List items={user.roles} mono />,

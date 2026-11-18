@@ -56,4 +56,11 @@ describe('NewUserPage', () => {
     expect(html).not.toContain('"><img');
     expect(html).toContain('&#34;');
   });
+
+  it('shows a way back to the users list above the form', async () => {
+    const html = await NewUserPage({});
+
+    expect(html).toContain('<li><a href="/admin/users">Users</a></li>');
+    expect(html).not.toContain('aria-current');
+  });
 });

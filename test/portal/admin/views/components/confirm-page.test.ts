@@ -52,4 +52,12 @@ describe('ConfirmPage', () => {
 
     expect(html).not.toContain(hostile);
   });
+
+  it('links back up to the users list and the person', async () => {
+    const html = await render();
+
+    expect(html).toContain('<li><a href="/admin/users">Users</a></li>');
+    expect(html).toContain('<li><a href="/admin/users/sub-1">Friend Person</a></li>');
+    expect(html).not.toContain('aria-current');
+  });
 });

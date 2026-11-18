@@ -7,5 +7,6 @@ describe('CopyButton', () => {
 
     expect(html).toContain('data-copy-target="temp-password"');
     expect(html).toContain('aria-label="Copy"');
+    expect(html).toContain('class="icon-button"');
   });
 });

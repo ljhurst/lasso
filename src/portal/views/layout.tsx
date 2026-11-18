@@ -1,8 +1,10 @@
 import type { Children } from '@kitajs/html';
+import { DOCTYPE } from '#src/doctype.ts';
 import pkg from '#package.json' with { type: 'json' };
 import { APPLE_TOUCH_ICON_HREF, FAVICON_HREF, LassoMark, THEME_STYLES } from '#src/branding.tsx';
 import PAGE_SCRIPT from '#src/portal/views/page.js' with { type: 'text' };
 import STYLES from '#src/portal/views/styles.css' with { type: 'text' };
+import { type Crumb, Breadcrumbs } from '#src/portal/views/components/breadcrumbs.tsx';
 import { adminUrl, APPS_URL } from '#src/portal/paths.ts';
 
 const BASE_NAV_ITEMS = [{ href: APPS_URL, label: 'My Apps' }];
@@ -11,15 +13,16 @@ const ADMIN_NAV_ITEMS = [
   { href: adminUrl.users(), label: 'Users' },
 ];
 
-export function Layout(props: {
+export async function Layout(props: {
   title: string;
   active: string;
   isAdmin: boolean;
+  crumbs?: Crumb[];
   children: Children;
 }) {
   const navItems = props.isAdmin ? [...BASE_NAV_ITEMS, ...ADMIN_NAV_ITEMS] : BASE_NAV_ITEMS;
 
-  return (
+  const page = (
     <html lang="en">
       <head>
         <meta charset="utf-8" />
@@ -34,11 +37,13 @@ export function Layout(props: {
       <body>
         <div class="shell">
           <header>
-            <div class="brand">
+            <a class="home" href={APPS_URL}>
               <span class="mark">
                 <LassoMark />
               </span>
               <h1>Lasso</h1>
+            </a>
+            {navItems.length > 1 ? (
               <nav>
                 {navItems.map((item) => (
                   <a href={item.href} class={item.href === props.active ? 'active' : ''} safe>
@@ -46,18 +51,22 @@ export function Layout(props: {
                   </a>
                 ))}
               </nav>
-            </div>
+            ) : null}
             <form method="post" action="/portal/logout">
               <button type="submit" class="logout">
                 Log out
               </button>
             </form>
           </header>
-          <main>{props.children}</main>
+          <main>
+            {props.crumbs ? <Breadcrumbs items={props.crumbs} /> : null}
+            {props.children}
+          </main>
           <footer safe>v{pkg.version}</footer>
         </div>
         <script>{PAGE_SCRIPT}</script>
       </body>
     </html>
   );
+  return DOCTYPE + (await page);
 }

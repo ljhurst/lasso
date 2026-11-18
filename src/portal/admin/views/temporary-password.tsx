@@ -5,6 +5,7 @@ import { Facts } from '#src/portal/views/components/facts.tsx';
 import { Time } from '#src/portal/views/components/time.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
+import { fullName } from '#src/users/name.ts';
 
 export function TemporaryPasswordPage(props: {
   mode: 'created' | 'reset';
@@ -13,9 +14,17 @@ export function TemporaryPasswordPage(props: {
   expiresAt?: number;
 }) {
   const { mode, user } = props;
-  const heading = `${mode === 'created' ? 'Created' : 'Password reset for'} ${user.givenName} ${user.familyName}`;
+  const heading = `${mode === 'created' ? 'Created' : 'Password reset for'} ${fullName(user)}`;
   return (
-    <Layout title="Temporary password" active={adminUrl.users()} isAdmin={true}>
+    <Layout
+      title="Temporary password"
+      active={adminUrl.users()}
+      isAdmin={true}
+      crumbs={[
+        { label: 'Users', href: adminUrl.users() },
+        { label: fullName(user), href: adminUrl.user(user.sub) },
+      ]}
+    >
       <section>
         <h2 safe>{heading}</h2>
         <Facts items={[emailFact(user)]} />

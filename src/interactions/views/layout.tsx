@@ -1,6 +1,7 @@
 import type { Children } from '@kitajs/html';
 import pkg from '#package.json' with { type: 'json' };
 import { APPLE_TOUCH_ICON_HREF, FAVICON_HREF, LassoMark, THEME_STYLES } from '#src/branding.tsx';
+import { DOCTYPE } from '#src/doctype.ts';
 
 const AUTH_STYLES = `
   body {
@@ -179,14 +180,14 @@ const SUBMIT_LOADING_SCRIPT = `
   });
 `;
 
-export function AuthLayout(props: {
+export async function AuthLayout(props: {
   title: string;
   heading: string;
   subtitle?: string;
   error?: string;
   children: Children;
 }) {
-  return (
+  const page = (
     <html lang="en">
       <head>
         <meta charset="utf-8" />
@@ -226,6 +227,7 @@ export function AuthLayout(props: {
       </body>
     </html>
   );
+  return DOCTYPE + (await page);
 }
 
 export function SubmitButton(props: { label: string }) {

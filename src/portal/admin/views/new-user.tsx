@@ -13,7 +13,12 @@ const EMPTY_FORM: NewUserForm = { givenName: '', familyName: '', email: '' };
 export function NewUserPage(props: { error?: string; values?: NewUserForm }) {
   const values = props.values ?? EMPTY_FORM;
   return (
-    <Layout title="Add a user" active={adminUrl.users()} isAdmin={true}>
+    <Layout
+      title="Add a user"
+      active={adminUrl.users()}
+      isAdmin={true}
+      crumbs={[{ label: 'Users', href: adminUrl.users() }]}
+    >
       <section>
         <h2>Add a user</h2>
         {props.error ? (
