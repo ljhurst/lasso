@@ -4,7 +4,16 @@ import { requireSameOrigin } from '#src/auth/same-origin.ts';
 import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
 import { readForm } from '#src/form-body.ts';
 import { logEvent } from '#src/observability/events.ts';
-import { addRole, deleteUser, getUserBySub, listUsers, removeRole } from '#src/users/store.ts';
+import { parseNewUser, buildNewUser } from '#src/users/provision.ts';
+import {
+  addRole,
+  createUser,
+  deleteUser,
+  getUserByEmail,
+  getUserBySub,
+  listUsers,
+  removeRole,
+} from '#src/users/store.ts';
 import { buildRequirePortalSession, requireAdmin } from '#src/portal/auth/session.ts';
 import {
   byLatestExpiry,
@@ -18,8 +27,10 @@ import {
   revokeGrantsWithScope,
 } from '#src/portal/admin/revocation.ts';
 import { DashboardPage } from '#src/portal/admin/views/dashboard.tsx';
+import { CreatedUserPage } from '#src/portal/admin/views/created-user.tsx';
 import { DeleteUserPage } from '#src/portal/admin/views/delete-user.tsx';
 import { type HeldRole, UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
+import { type NewUserForm, NewUserPage } from '#src/portal/admin/views/new-user.tsx';
 import { UsersListPage } from '#src/portal/admin/views/users.tsx';
 import type { User } from '#src/users/types.ts';
 
@@ -72,10 +83,39 @@ export function buildAdminRouter(provider: Provider): Router {
   });
 
   router.get('/users', async (ctx) => {
-    const users = await listUsers();
-
     ctx.type = 'html';
-    ctx.body = await UsersListPage({ users });
+    ctx.body = await UsersListPage({ users: await listUsers() });
+  });
+
+  router.get('/users/new', async (ctx) => {
+    ctx.type = 'html';
+    ctx.body = await NewUserPage({});
+  });
+
+  router.post('/users', async (ctx) => {
+    const form = await readForm(ctx);
+    const parsed = parseNewUser(form);
+    if ('error' in parsed) {
+      await renderNewUserPage(ctx, { error: parsed.error, values: formValues(form) });
+      return;
+    }
+
+    const { user, tempPassword } = await buildNewUser({ ...parsed.details, roles: [] });
+
+    if (await getUserByEmail(user.email)) {
+      await renderNewUserPage(ctx, {
+        error: 'A user with that email already exists.',
+        values: formValues(form),
+      });
+      return;
+    }
+
+    await createUser(user);
+    logEvent({ event: 'user_created', sub: user.sub, by: ctx.state.user.sub });
+
+    ctx.set('Cache-Control', 'no-store');
+    ctx.type = 'html';
+    ctx.body = await CreatedUserPage({ user, tempPassword });
   });
 
   router.get('/users/:sub', async (ctx) => {
@@ -160,4 +200,21 @@ async function findDeletableUser(ctx: RouterContext): Promise<User | undefined> 
   }
   ctx.redirect(user ? `/admin/users/${user.sub}` : '/admin/users');
   return undefined;
+}
+
+async function renderNewUserPage(
+  ctx: RouterContext,
+  form: { error: string; values: NewUserForm },
+): Promise<void> {
+  ctx.status = 400;
+  ctx.type = 'html';
+  ctx.body = await NewUserPage(form);
+}
+
+function formValues(form: URLSearchParams): NewUserForm {
+  return {
+    givenName: form.get('givenName') ?? '',
+    familyName: form.get('familyName') ?? '',
+    email: form.get('email') ?? '',
+  };
 }

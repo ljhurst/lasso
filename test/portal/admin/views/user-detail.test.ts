@@ -156,6 +156,33 @@ describe('UserDetailPage', () => {
     expect(html).not.toContain('/delete"');
   });
 
+  describe('lifecycle', () => {
+    it('says a user on the temporary password is waiting for first sign-in', async () => {
+      const html = await render({ user: { ...user, mustChangePassword: true } });
+
+      expect(html).toContain('<dt>Status</dt><dd><span>Hasn&#39;t signed in yet</span></dd>');
+    });
+
+    it('says a user who set their own password is active', async () => {
+      const html = await render({ user: { ...user, mustChangePassword: false } });
+
+      expect(html).toContain('<dt>Status</dt><dd><span>Active</span></dd>');
+    });
+
+    it('shows when the account was created', async () => {
+      const html = await render();
+
+      expect(html).toContain('<dt>Created</dt>');
+      expect(html).toContain('datetime="2026-01-01T00:00:00.000Z"');
+    });
+
+    it('shows a dash rather than failing when the created time is unreadable', async () => {
+      const html = await render({ user: { ...user, createdAt: 'not a date' } });
+
+      expect(html).toMatch(/<dt>Created<\/dt><dd><span class="empty-cell">—<\/span><\/dd>/);
+    });
+  });
+
   it('shows a dash for a session with no apps', async () => {
     const html = await render({ sessions: [{ id: 's-1', clientIds: [] }] });
 

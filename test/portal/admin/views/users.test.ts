@@ -40,4 +40,25 @@ describe('UsersListPage', () => {
     expect(html).toContain('data-label="Roles"');
     expect(html).toMatch(/<td role="cell"><a class="row-action" href="\/admin\/users\/sub-1">/);
   });
+
+  it('links to the add-user page and has no form of its own', async () => {
+    const html = await UsersListPage({ users: [] });
+
+    expect(html).toContain('href="/admin/users/new"');
+    expect(html).not.toContain('action="/admin/users"');
+    expect(html).not.toContain('name="email"');
+  });
+
+  it("shows each user's status", async () => {
+    const html = await UsersListPage({
+      users: [
+        user({ sub: 'a', mustChangePassword: true }),
+        user({ sub: 'b', mustChangePassword: false }),
+      ],
+    });
+
+    expect(html).toContain('data-label="Status"');
+    expect(html).toContain('<span>Hasn&#39;t signed in yet</span>');
+    expect(html).toContain('<span>Active</span>');
+  });
 });
