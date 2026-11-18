@@ -2,7 +2,7 @@ export function CopyButton(props: { target: string }) {
   return (
     <button
       type="button"
-      class="copy-icon-button"
+      class="icon-button"
       data-copy-target={props.target}
       aria-label="Copy"
       title="Copy"

@@ -149,12 +149,19 @@ describe('UserDetailPage', () => {
   });
 
   describe('milder actions', () => {
-    it('outlines Reset password and Remove in red, and leaves Delete filled', async () => {
-      const html = await render({ roles: [{ role: 'freal:read', registered: true }] });
+    it('outlines Reset password in red and leaves Delete filled', async () => {
+      const html = await render();
 
       expect(html).toMatch(/class="row-action caution" href="[^"]*\/reset-password"/);
-      expect(html).toMatch(/class="row-action caution"\s+aria-label="Remove freal:read"/);
       expect(html).toMatch(/class="row-action danger" href="[^"]*\/delete"/);
+    });
+
+    it('removes a role with a small icon button that still says what it does', async () => {
+      const html = await render({ roles: [{ role: 'freal:read', registered: true }] });
+
+      expect(html).toMatch(/class="icon-button caution"\s+aria-label="Remove freal:read"/);
+      expect(html).toContain('title="Remove freal:read"');
+      expect(html).not.toContain('>Remove<');
     });
   });
 
@@ -251,5 +258,12 @@ describe('UserDetailPage', () => {
     expect(html).not.toContain('"><img');
     expect(html).toContain('&#34;');
     expect(html).toContain('&lt;img');
+  });
+
+  it('shows a way back to the users list above the page', async () => {
+    const html = await render();
+
+    expect(html).toContain('<li><a href="/admin/users">Users</a></li>');
+    expect(html).not.toContain('aria-current');
   });
 });

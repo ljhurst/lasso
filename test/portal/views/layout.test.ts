@@ -7,6 +7,41 @@ function render(overrides: Partial<Parameters<typeof Layout>[0]> = {}) {
   return Layout({ title: 't', active: '/', isAdmin: false, children: 'x', ...overrides });
 }
 
+describe('Layout document', () => {
+  it('starts with a doctype so browsers do not use quirks mode', async () => {
+    expect(await render()).toMatch(/^<!doctype html><html/);
+  });
+});
+
+describe('Layout header', () => {
+  it('links the logo to the apps page', async () => {
+    expect(await render()).toContain('<a class="home" href="/apps">');
+  });
+
+  it('shows no navigation to someone with only one place to go', async () => {
+    expect(await render({ isAdmin: false })).not.toContain('<nav>');
+  });
+
+  it('shows the navigation to an admin', async () => {
+    expect(await render({ isAdmin: true })).toContain('<nav><a href="/apps"');
+  });
+});
+
+describe('Layout breadcrumbs', () => {
+  const crumbs = [{ label: 'Users', href: '/admin/users' }];
+
+  it('puts the trail above the page content', async () => {
+    const html = await render({ crumbs, children: 'PAGE-CONTENT' });
+
+    expect(html.indexOf('aria-label="Breadcrumb"')).toBeGreaterThan(-1);
+    expect(html.indexOf('aria-label="Breadcrumb"')).toBeLessThan(html.indexOf('PAGE-CONTENT'));
+  });
+
+  it('shows no trail when none is given', async () => {
+    expect(await render()).not.toContain('aria-label="Breadcrumb"');
+  });
+});
+
 describe('Layout stylesheet', () => {
   it('inlines the portal stylesheet', async () => {
     const html = await render();

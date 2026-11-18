@@ -22,7 +22,9 @@ describe('DeleteUserPage', () => {
   it('lists what happens as separate points', async () => {
     const html = await DeleteUserPage({ user });
 
-    expect(html.match(/<li>/g)).toHaveLength(4);
+    const list = html.match(/<ul class="consequences">.*?<\/ul>/s)?.[0] ?? '';
+
+    expect(list.match(/<li>/g)).toHaveLength(4);
     expect(html).toContain("can't be undone");
   });
 

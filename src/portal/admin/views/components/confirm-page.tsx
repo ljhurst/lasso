@@ -3,6 +3,7 @@ import type { User } from '#src/users/types.ts';
 import { PersonFacts } from '#src/portal/admin/views/components/person-facts.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
+import { fullName } from '#src/users/name.ts';
 
 /** A step-before-you-do-it page: who it affects, what will happen, then act or cancel. */
 export function ConfirmPage(props: {
@@ -16,7 +17,15 @@ export function ConfirmPage(props: {
 }) {
   const { user } = props;
   return (
-    <Layout title={props.title} active={adminUrl.users()} isAdmin={true}>
+    <Layout
+      title={props.title}
+      active={adminUrl.users()}
+      isAdmin={true}
+      crumbs={[
+        { label: 'Users', href: adminUrl.users() },
+        { label: fullName(user), href: adminUrl.user(user.sub) },
+      ]}
+    >
       <section>
         <h2 safe>{props.heading}</h2>
         <PersonFacts user={user} />

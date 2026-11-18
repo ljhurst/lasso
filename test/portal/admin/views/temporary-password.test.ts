@@ -71,4 +71,16 @@ describe('TemporaryPasswordPage', () => {
     expect(html).not.toContain('<img src=x');
     expect(html).toContain('&lt;img');
   });
+
+  it('links back up to the users list and the person', async () => {
+    const html = await TemporaryPasswordPage({
+      mode: 'created',
+      user,
+      tempPassword: PASSWORD,
+    });
+
+    expect(html).toContain('<li><a href="/admin/users">Users</a></li>');
+    expect(html).toContain(`<li><a href="/admin/users/${user.sub}">Friend Person</a></li>`);
+    expect(html).not.toContain('aria-current');
+  });
 });

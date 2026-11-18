@@ -11,6 +11,7 @@ import { Table } from '#src/portal/views/components/table.tsx';
 import { Time } from '#src/portal/views/components/time.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
+import { fullName } from '#src/users/name.ts';
 
 export function UserDetailPage(props: {
   user: User;
@@ -22,11 +23,14 @@ export function UserDetailPage(props: {
   canManage: boolean;
 }) {
   return (
-    <Layout title={props.user.email} active={adminUrl.users()} isAdmin={true}>
+    <Layout
+      title={props.user.email}
+      active={adminUrl.users()}
+      isAdmin={true}
+      crumbs={[{ label: 'Users', href: adminUrl.users() }]}
+    >
       <section>
-        <h2 safe>
-          {props.user.givenName} {props.user.familyName}
-        </h2>
+        <h2 safe>{fullName(props.user)}</h2>
         <Facts
           items={[
             emailFact(props.user),
@@ -190,11 +194,19 @@ function RoleRow(props: { held: HeldRole; sub: string }) {
         <input type="hidden" name="role" value={held.role} />
         <button
           type="submit"
-          class="row-action caution"
+          class="icon-button caution"
           aria-label={`Remove ${held.role}`}
+          title={`Remove ${held.role}`}
           disabled={Boolean(held.blockedReason)}
         >
-          Remove
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path
+              d="M3.5 3.5L12.5 12.5M12.5 3.5L3.5 12.5"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
         </button>
       </form>
     </li>
