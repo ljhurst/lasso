@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getUserApps } from '#src/portal/apps/routes.ts';
+import { getUserApps } from '#src/portal/apps/apps.ts';
 
 describe('getUserApps', () => {
   it('returns nothing for a user with no roles', () => {

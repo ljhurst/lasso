@@ -2,7 +2,7 @@ import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { primaryKey } from '#src/adapter/keys.ts';
-import { byLatestExpiry, listGrants, listSessions } from '#src/portal/admin/data.ts';
+import { listGrants, listSessions } from '#src/adapter/records.ts';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 
@@ -69,30 +69,5 @@ describe('listSessions', () => {
     const [session] = await listSessions();
 
     expect(session?.clientIds).toEqual([]);
-  });
-});
-
-describe('byLatestExpiry', () => {
-  it('puts the row that expires last first', () => {
-    const rows = [{ expiresAt: 100 }, { expiresAt: 300 }, { expiresAt: 200 }];
-
-    expect(rows.sort(byLatestExpiry).map((r) => r.expiresAt)).toEqual([300, 200, 100]);
-  });
-
-  it('puts rows with no expiry last', () => {
-    const rows = [{ id: 'none' }, { id: 'old', expiresAt: 100 }, { id: 'new', expiresAt: 300 }];
-
-    expect(rows.sort(byLatestExpiry).map((r) => r.id)).toEqual(['new', 'old', 'none']);
-  });
-
-  it('keeps rows with the same expiry in their original order', () => {
-    const rows = [
-      { id: 'a', expiresAt: 100 },
-      { id: 'b', expiresAt: 100 },
-      { id: 'c' },
-      { id: 'd' },
-    ];
-
-    expect(rows.sort(byLatestExpiry).map((r) => r.id)).toEqual(['a', 'b', 'c', 'd']);
   });
 });

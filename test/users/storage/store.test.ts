@@ -19,22 +19,12 @@ import {
   removeRole,
   setTemporaryPassword,
   updatePassword,
-} from '#src/users/store.ts';
+} from '#src/users/storage/store.ts';
+import { makeUser } from '#test/support/users.ts';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 
-const user = {
-  sub: 'sub-1',
-  email: 'friend@example.com',
-  emailVerified: true,
-  givenName: 'Friend',
-  familyName: 'Person',
-  passwordHash: 'hash',
-  passwordSalt: 'salt',
-  mustChangePassword: false,
-  roles: [],
-  createdAt: '2026-01-01T00:00:00.000Z',
-};
+const user = makeUser();
 
 beforeEach(() => {
   ddbMock.reset();

@@ -11,10 +11,11 @@ import {
   rejectPassword,
   verifyPassword,
 } from '#src/users/password.ts';
-import { clearLoginAttempts, reserveLoginAttempt } from '#src/users/login-throttle.ts';
+import { clearLoginAttempts, reserveLoginAttempt } from '#src/users/storage/login-throttle.ts';
 import { isTemporaryPasswordExpired } from '#src/users/status.ts';
-import { getUserByEmail, getUserBySub, updatePassword } from '#src/users/store.ts';
+import { getUserByEmail, getUserBySub, updatePassword } from '#src/users/storage/store.ts';
 import type { User } from '#src/users/types.ts';
+import { applyResourceConsent } from '#src/interactions/consent.ts';
 import { ChangePasswordPage } from '#src/interactions/views/change-password.tsx';
 import { LoginPage } from '#src/interactions/views/login.tsx';
 
@@ -22,45 +23,6 @@ interface ConsentPromptDetails {
   missingOIDCScope?: string[];
   missingOIDCClaims?: string[];
   missingResourceScopes?: Record<string, string[]>;
-}
-
-type Grant = InstanceType<Provider['Grant']>;
-
-export function partitionScopeByRoles(
-  requestedScope: string[],
-  roles: string[],
-): { granted: string[]; denied: string[] } {
-  return {
-    granted: requestedScope.filter((scope) => roles.includes(scope)),
-    denied: requestedScope.filter((scope) => !roles.includes(scope)),
-  };
-}
-
-/**
- * Grants each requested resource scope the roles allow and rejects the rest.
- * oidc-provider keeps prompting for consent until every requested scope is
- * granted or rejected, so leaving a denied scope unrecorded loops the browser.
- * Reports whether the grant ends up with any scope for the requested resources.
- */
-export function applyResourceConsent(
-  grant: Grant,
-  missingResourceScopes: Record<string, string[]>,
-  roles: string[],
-): { grantedAny: boolean } {
-  for (const [indicator, scope] of Object.entries(missingResourceScopes)) {
-    const { granted, denied } = partitionScopeByRoles(scope, roles);
-    if (granted.length > 0) {
-      grant.addResourceScope(indicator, granted.join(' '));
-    }
-    if (denied.length > 0) {
-      grant.rejectResourceScope(indicator, denied.join(' '));
-    }
-  }
-
-  const grantedAny = Object.keys(missingResourceScopes).some(
-    (indicator) => grant.getResourceScope(indicator) !== '',
-  );
-  return { grantedAny };
 }
 
 export async function grantConsent(provider: Provider, ctx: Koa.Context): Promise<void> {

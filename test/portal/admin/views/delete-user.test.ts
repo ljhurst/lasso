@@ -1,18 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DeleteUserPage } from '#src/portal/admin/views/delete-user.tsx';
+import { makeUser } from '#test/support/users.ts';
 
-const user = {
-  sub: 'b3698a6c-188e-4a4f-8c79-a8e09843fc34',
-  email: 'friend@example.com',
-  emailVerified: true,
-  givenName: 'Friend',
-  familyName: 'Person',
-  passwordHash: 'hash',
-  passwordSalt: 'salt',
-  mustChangePassword: false,
-  roles: [],
-  createdAt: '2026-01-01T00:00:00.000Z',
-};
+const user = makeUser();
 
 describe('DeleteUserPage', () => {
   it('names the account and posts the delete to its own address', async () => {

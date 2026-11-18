@@ -1,20 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { emailFact, PersonFacts } from '#src/portal/admin/views/components/person-facts.tsx';
+import { makeUser } from '#test/support/users.ts';
 
 const HOSTILE = '<img src=x onerror=alert(1)>';
 
-const user = {
-  sub: 'sub-1',
-  email: 'friend@example.com',
-  emailVerified: true,
-  givenName: 'Friend',
-  familyName: 'Person',
-  passwordHash: 'hash',
-  passwordSalt: 'salt',
-  mustChangePassword: false,
-  roles: [],
-  createdAt: '2026-01-01T00:00:00.000Z',
-};
+const user = makeUser();
 
 describe('PersonFacts', () => {
   it('shows the full name and the email as labelled facts', () => {

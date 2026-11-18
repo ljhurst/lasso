@@ -77,7 +77,3 @@ export async function listAccessTokens(): Promise<AccessTokenRow[]> {
     expiresAt: item.expiresAt,
   }));
 }
-
-export function byLatestExpiry<T extends { expiresAt?: number }>(a: T, b: T): number {
-  return (b.expiresAt ?? 0) - (a.expiresAt ?? 0);
-}

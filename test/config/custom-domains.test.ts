@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { buildClients } from '#src/config/clients.ts';
 import { allResourceScopes, getResourceServerInfo, resources } from '#src/config/resources.ts';
-import { getUserApps } from '#src/portal/apps/routes.ts';
+import { getUserApps } from '#src/portal/apps/apps.ts';
 
 vi.mock('#src/config/ssm.ts', () => ({
   getParameter: vi.fn().mockResolvedValue('client-secret'),

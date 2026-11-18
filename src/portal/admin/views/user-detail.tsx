@@ -1,7 +1,8 @@
 import { emailFact } from '#src/portal/admin/views/components/person-facts.tsx';
 import { accountStatus, STATUS_LABEL } from '#src/users/status.ts';
 import type { User } from '#src/users/types.ts';
-import type { AccessTokenRow, GrantRow, SessionRow } from '#src/portal/admin/data.ts';
+import type { AccessTokenRow, GrantRow, SessionRow } from '#src/adapter/records.ts';
+import type { HeldRole } from '#src/portal/admin/types.ts';
 import { Empty } from '#src/portal/views/components/empty.tsx';
 import { Facts } from '#src/portal/views/components/facts.tsx';
 import { Help } from '#src/portal/views/components/help.tsx';
@@ -10,12 +11,6 @@ import { Table } from '#src/portal/views/components/table.tsx';
 import { Time } from '#src/portal/views/components/time.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
-
-export interface HeldRole {
-  role: string;
-  registered: boolean;
-  blockedReason?: string;
-}
 
 export function UserDetailPage(props: {
   user: User;

@@ -45,7 +45,7 @@ Answer each question against the diff. Skip a question the diff cannot affect.
 - **Clients and redirects** (`src/config/clients.ts`): exact redirect URI
   matching, PKCE required, no new wildcard or localhost origin, client
   secrets only in SSM.
-- **Scopes and roles** (`src/interactions/routes.ts`): consent grants only
+- **Scopes and roles** (`src/interactions/consent.ts`, `src/users/access.ts`): consent grants only
   scopes the account's roles allow, denied scopes are rejected so the consent
   loop ends, and each resource gets its own audience.
 - **Login** (`src/interactions/routes.ts`, `src/users/`): every failure
@@ -90,7 +90,7 @@ touches. Answer pass or fail for each, with the file and line that proves it.
 3. A failed login, whatever the reason, returns the same page and still
    spends a password check (`authenticate` in `src/interactions/routes.ts`).
 4. Consent never grants a scope the account's roles don't hold
-   (`partitionScopeByRoles` is the only path).
+   (`partitionScopeByRoles` in `src/users/access.ts` is the only path).
 5. Redirect URIs in `src/config/clients.ts` are exact strings. List every
    `localhost` or `127.0.0.1` entry so a new one is noticed.
 6. Every cookie the code sets is `httpOnly`, `sameSite`, signed where it
@@ -98,7 +98,7 @@ touches. Answer pass or fail for each, with the file and line that proves it.
 7. No log line carries a password, token, code, typed email, query string or
    interaction uid: check `src/observability/` and every `console.*` in `src/`.
 8. Every DynamoDB record that should expire gets `expiresAt`
-   (`src/adapter/keys.ts`, `src/users/login-throttle.ts`).
+   (`src/adapter/keys.ts`, `src/users/storage/login-throttle.ts`).
 9. Terraform grants no `Resource: *` and exposes nothing beyond CloudFront;
    index ARNs (`…/index/*`) are fine.
 

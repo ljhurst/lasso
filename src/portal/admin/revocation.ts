@@ -1,5 +1,5 @@
 import type Provider from 'oidc-provider';
-import { listGrants, listSessions } from '#src/portal/admin/data.ts';
+import { listGrants, listSessions } from '#src/adapter/records.ts';
 
 type Grant = InstanceType<Provider['Grant']>;
 
