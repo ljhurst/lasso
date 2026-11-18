@@ -17,6 +17,7 @@ import {
   getUserBySub,
   listUsers,
   removeRole,
+  setTemporaryPassword,
   updatePassword,
 } from '#src/users/store.ts';
 
@@ -172,5 +173,39 @@ describe('updatePassword', () => {
       ':salt': 'new-salt',
       ':false': false,
     });
+  });
+});
+
+describe('updatePassword clearing the temporary-password fields', () => {
+  it('removes the expiry and the reset marker when they choose their own password', async () => {
+    ddbMock.on(UpdateCommand).resolves({});
+
+    await updatePassword('sub-1', { hash: 'new-hash', salt: 'new-salt' });
+
+    const expression = ddbMock.commandCalls(UpdateCommand)[0]?.args[0].input.UpdateExpression;
+    expect(expression).toContain('REMOVE tempPasswordExpiresAt, passwordResetAt');
+  });
+});
+
+describe('setTemporaryPassword', () => {
+  it('writes the hash, forces a change, and records the expiry and the reset', async () => {
+    ddbMock.on(UpdateCommand).resolves({});
+
+    await setTemporaryPassword('sub-1', {
+      tempPassword: 'aaaa-bbbb-cccc',
+      hash: 'temp-hash',
+      salt: 'temp-salt',
+      expiresAt: 1_800_000_000,
+    });
+
+    const call = ddbMock.commandCalls(UpdateCommand)[0]?.args[0].input;
+    expect(call?.Key).toEqual({ sub: 'sub-1' });
+    expect(call?.ExpressionAttributeValues).toMatchObject({
+      ':hash': 'temp-hash',
+      ':salt': 'temp-salt',
+      ':true': true,
+      ':expiresAt': 1_800_000_000,
+    });
+    expect(JSON.stringify(call)).not.toContain('aaaa-bbbb-cccc');
   });
 });

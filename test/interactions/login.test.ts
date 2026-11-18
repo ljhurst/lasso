@@ -37,7 +37,7 @@ const provider = {
 let server: Server;
 let baseUrl: string;
 
-async function userRecord(mustChangePassword: boolean) {
+async function userRecord(mustChangePassword: boolean, extra: Record<string, unknown> = {}) {
   const { hash, salt } = await hashPassword(TEMP_PASSWORD);
   return {
     sub: VICTIM_SUB,
@@ -50,6 +50,7 @@ async function userRecord(mustChangePassword: boolean) {
     mustChangePassword,
     roles: ['lasso:admin'],
     createdAt: '2026-01-01T00:00:00.000Z',
+    ...extra,
   };
 }
 
@@ -286,6 +287,95 @@ describe('login throttling', () => {
     expect(throttle.reserveLoginAttempt).toHaveBeenCalledWith(VICTIM_SUB, '203.0.113.7');
     expect(store.updatePassword).not.toHaveBeenCalled();
     expect(interactionFinished).not.toHaveBeenCalled();
+  });
+});
+
+describe('expired temporary passwords', () => {
+  const LOGIN = { email: VICTIM_EMAIL, password: TEMP_PASSWORD };
+  const NOW_SECONDS = () => Math.floor(Date.now() / 1000);
+
+  async function expireTemporaryPassword() {
+    store.getUserByEmail.mockResolvedValue(
+      await userRecord(true, { tempPasswordExpiresAt: NOW_SECONDS() - 60 }),
+    );
+  }
+
+  it('refuses the right temporary password once it has lapsed', async () => {
+    await expireTemporaryPassword();
+
+    const response = await post('/interaction/uid1/login', LOGIN);
+
+    expect(await response.text()).toContain('Invalid email or password');
+    expect(interactionFinished).not.toHaveBeenCalled();
+  });
+
+  it('shows a lapsed password the same page as an unknown email', async () => {
+    await expireTemporaryPassword();
+
+    const expired = await post('/interaction/uid1/login', LOGIN);
+    const unknown = await post('/interaction/uid1/login', {
+      email: 'nobody@example.com',
+      password: TEMP_PASSWORD,
+    });
+
+    expect(expired.status).toBe(unknown.status);
+    expect(await expired.text()).toBe(await unknown.text());
+  });
+
+  it('still counts the attempt and does not clear the counter', async () => {
+    await expireTemporaryPassword();
+
+    await post('/interaction/uid1/login', LOGIN, fromAddress('203.0.113.7'));
+
+    expect(throttle.reserveLoginAttempt).toHaveBeenCalledWith(VICTIM_SUB, '203.0.113.7');
+    expect(throttle.clearLoginAttempts).not.toHaveBeenCalled();
+  });
+
+  it('refuses it at the change-password step too', async () => {
+    await expireTemporaryPassword();
+
+    await changePassword({
+      email: VICTIM_EMAIL,
+      current: TEMP_PASSWORD,
+      password: 'new-password-1',
+      confirm: 'new-password-1',
+    });
+
+    expect(store.updatePassword).not.toHaveBeenCalled();
+    expect(interactionFinished).not.toHaveBeenCalled();
+  });
+
+  it('accepts a temporary password that has not lapsed', async () => {
+    store.getUserByEmail.mockResolvedValue(
+      await userRecord(true, { tempPasswordExpiresAt: NOW_SECONDS() + 3600 }),
+    );
+
+    const response = await post('/interaction/uid1/login', LOGIN);
+
+    expect(await response.text()).toContain('minlength="12"');
+  });
+
+  it('ignores a leftover expiry once they have set their own password', async () => {
+    store.getUserByEmail.mockResolvedValue(
+      await userRecord(false, { tempPasswordExpiresAt: NOW_SECONDS() - 60 }),
+    );
+
+    await post('/interaction/uid1/login', LOGIN);
+
+    expect(interactionFinished.mock.calls[0]?.[2]).toEqual({ login: { accountId: VICTIM_SUB } });
+  });
+
+  it('logs the failure with the reason expired', async () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await expireTemporaryPassword();
+
+    await post('/interaction/uid1/login', LOGIN, fromAddress('203.0.113.7'));
+
+    const logged = spy.mock.calls.map(([line]) => JSON.parse(line as string));
+    expect(logged).toEqual([
+      { event: 'login_failed', reason: 'expired', sub: VICTIM_SUB, ip: '203.0.113.7' },
+    ]);
+    spy.mockRestore();
   });
 });
 

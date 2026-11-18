@@ -22,7 +22,7 @@ function render(overrides: Partial<Parameters<typeof UserDetailPage>[0]> = {}) {
     accessTokens: [],
     roles: [],
     grantableRoles: [],
-    canDelete: true,
+    canManage: true,
     ...overrides,
   });
 }
@@ -143,17 +143,29 @@ describe('UserDetailPage', () => {
     });
   });
 
-  it('links to the delete confirmation for another user', async () => {
+  it('links to the reset and delete confirmations for another user', async () => {
     const html = await render();
 
+    expect(html).toContain(`href="/admin/users/${user.sub}/reset-password"`);
     expect(html).toContain(`href="/admin/users/${user.sub}/delete"`);
     expect(html).not.toContain('Delete user…');
   });
 
-  it('offers no delete for your own account', async () => {
-    const html = await render({ canDelete: false });
+  it('offers no reset or delete for your own account', async () => {
+    const html = await render({ canManage: false });
 
     expect(html).not.toContain('/delete"');
+    expect(html).not.toContain('/reset-password"');
+  });
+
+  describe('milder actions', () => {
+    it('outlines Reset password and Remove in red, and leaves Delete filled', async () => {
+      const html = await render({ roles: [{ role: 'freal:read', registered: true }] });
+
+      expect(html).toMatch(/class="row-action caution" href="[^"]*\/reset-password"/);
+      expect(html).toMatch(/class="row-action caution"\s+aria-label="Remove freal:read"/);
+      expect(html).toMatch(/class="row-action danger" href="[^"]*\/delete"/);
+    });
   });
 
   describe('lifecycle', () => {
@@ -167,6 +179,23 @@ describe('UserDetailPage', () => {
       const html = await render({ user: { ...user, mustChangePassword: false } });
 
       expect(html).toContain('<dt>Status</dt><dd><span>Active</span></dd>');
+    });
+
+    it('shows when a temporary password expires', async () => {
+      const html = await render({
+        user: { ...user, mustChangePassword: true, tempPasswordExpiresAt: 1_800_000_000 },
+      });
+
+      expect(html).toContain('<dt>Password expires</dt>');
+      expect(html).toContain('datetime="2027-01-15T08:00:00.000Z"');
+    });
+
+    it('shows no expiry for someone on their own password', async () => {
+      const html = await render({
+        user: { ...user, mustChangePassword: false, tempPasswordExpiresAt: 1_800_000_000 },
+      });
+
+      expect(html).not.toContain('Password expires');
     });
 
     it('shows when the account was created', async () => {

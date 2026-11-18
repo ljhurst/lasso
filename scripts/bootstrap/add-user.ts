@@ -11,8 +11,11 @@ import { parseArgs } from 'node:util';
 import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 import { normalizeEmail } from '../../src/users/email.ts';
-import { generateTempPassword, hashPassword } from '../../src/users/password.ts';
-import { buildNewUser } from '../../src/users/provision.ts';
+import {
+  buildNewUser,
+  issueTemporaryPassword,
+  temporaryPasswordUpdate,
+} from '../../src/users/provision.ts';
 import type { User } from '../../src/users/types.ts';
 import { createDynamoClient } from './dynamo.ts';
 
@@ -63,20 +66,19 @@ async function resetPassword(
     throw new Error(`no user found with email ${email}`);
   }
 
-  const tempPassword = generateTempPassword();
-  const { hash, salt } = await hashPassword(tempPassword);
+  const temp = await issueTemporaryPassword();
 
   await client.send(
     new UpdateCommand({
       TableName: table,
       Key: { sub: user.sub },
-      UpdateExpression:
-        'SET passwordHash = :hash, passwordSalt = :salt, mustChangePassword = :true',
-      ExpressionAttributeValues: { ':hash': hash, ':salt': salt, ':true': true },
+      ...temporaryPasswordUpdate(temp, new Date().toISOString()),
     }),
   );
 
-  console.log(`Reset password for ${email}. Temporary password: ${tempPassword}`);
+  console.log(
+    `Reset password for ${email}. Temporary password: ${temp.tempPassword} (expires ${new Date(temp.expiresAt * 1000).toISOString()})`,
+  );
 }
 
 async function grantRole(
