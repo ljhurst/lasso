@@ -13,7 +13,7 @@ import {
 } from '#src/portal/admin/data.ts';
 import { revokeGrantsRejectingScope, revokeGrantsWithScope } from '#src/portal/admin/revocation.ts';
 import { DashboardPage } from '#src/portal/admin/views/dashboard.tsx';
-import { UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
+import { type HeldRole, UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
 import { UsersListPage } from '#src/portal/admin/views/users.tsx';
 import type { User } from '#src/users/types.ts';
 
@@ -27,6 +27,16 @@ export function canRemoveRole(target: User, role: string, actorSub: string): boo
   const isKnown = target.roles.includes(role) || allResourceScopes.includes(role);
   const isSelfLockout = target.sub === actorSub && role === LASSO_ADMIN_SCOPE;
   return isKnown && !isSelfLockout;
+}
+
+export function buildHeldRoles(user: User, actorSub: string): HeldRole[] {
+  return user.roles.toSorted().map((role) => ({
+    role,
+    registered: allResourceScopes.includes(role),
+    blockedReason: canRemoveRole(user, role, actorSub)
+      ? undefined
+      : "Can't remove your own admin role",
+  }));
 }
 
 /**
@@ -76,6 +86,7 @@ export function buildAdminRouter(provider: Provider): Router {
       sessions: sessions.filter((s) => s.accountId === user.sub).sort(byLatestExpiry),
       grants: grants.filter((g) => g.accountId === user.sub).sort(byLatestExpiry),
       accessTokens: accessTokens.filter((t) => t.accountId === user.sub).sort(byLatestExpiry),
+      roles: buildHeldRoles(user, ctx.state.user.sub),
       grantableRoles: allResourceScopes.filter((role) => !user.roles.includes(role)),
     });
   });

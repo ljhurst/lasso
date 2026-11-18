@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import Koa from 'koa';
 import type Provider from 'oidc-provider';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildAdminRouter, canRemoveRole } from '#src/portal/admin/routes.ts';
+import { buildAdminRouter, buildHeldRoles, canRemoveRole } from '#src/portal/admin/routes.ts';
 
 const store = vi.hoisted(() => ({
   addRole: vi.fn(),
@@ -51,6 +51,28 @@ function user(sub: string, roles: string[]) {
     createdAt: '2026-01-01T00:00:00.000Z',
   };
 }
+
+describe('buildHeldRoles', () => {
+  it('lists the roles a user holds, sorted', () => {
+    const roles = buildHeldRoles(user('sub-1', ['fife:read', 'freal:read']), 'admin');
+
+    expect(roles.map((held) => held.role)).toEqual(['fife:read', 'freal:read']);
+  });
+
+  it('marks a held role that is no longer configured', () => {
+    const [held] = buildHeldRoles(user('sub-1', ['retired:read']), 'admin');
+
+    expect(held).toEqual({ role: 'retired:read', registered: false, blockedReason: undefined });
+  });
+
+  it('refuses to let an admin remove their own admin role', () => {
+    const [own] = buildHeldRoles(user('admin', ['lasso:admin']), 'admin');
+    const [theirs] = buildHeldRoles(user('sub-1', ['lasso:admin']), 'admin');
+
+    expect(own?.blockedReason).toBe("Can't remove your own admin role");
+    expect(theirs?.blockedReason).toBeUndefined();
+  });
+});
 
 describe('canRemoveRole', () => {
   it('allows removing a role the user holds', () => {
@@ -183,6 +205,12 @@ describe('admin user page', () => {
 
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
+  });
+
+  it('lists the roles the user holds', async () => {
+    store.getUserBySub.mockResolvedValue(user('sub-1', ['fife:read']));
+
+    expect(await page()).toContain('aria-label="Remove fife:read"');
   });
 
   it("leaves out another account's rows", async () => {

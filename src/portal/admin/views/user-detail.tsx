@@ -2,11 +2,18 @@ import type { User } from '#src/users/types.ts';
 import type { AccessTokenRow, GrantRow, SessionRow } from '#src/portal/admin/data.ts';
 import { Empty, Facts, Help, Layout, List, Table, Time } from '#src/portal/views/layout.tsx';
 
+export interface HeldRole {
+  role: string;
+  registered: boolean;
+  blockedReason?: string;
+}
+
 export function UserDetailPage(props: {
   user: User;
   sessions: SessionRow[];
   grants: GrantRow[];
   accessTokens: AccessTokenRow[];
+  roles: HeldRole[];
   grantableRoles: string[];
 }) {
   return (
@@ -26,41 +33,33 @@ export function UserDetailPage(props: {
                 </code>
               ),
             },
-            { label: 'Roles', value: <List items={props.user.roles} mono /> },
           ]}
         />
       </section>
       <section>
-        <h2>Grant a role</h2>
+        <h2>Roles ({props.roles.length})</h2>
+        {props.roles.length === 0 ? (
+          <Empty>No roles yet.</Empty>
+        ) : (
+          <ul class="roles">
+            {props.roles.map((held) => (
+              <RoleRow held={held} sub={props.user.sub} />
+            ))}
+          </ul>
+        )}
         {props.grantableRoles.length === 0 ? (
           <Empty>This user already has every registered role.</Empty>
         ) : (
-          <form method="post" action={`/admin/users/${props.user.sub}/roles`}>
-            <select name="role">
+          <form class="add-role" method="post" action={`/admin/users/${props.user.sub}/roles`}>
+            <select name="role" required aria-label="Role to add">
+              <option value="">Choose a role…</option>
               {props.grantableRoles.toSorted().map((role) => (
                 <option value={role} safe>
                   {role}
                 </option>
               ))}
             </select>
-            <button type="submit">Grant</button>
-          </form>
-        )}
-      </section>
-      <section>
-        <h2>Remove a role</h2>
-        {props.user.roles.length === 0 ? (
-          <Empty>No roles to remove.</Empty>
-        ) : (
-          <form method="post" action={`/admin/users/${props.user.sub}/roles/remove`}>
-            <select name="role">
-              {props.user.roles.toSorted().map((role) => (
-                <option value={role} safe>
-                  {role}
-                </option>
-              ))}
-            </select>
-            <button type="submit">Remove</button>
+            <button type="submit">Add</button>
           </form>
         )}
       </section>
@@ -142,4 +141,32 @@ const ACCESS_TOKEN_HELP =
 
 function ClientLabel(props: { clientId: string | undefined }) {
   return props.clientId ? <code safe>{props.clientId}</code> : <span class="empty-cell">—</span>;
+}
+
+function RoleRow(props: { held: HeldRole; sub: string }) {
+  const { held, sub } = props;
+  return (
+    <li>
+      <div class="role-name">
+        <code safe>{held.role}</code>
+        {held.registered ? null : <span class="role-note">no longer registered</span>}
+        {held.blockedReason ? (
+          <span class="role-note" safe>
+            {held.blockedReason}
+          </span>
+        ) : null}
+      </div>
+      <form method="post" action={`/admin/users/${sub}/roles/remove`}>
+        <input type="hidden" name="role" value={held.role} />
+        <button
+          type="submit"
+          class="row-action"
+          aria-label={`Remove ${held.role}`}
+          disabled={Boolean(held.blockedReason)}
+        >
+          Remove
+        </button>
+      </form>
+    </li>
+  );
 }
