@@ -9,4 +9,6 @@ export interface User {
   mustChangePassword: boolean;
   roles: string[];
   createdAt: string;
+  tempPasswordExpiresAt?: number;
+  passwordResetAt?: string;
 }

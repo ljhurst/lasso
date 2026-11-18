@@ -4,7 +4,7 @@ import { requireSameOrigin } from '#src/auth/same-origin.ts';
 import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
 import { readForm } from '#src/form-body.ts';
 import { logEvent } from '#src/observability/events.ts';
-import { parseNewUser, buildNewUser } from '#src/users/provision.ts';
+import { buildNewUser, issueTemporaryPassword, parseNewUser } from '#src/users/provision.ts';
 import {
   addRole,
   createUser,
@@ -13,6 +13,7 @@ import {
   getUserBySub,
   listUsers,
   removeRole,
+  setTemporaryPassword,
 } from '#src/users/store.ts';
 import { buildRequirePortalSession, requireAdmin } from '#src/portal/auth/session.ts';
 import {
@@ -27,10 +28,11 @@ import {
   revokeGrantsWithScope,
 } from '#src/portal/admin/revocation.ts';
 import { DashboardPage } from '#src/portal/admin/views/dashboard.tsx';
-import { CreatedUserPage } from '#src/portal/admin/views/created-user.tsx';
 import { DeleteUserPage } from '#src/portal/admin/views/delete-user.tsx';
 import { type HeldRole, UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
 import { type NewUserForm, NewUserPage } from '#src/portal/admin/views/new-user.tsx';
+import { ResetPasswordPage } from '#src/portal/admin/views/reset-password.tsx';
+import { TemporaryPasswordPage } from '#src/portal/admin/views/temporary-password.tsx';
 import { UsersListPage } from '#src/portal/admin/views/users.tsx';
 import type { User } from '#src/users/types.ts';
 
@@ -46,8 +48,8 @@ export function canRemoveRole(target: User, role: string, actorSub: string): boo
   return isKnown && !isSelfLockout;
 }
 
-/** Admins can't delete their own account, so they can't lock themselves out. */
-export function canDeleteUser(target: User, actorSub: string): boolean {
+/** Admins can't delete or reset their own account, so they can't lock themselves out. */
+export function canManageUser(target: User, actorSub: string): boolean {
   return target.sub !== actorSub;
 }
 
@@ -115,7 +117,12 @@ export function buildAdminRouter(provider: Provider): Router {
 
     ctx.set('Cache-Control', 'no-store');
     ctx.type = 'html';
-    ctx.body = await CreatedUserPage({ user, tempPassword });
+    ctx.body = await TemporaryPasswordPage({
+      mode: 'created',
+      user,
+      tempPassword,
+      expiresAt: user.tempPasswordExpiresAt,
+    });
   });
 
   router.get('/users/:sub', async (ctx) => {
@@ -138,7 +145,7 @@ export function buildAdminRouter(provider: Provider): Router {
       grants: grants.filter((g) => g.accountId === user.sub).sort(byLatestExpiry),
       accessTokens: accessTokens.filter((t) => t.accountId === user.sub).sort(byLatestExpiry),
       roles: buildHeldRoles(user, ctx.state.user.sub),
-      canDelete: canDeleteUser(user, ctx.state.user.sub),
+      canManage: canManageUser(user, ctx.state.user.sub),
       grantableRoles: allResourceScopes.filter((role) => !user.roles.includes(role)),
     });
   });
@@ -168,7 +175,7 @@ export function buildAdminRouter(provider: Provider): Router {
   });
 
   router.get('/users/:sub/delete', async (ctx) => {
-    const user = await findDeletableUser(ctx);
+    const user = await findOtherUser(ctx);
     if (!user) {
       return;
     }
@@ -178,7 +185,7 @@ export function buildAdminRouter(provider: Provider): Router {
   });
 
   router.post('/users/:sub/delete', async (ctx) => {
-    const user = await findDeletableUser(ctx);
+    const user = await findOtherUser(ctx);
     if (!user) {
       return;
     }
@@ -189,13 +196,44 @@ export function buildAdminRouter(provider: Provider): Router {
     ctx.redirect('/admin/users');
   });
 
+  router.get('/users/:sub/reset-password', async (ctx) => {
+    const user = await findOtherUser(ctx);
+    if (!user) {
+      return;
+    }
+
+    ctx.type = 'html';
+    ctx.body = await ResetPasswordPage({ user });
+  });
+
+  router.post('/users/:sub/reset-password', async (ctx) => {
+    const user = await findOtherUser(ctx);
+    if (!user) {
+      return;
+    }
+
+    const temp = await issueTemporaryPassword();
+    await revokeAllAccess(provider, user.sub);
+    await setTemporaryPassword(user.sub, temp);
+    logEvent({ event: 'password_reset', sub: user.sub, by: ctx.state.user.sub });
+
+    ctx.set('Cache-Control', 'no-store');
+    ctx.type = 'html';
+    ctx.body = await TemporaryPasswordPage({
+      mode: 'reset',
+      user,
+      tempPassword: temp.tempPassword,
+      expiresAt: temp.expiresAt,
+    });
+  });
+
   return router;
 }
 
-/** Loads the user in the URL, or redirects away and returns nothing when they can't be deleted. */
-async function findDeletableUser(ctx: RouterContext): Promise<User | undefined> {
+/** Loads the user in the URL, or redirects away and returns nothing when they can't be managed. */
+async function findOtherUser(ctx: RouterContext): Promise<User | undefined> {
   const user = ctx.params.sub ? await getUserBySub(ctx.params.sub) : undefined;
-  if (user && canDeleteUser(user, ctx.state.user.sub)) {
+  if (user && canManageUser(user, ctx.state.user.sub)) {
     return user;
   }
   ctx.redirect(user ? `/admin/users/${user.sub}` : '/admin/users');

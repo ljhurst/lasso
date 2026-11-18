@@ -7,7 +7,7 @@ import { logEvent } from '#src/observability/events.ts';
 import {
   buildAdminRouter,
   buildHeldRoles,
-  canDeleteUser,
+  canManageUser,
   canRemoveRole,
 } from '#src/portal/admin/routes.ts';
 import { revokeAllAccess } from '#src/portal/admin/revocation.ts';
@@ -17,6 +17,7 @@ const store = vi.hoisted(() => ({
   removeRole: vi.fn(),
   deleteUser: vi.fn(),
   createUser: vi.fn(),
+  setTemporaryPassword: vi.fn(),
   getUserByEmail: vi.fn(),
   getUserBySub: vi.fn(),
   listUsers: vi.fn(),
@@ -87,13 +88,13 @@ describe('buildHeldRoles', () => {
   });
 });
 
-describe('canDeleteUser', () => {
-  it("allows deleting someone else's account", () => {
-    expect(canDeleteUser(user('sub-1', []), 'admin')).toBe(true);
+describe('canManageUser', () => {
+  it("allows managing someone else's account", () => {
+    expect(canManageUser(user('sub-1', []), 'admin')).toBe(true);
   });
 
-  it('refuses an admin deleting their own account', () => {
-    expect(canDeleteUser(user('admin', ['lasso:admin']), 'admin')).toBe(false);
+  it('refuses an admin managing their own account', () => {
+    expect(canManageUser(user('admin', ['lasso:admin']), 'admin')).toBe(false);
   });
 });
 
@@ -440,5 +441,106 @@ describe('admin add user', () => {
 
     expect(response.status).toBe(403);
     expect(store.createUser).not.toHaveBeenCalled();
+  });
+});
+
+describe('admin password reset', () => {
+  let server: Server;
+  let baseUrl: string;
+
+  beforeAll(() => {
+    const app = new Koa();
+    app.use(buildAdminRouter({} as Provider).routes());
+    server = app.listen(0);
+    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(() => {
+    server.close();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    store.getUserBySub.mockResolvedValue(user('sub-1', []));
+  });
+
+  function postReset(sub: string, site = 'same-origin'): Promise<Response> {
+    return fetch(`${baseUrl}/admin/users/${sub}/reset-password`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { 'sec-fetch-site': site },
+    });
+  }
+
+  it('asks for confirmation before changing anything', async () => {
+    const response = await fetch(`${baseUrl}/admin/users/sub-1/reset-password`);
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('action="/admin/users/sub-1/reset-password"');
+    expect(store.setTemporaryPassword).not.toHaveBeenCalled();
+  });
+
+  it('ends their access first, then sets the temporary password', async () => {
+    const response = await postReset('sub-1');
+
+    expect(response.status).toBe(200);
+    expect(revokeAllAccess).toHaveBeenCalledWith(expect.anything(), 'sub-1');
+    expect(store.setTemporaryPassword).toHaveBeenCalledWith(
+      'sub-1',
+      expect.objectContaining({ hash: expect.any(String), expiresAt: expect.any(Number) }),
+    );
+    expect(vi.mocked(revokeAllAccess).mock.invocationCallOrder[0]).toBeLessThan(
+      store.setTemporaryPassword.mock.invocationCallOrder[0] as number,
+    );
+  });
+
+  it('shows the new password once, uncached', async () => {
+    const response = await postReset('sub-1');
+    const html = await response.text();
+
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(html).toMatch(/id="temp-password">[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}</);
+    expect(html).toContain('Password reset for');
+  });
+
+  it('logs who reset whom, without the password', async () => {
+    await postReset('sub-1');
+
+    expect(logEvent).toHaveBeenCalledWith({ event: 'password_reset', sub: 'sub-1', by: 'admin' });
+  });
+
+  it('keeps the old password when ending their access fails', async () => {
+    vi.mocked(revokeAllAccess).mockRejectedValueOnce(new Error('boom'));
+
+    const response = await postReset('sub-1');
+
+    expect(response.status).toBe(500);
+    expect(store.setTemporaryPassword).not.toHaveBeenCalled();
+  });
+
+  it('refuses to reset your own password', async () => {
+    store.getUserBySub.mockResolvedValue(user('admin', ['lasso:admin']));
+
+    const response = await postReset('admin');
+
+    expect(response.headers.get('location')).toBe('/admin/users/admin');
+    expect(revokeAllAccess).not.toHaveBeenCalled();
+    expect(store.setTemporaryPassword).not.toHaveBeenCalled();
+  });
+
+  it('sends you back to the list for an unknown user', async () => {
+    store.getUserBySub.mockResolvedValue(undefined);
+
+    const response = await postReset('nobody');
+
+    expect(response.headers.get('location')).toBe('/admin/users');
+    expect(store.setTemporaryPassword).not.toHaveBeenCalled();
+  });
+
+  it('refuses a reset sent from another site', async () => {
+    const response = await postReset('sub-1', 'cross-site');
+
+    expect(response.status).toBe(403);
+    expect(store.setTemporaryPassword).not.toHaveBeenCalled();
   });
 });

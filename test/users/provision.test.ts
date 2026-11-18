@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { verifyPassword } from '#src/users/password.ts';
-import { buildNewUser, parseNewUser } from '#src/users/provision.ts';
+import {
+  buildNewUser,
+  issueTemporaryPassword,
+  parseNewUser,
+  TEMP_PASSWORD_TTL_DAYS,
+  temporaryPasswordUpdate,
+} from '#src/users/provision.ts';
 
 function form(fields: Record<string, string>): URLSearchParams {
   return new URLSearchParams({
@@ -36,11 +42,62 @@ describe('buildNewUser', () => {
     expect(JSON.stringify(user)).not.toContain(tempPassword);
   });
 
+  it('gives a new user a temporary password that expires and is not marked as a reset', async () => {
+    const { user } = await buildNewUser(input);
+
+    expect(user.tempPasswordExpiresAt).toBeGreaterThan(Date.now() / 1000);
+    expect(user.passwordResetAt).toBeUndefined();
+  });
+
   it('gives each user its own sub and password', async () => {
     const [first, second] = [await buildNewUser(input), await buildNewUser(input)];
 
     expect(first.user.sub).not.toBe(second.user.sub);
     expect(first.tempPassword).not.toBe(second.tempPassword);
+  });
+});
+
+describe('issueTemporaryPassword', () => {
+  const NOW_MS = 1_800_000_000_000;
+
+  it('expires the password after the lifetime', async () => {
+    const temp = await issueTemporaryPassword(NOW_MS);
+
+    expect(temp.expiresAt).toBe(1_800_000_000 + TEMP_PASSWORD_TTL_DAYS * 24 * 60 * 60);
+  });
+
+  it('returns a password that matches its hash', async () => {
+    const temp = await issueTemporaryPassword(NOW_MS);
+
+    expect(await verifyPassword(temp.tempPassword, { hash: temp.hash, salt: temp.salt })).toBe(
+      true,
+    );
+  });
+});
+
+describe('temporaryPasswordUpdate', () => {
+  it('puts the user back on a temporary password that expires, and marks the reset', async () => {
+    const temp = await issueTemporaryPassword(1_800_000_000_000);
+
+    const update = temporaryPasswordUpdate(temp, '2027-01-01T00:00:00.000Z');
+
+    expect(update.ExpressionAttributeValues).toEqual({
+      ':hash': temp.hash,
+      ':salt': temp.salt,
+      ':true': true,
+      ':expiresAt': temp.expiresAt,
+      ':resetAt': '2027-01-01T00:00:00.000Z',
+    });
+    for (const field of [
+      'passwordHash',
+      'passwordSalt',
+      'mustChangePassword',
+      'tempPasswordExpiresAt',
+      'passwordResetAt',
+    ]) {
+      expect(update.UpdateExpression).toContain(field);
+    }
+    expect(JSON.stringify(update)).not.toContain(temp.tempPassword);
   });
 });
 

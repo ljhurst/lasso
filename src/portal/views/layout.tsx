@@ -410,6 +410,23 @@ const STYLES = `
 
   .heading-row h2 { margin: 0; }
 
+  .row-action.caution {
+    color: var(--error-text);
+    border-color: var(--error-border);
+    background: transparent;
+  }
+
+  .row-action.caution:not(:disabled):hover { background: var(--error-bg); }
+
+  .name-link {
+    display: inline-block;
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .name-link:hover { text-decoration: underline; }
+
   .row-action.danger {
     color: var(--error-text);
     border-color: var(--error-border);
@@ -721,6 +738,7 @@ const STYLES = `
 
   @media (max-width: 640px), (pointer: coarse) {
     .row-action, .control, button.primary, .copy-icon-button { min-height: 44px; }
+    .name-link { align-items: center; display: inline-flex; min-height: 44px; }
     .copy-icon-button { min-width: 44px; align-items: center; justify-content: center; }
   }
 `;

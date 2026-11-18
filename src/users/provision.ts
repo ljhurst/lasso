@@ -5,6 +5,8 @@ import type { User } from '#src/users/types.ts';
 
 export const MAX_NAME_LENGTH = 100;
 export const MAX_EMAIL_LENGTH = 254;
+export const TEMP_PASSWORD_TTL_DAYS = 7;
+const TEMP_PASSWORD_TTL_SECONDS = TEMP_PASSWORD_TTL_DAYS * 24 * 60 * 60;
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export interface NewUserDetails {
@@ -22,12 +24,49 @@ export interface NewUser {
   tempPassword: string;
 }
 
+export interface TemporaryPassword {
+  tempPassword: string;
+  hash: string;
+  salt: string;
+  expiresAt: number;
+}
+
+export interface TemporaryPasswordUpdate {
+  UpdateExpression: string;
+  ExpressionAttributeValues: Record<string, string | number | boolean>;
+}
+
 export type ParsedNewUser = { details: NewUserDetails } | { error: string };
+
+/** A fresh temporary password and its hash, valid for the temporary-password lifetime; the password itself is never stored. */
+export async function issueTemporaryPassword(nowMs = Date.now()): Promise<TemporaryPassword> {
+  const tempPassword = generateTempPassword();
+  const { hash, salt } = await hashPassword(tempPassword);
+  const expiresAt = Math.floor(nowMs / 1000) + TEMP_PASSWORD_TTL_SECONDS;
+  return { tempPassword, hash, salt, expiresAt };
+}
+
+/** The write that puts an existing user back on a temporary password. */
+export function temporaryPasswordUpdate(
+  temp: TemporaryPassword,
+  resetAt: string,
+): TemporaryPasswordUpdate {
+  return {
+    UpdateExpression:
+      'SET passwordHash = :hash, passwordSalt = :salt, mustChangePassword = :true, tempPasswordExpiresAt = :expiresAt, passwordResetAt = :resetAt',
+    ExpressionAttributeValues: {
+      ':hash': temp.hash,
+      ':salt': temp.salt,
+      ':true': true,
+      ':expiresAt': temp.expiresAt,
+      ':resetAt': resetAt,
+    },
+  };
+}
 
 /** The temporary password is returned once and only its hash is kept on the user. */
 export async function buildNewUser(input: NewUserInput): Promise<NewUser> {
-  const tempPassword = generateTempPassword();
-  const { hash, salt } = await hashPassword(tempPassword);
+  const temp = await issueTemporaryPassword();
 
   const user: User = {
     sub: randomUUID(),
@@ -35,13 +74,14 @@ export async function buildNewUser(input: NewUserInput): Promise<NewUser> {
     emailVerified: true,
     givenName: input.givenName,
     familyName: input.familyName,
-    passwordHash: hash,
-    passwordSalt: salt,
+    passwordHash: temp.hash,
+    passwordSalt: temp.salt,
     mustChangePassword: true,
     roles: input.roles,
     createdAt: new Date().toISOString(),
+    tempPasswordExpiresAt: temp.expiresAt,
   };
-  return { user, tempPassword };
+  return { user, tempPassword: temp.tempPassword };
 }
 
 /** Reads the add-user form. It never grants roles; those are added from the user page. */

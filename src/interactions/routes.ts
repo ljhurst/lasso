@@ -12,6 +12,7 @@ import {
   verifyPassword,
 } from '#src/users/password.ts';
 import { clearLoginAttempts, reserveLoginAttempt } from '#src/users/login-throttle.ts';
+import { isTemporaryPasswordExpired } from '#src/users/status.ts';
 import { getUserByEmail, getUserBySub, updatePassword } from '#src/users/store.ts';
 import type { User } from '#src/users/types.ts';
 import { ChangePasswordPage } from '#src/interactions/views/change-password.tsx';
@@ -219,7 +220,11 @@ export function buildInteractionRouter(provider: Provider): Router {
 
 type AuthOutcome =
   | { user: User }
-  | { user?: undefined; failure: 'unknown_user' | 'throttled' | 'bad_password'; sub?: string };
+  | {
+      user?: undefined;
+      failure: 'unknown_user' | 'throttled' | 'bad_password' | 'expired';
+      sub?: string;
+    };
 
 async function authenticate(
   email: string | null,
@@ -243,6 +248,9 @@ async function authenticate(
   });
   if (!valid) {
     return { failure: 'bad_password', sub: user.sub };
+  }
+  if (isTemporaryPasswordExpired(user)) {
+    return { failure: 'expired', sub: user.sub };
   }
   await clearLoginAttempts(user.sub, ip);
   return { user };

@@ -9,6 +9,7 @@ import {
 import { docClient } from '#src/adapter/client.ts';
 import { env } from '#src/env.ts';
 import { normalizeEmail } from '#src/users/email.ts';
+import { type TemporaryPassword, temporaryPasswordUpdate } from '#src/users/provision.ts';
 import type { User } from '#src/users/types.ts';
 
 export async function getUserBySub(sub: string): Promise<User | undefined> {
@@ -100,12 +101,22 @@ export async function updatePassword(
       TableName: env.usersTableName,
       Key: { sub },
       UpdateExpression:
-        'SET passwordHash = :hash, passwordSalt = :salt, mustChangePassword = :false',
+        'SET passwordHash = :hash, passwordSalt = :salt, mustChangePassword = :false REMOVE tempPasswordExpiresAt, passwordResetAt',
       ExpressionAttributeValues: {
         ':hash': password.hash,
         ':salt': password.salt,
         ':false': false,
       },
+    }),
+  );
+}
+
+export async function setTemporaryPassword(sub: string, temp: TemporaryPassword): Promise<void> {
+  await docClient.send(
+    new UpdateCommand({
+      TableName: env.usersTableName,
+      Key: { sub },
+      ...temporaryPasswordUpdate(temp, new Date().toISOString()),
     }),
   );
 }

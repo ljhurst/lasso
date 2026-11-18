@@ -29,7 +29,7 @@ export function DeleteUserPage(props: { user: User }) {
           <li>Removes their account. This can't be undone.</li>
           <li>Apps keep any data stored under their user ID</li>
         </ul>
-        <form class="actions" method="post" action={`/admin/users/${user.sub}/delete`}>
+        <form class="actions" method="post" action={`/admin/users/${user.sub}/delete`} data-once>
           <button type="submit" class="row-action danger">
             Delete user
           </button>

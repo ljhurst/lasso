@@ -16,21 +16,30 @@ export function UsersListPage(props: { users: User[] }) {
           <Empty>No users yet.</Empty>
         ) : (
           <Table
-            columns={['Name', 'Email', 'Roles', 'Status', '']}
-            rows={props.users.map((user) => [
-              <span safe>
+            columns={['Name', 'Email', 'Roles', 'Status']}
+            rows={props.users.toSorted(byFirstName).map((user) => [
+              <a class="name-link" href={`/admin/users/${user.sub}`} safe>
                 {user.givenName} {user.familyName}
-              </span>,
+              </a>,
               <code safe>{user.email}</code>,
               <List items={user.roles} mono />,
               <span safe>{STATUS_LABEL[accountStatus(user)]}</span>,
-              <a class="row-action" href={`/admin/users/${user.sub}`}>
-                View
-              </a>,
             ])}
           />
         )}
       </section>
     </Layout>
   );
+}
+
+function byFirstName(a: User, b: User): number {
+  return (
+    compareText(a.givenName, b.givenName) ||
+    compareText(a.familyName, b.familyName) ||
+    compareText(a.email, b.email)
+  );
+}
+
+function compareText(a: string, b: string): number {
+  return a.localeCompare(b, 'en', { sensitivity: 'base' });
 }

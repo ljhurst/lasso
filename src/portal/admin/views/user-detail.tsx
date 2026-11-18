@@ -16,7 +16,7 @@ export function UserDetailPage(props: {
   accessTokens: AccessTokenRow[];
   roles: HeldRole[];
   grantableRoles: string[];
-  canDelete: boolean;
+  canManage: boolean;
 }) {
   return (
     <Layout title={props.user.email} active="/admin/users" isAdmin={true}>
@@ -37,6 +37,7 @@ export function UserDetailPage(props: {
             },
             { label: 'Status', value: <span safe>{STATUS_LABEL[accountStatus(props.user)]}</span> },
             { label: 'Created', value: <Time seconds={createdAtSeconds(props.user)} /> },
+            ...passwordExpiryFacts(props.user),
           ]}
         />
       </section>
@@ -134,7 +135,18 @@ export function UserDetailPage(props: {
           />
         )}
       </section>
-      {props.canDelete ? (
+      {props.canManage ? (
+        <section>
+          <h2>Reset password</h2>
+          <p class="empty">
+            Replaces their password with a temporary one and signs them out everywhere.
+          </p>
+          <a class="row-action caution" href={`/admin/users/${props.user.sub}/reset-password`}>
+            Reset password
+          </a>
+        </section>
+      ) : null}
+      {props.canManage ? (
         <section>
           <h2>Delete user</h2>
           <p class="empty">Removes the account and signs them out everywhere.</p>
@@ -175,7 +187,7 @@ function RoleRow(props: { held: HeldRole; sub: string }) {
         <input type="hidden" name="role" value={held.role} />
         <button
           type="submit"
-          class="row-action"
+          class="row-action caution"
           aria-label={`Remove ${held.role}`}
           disabled={Boolean(held.blockedReason)}
         >
@@ -189,4 +201,11 @@ function RoleRow(props: { held: HeldRole; sub: string }) {
 function createdAtSeconds(user: User): number | undefined {
   const created = Date.parse(user.createdAt);
   return Number.isNaN(created) ? undefined : Math.floor(created / 1000);
+}
+
+function passwordExpiryFacts(user: User): { label: string; value: JSX.Element }[] {
+  if (!user.mustChangePassword || user.tempPasswordExpiresAt === undefined) {
+    return [];
+  }
+  return [{ label: 'Password expires', value: <Time seconds={user.tempPasswordExpiresAt} /> }];
 }
