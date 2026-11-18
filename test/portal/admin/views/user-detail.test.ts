@@ -21,7 +21,6 @@ function render(overrides: Partial<Parameters<typeof UserDetailPage>[0]> = {}) {
     grants: [],
     accessTokens: [],
     grantableRoles: [],
-    clientNames: { freal: 'Freal' },
     ...overrides,
   });
 }
@@ -34,7 +33,7 @@ describe('UserDetailPage', () => {
     expect(await render()).toContain(user.sub);
   });
 
-  it('shows what each session signed in to, by name with the id beside it', async () => {
+  it('shows what each session signed in to, by id', async () => {
     const html = await render({
       sessions: [
         {
@@ -46,9 +45,48 @@ describe('UserDetailPage', () => {
       ],
     });
 
-    expect(html).toContain('<span>Freal</span> <code>freal</code>');
+    expect(html).toContain('<code>freal</code>');
+    expect(html).not.toContain('Freal');
     expect(html).toContain('<code>retired-app</code>');
     expect(html).toContain('datetime="2027-01-15T08:00:00.000Z"');
+  });
+
+  it('labels every cell with its column heading', async () => {
+    const html = await render({
+      sessions: [{ id: 's-1', clientIds: ['freal'], loginTs: 1, expiresAt: 2 }],
+      grants: [{ id: 'g-1', clientId: 'freal', expiresAt: 2 }],
+      accessTokens: [{ id: 't-1', clientId: 'freal', scope: 'openid', expiresAt: 2 }],
+    });
+    const labels = [...html.matchAll(/data-label="([^"]+)"/g)].map((match) => match[1]);
+
+    expect(labels).toEqual([
+      'Apps',
+      'Signed in',
+      'Expires',
+      'Session ID',
+      'Client',
+      'Expires',
+      'Grant ID',
+      'Client',
+      'Scope',
+      'Expires',
+    ]);
+  });
+
+  it('keeps table roles on the rows and cells', async () => {
+    const html = await render({ grants: [{ id: 'g-1', clientId: 'freal' }] });
+
+    expect(html).toContain('<table role="table">');
+    expect(html).toContain('<tr role="row">');
+    expect(html).toContain('role="cell"');
+  });
+
+  it('shows the email, sub and roles as labelled facts', async () => {
+    const html = await render();
+
+    expect(html).toMatch(/<dt>Email<\/dt><dd><code>friend@example.com<\/code><\/dd>/);
+    expect(html).toContain('<dt>User ID (sub)</dt>');
+    expect(html).toContain('<dt>Roles</dt>');
   });
 
   it('shows a dash for a session with no apps', async () => {
@@ -77,21 +115,12 @@ describe('UserDetailPage', () => {
     expect(headers).toEqual([...headers].sort((a, b) => a - b));
   });
 
-  it('escapes a client name', async () => {
-    const html = await render({
-      grants: [{ id: 'g-1', clientId: 'evil' }],
-      clientNames: { evil: '<script>alert(1)</script>' },
-    });
-
-    expect(html).not.toContain('<script>alert(1)</script>');
-    expect(html).toContain('&lt;script>');
-  });
-
   it.each([
     ['given name', { user: { ...user, givenName: HOSTILE } }],
     ['email', { user: { ...user, email: HOSTILE } }],
     ['session id', { sessions: [{ id: HOSTILE, clientIds: [] }] }],
     ['grant id', { grants: [{ id: HOSTILE, clientId: 'freal' }] }],
+    ['client id', { grants: [{ id: 'g-1', clientId: HOSTILE }] }],
     ['token scope', { accessTokens: [{ id: 't', clientId: 'freal', scope: HOSTILE }] }],
   ])('escapes a hostile %s', async (_name, overrides) => {
     const html = await render(overrides);

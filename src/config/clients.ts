@@ -88,10 +88,3 @@ export async function buildClients(): Promise<ClientMetadata[]> {
     },
   ];
 }
-
-export async function clientNames(): Promise<Record<string, string>> {
-  const clients = await buildClients();
-  return Object.fromEntries(
-    clients.map((client) => [client.client_id, client.client_name ?? client.client_id]),
-  );
-}

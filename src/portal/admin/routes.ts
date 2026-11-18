@@ -1,7 +1,6 @@
 import Router from '@koa/router';
 import type Provider from 'oidc-provider';
 import { requireSameOrigin } from '#src/auth/same-origin.ts';
-import { clientNames } from '#src/config/clients.ts';
 import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
 import { readForm } from '#src/form-body.ts';
 import { addRole, getUserBySub, listUsers, removeRole } from '#src/users/store.ts';
@@ -65,11 +64,10 @@ export function buildAdminRouter(provider: Provider): Router {
       return;
     }
 
-    const [sessions, grants, accessTokens, names] = await Promise.all([
+    const [sessions, grants, accessTokens] = await Promise.all([
       listSessions(),
       listGrants(),
       listAccessTokens(),
-      clientNames(),
     ]);
 
     ctx.type = 'html';
@@ -78,7 +76,6 @@ export function buildAdminRouter(provider: Provider): Router {
       sessions: sessions.filter((s) => s.accountId === user.sub).sort(byLatestExpiry),
       grants: grants.filter((g) => g.accountId === user.sub).sort(byLatestExpiry),
       accessTokens: accessTokens.filter((t) => t.accountId === user.sub).sort(byLatestExpiry),
-      clientNames: names,
       grantableRoles: allResourceScopes.filter((role) => !user.roles.includes(role)),
     });
   });
