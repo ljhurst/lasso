@@ -9,6 +9,7 @@ import { partitionScopeByRoles } from '#src/interactions/routes.ts';
 import type { User } from '#src/users/types.ts';
 import { buildRequirePortalSession } from '#src/portal/auth/session.ts';
 import { DashboardPage } from '#src/portal/apps/views/dashboard.tsx';
+import { APPS_URL } from '#src/portal/paths.ts';
 
 export interface UserApp {
   indicator: string;
@@ -26,7 +27,7 @@ export function getUserApps(roles: string[]): UserApp[] {
 }
 
 export function buildAppsRouter(provider: Provider): Router {
-  const router = new Router({ prefix: '/apps' });
+  const router = new Router({ prefix: APPS_URL });
   const requirePortalSession = buildRequirePortalSession(provider);
 
   router.get('/', requirePortalSession, async (ctx) => {

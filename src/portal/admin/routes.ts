@@ -3,6 +3,7 @@ import type Provider from 'oidc-provider';
 import { requireSameOrigin } from '#src/auth/same-origin.ts';
 import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
 import { readForm } from '#src/form-body.ts';
+import { ADMIN_PREFIX, adminUrl, ROUTE } from '#src/portal/paths.ts';
 import { logEvent } from '#src/observability/events.ts';
 import { buildNewUser, issueTemporaryPassword, parseNewUser } from '#src/users/provision.ts';
 import {
@@ -74,27 +75,27 @@ export async function assignRole(provider: Provider, sub: string, role: string):
 }
 
 export function buildAdminRouter(provider: Provider): Router {
-  const router = new Router({ prefix: '/admin' });
+  const router = new Router({ prefix: ADMIN_PREFIX });
   const requirePortalSession = buildRequirePortalSession(provider);
 
   router.use(requireSameOrigin, requirePortalSession, requireAdmin);
 
-  router.get('/', async (ctx) => {
+  router.get(ROUTE.dashboard, async (ctx) => {
     ctx.type = 'html';
     ctx.body = await DashboardPage();
   });
 
-  router.get('/users', async (ctx) => {
+  router.get(ROUTE.users, async (ctx) => {
     ctx.type = 'html';
     ctx.body = await UsersListPage({ users: await listUsers() });
   });
 
-  router.get('/users/new', async (ctx) => {
+  router.get(ROUTE.newUser, async (ctx) => {
     ctx.type = 'html';
     ctx.body = await NewUserPage({});
   });
 
-  router.post('/users', async (ctx) => {
+  router.post(ROUTE.users, async (ctx) => {
     const form = await readForm(ctx);
     const parsed = parseNewUser(form);
     if ('error' in parsed) {
@@ -125,10 +126,10 @@ export function buildAdminRouter(provider: Provider): Router {
     });
   });
 
-  router.get('/users/:sub', async (ctx) => {
+  router.get(ROUTE.user, async (ctx) => {
     const user = ctx.params.sub ? await getUserBySub(ctx.params.sub) : undefined;
     if (!user) {
-      ctx.redirect('/admin/users');
+      ctx.redirect(adminUrl.users());
       return;
     }
 
@@ -150,19 +151,19 @@ export function buildAdminRouter(provider: Provider): Router {
     });
   });
 
-  router.post('/users/:sub/roles', async (ctx) => {
+  router.post(ROUTE.addRole, async (ctx) => {
     const { sub } = ctx.params;
     const role = (await readForm(ctx)).get('role');
     if (sub && role && allResourceScopes.includes(role)) {
       await assignRole(provider, sub, role);
     }
-    ctx.redirect(`/admin/users/${sub}`);
+    ctx.redirect(adminUrl.user(sub ?? ''));
   });
 
-  router.post('/users/:sub/roles/remove', async (ctx) => {
+  router.post(ROUTE.removeRole, async (ctx) => {
     const user = ctx.params.sub ? await getUserBySub(ctx.params.sub) : undefined;
     if (!user) {
-      ctx.redirect('/admin/users');
+      ctx.redirect(adminUrl.users());
       return;
     }
 
@@ -171,10 +172,10 @@ export function buildAdminRouter(provider: Provider): Router {
       await removeRole(user.sub, role);
       await revokeGrantsWithScope(provider, user.sub, role);
     }
-    ctx.redirect(`/admin/users/${user.sub}`);
+    ctx.redirect(adminUrl.user(user.sub));
   });
 
-  router.get('/users/:sub/delete', async (ctx) => {
+  router.get(ROUTE.deleteUser, async (ctx) => {
     const user = await findOtherUser(ctx);
     if (!user) {
       return;
@@ -184,7 +185,7 @@ export function buildAdminRouter(provider: Provider): Router {
     ctx.body = await DeleteUserPage({ user });
   });
 
-  router.post('/users/:sub/delete', async (ctx) => {
+  router.post(ROUTE.deleteUser, async (ctx) => {
     const user = await findOtherUser(ctx);
     if (!user) {
       return;
@@ -193,10 +194,10 @@ export function buildAdminRouter(provider: Provider): Router {
     await revokeAllAccess(provider, user.sub);
     await deleteUser(user.sub);
     logEvent({ event: 'user_deleted', sub: user.sub, by: ctx.state.user.sub });
-    ctx.redirect('/admin/users');
+    ctx.redirect(adminUrl.users());
   });
 
-  router.get('/users/:sub/reset-password', async (ctx) => {
+  router.get(ROUTE.resetPassword, async (ctx) => {
     const user = await findOtherUser(ctx);
     if (!user) {
       return;
@@ -206,7 +207,7 @@ export function buildAdminRouter(provider: Provider): Router {
     ctx.body = await ResetPasswordPage({ user });
   });
 
-  router.post('/users/:sub/reset-password', async (ctx) => {
+  router.post(ROUTE.resetPassword, async (ctx) => {
     const user = await findOtherUser(ctx);
     if (!user) {
       return;
@@ -236,7 +237,7 @@ async function findOtherUser(ctx: RouterContext): Promise<User | undefined> {
   if (user && canManageUser(user, ctx.state.user.sub)) {
     return user;
   }
-  ctx.redirect(user ? `/admin/users/${user.sub}` : '/admin/users');
+  ctx.redirect(user ? adminUrl.user(user.sub) : adminUrl.users());
   return undefined;
 }
 
