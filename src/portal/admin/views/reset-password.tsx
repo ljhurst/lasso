@@ -1,6 +1,7 @@
 import { TEMP_PASSWORD_TTL_DAYS } from '#src/users/provision.ts';
 import type { User } from '#src/users/types.ts';
-import { Facts, Layout } from '#src/portal/views/layout.tsx';
+import { Facts } from '#src/portal/views/components/facts.tsx';
+import { Layout } from '#src/portal/views/layout.tsx';
 
 export function ResetPasswordPage(props: { user: User }) {
   const { user } = props;

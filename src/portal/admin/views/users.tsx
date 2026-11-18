@@ -1,6 +1,9 @@
 import { accountStatus, STATUS_LABEL } from '#src/users/status.ts';
 import type { User } from '#src/users/types.ts';
-import { Empty, Layout, List, Table } from '#src/portal/views/layout.tsx';
+import { Empty } from '#src/portal/views/components/empty.tsx';
+import { List } from '#src/portal/views/components/list.tsx';
+import { Table } from '#src/portal/views/components/table.tsx';
+import { Layout } from '#src/portal/views/layout.tsx';
 
 export function UsersListPage(props: { users: User[] }) {
   return (

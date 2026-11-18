@@ -1,6 +1,7 @@
 import { buildMcpAddCommand, buildMcpInspectorCommand } from '#src/config/mcp-command.ts';
 import { AppType } from '#src/config/resources.ts';
-import { CopyButton, Layout } from '#src/portal/views/layout.tsx';
+import { CopyButton } from '#src/portal/views/components/copy-button.tsx';
+import { Layout } from '#src/portal/views/layout.tsx';
 import type { UserApp } from '#src/portal/apps/routes.ts';
 
 const MODAL_SCRIPT = `

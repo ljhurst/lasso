@@ -4,6 +4,8 @@
     "includes": [
       "src/**/*.ts",
       "src/**/*.tsx",
+      "src/**/*.css",
+      "src/**/*.js",
       "test/**/*.ts",
       "scripts/**/*.ts",
       "!!**/.terraform"
