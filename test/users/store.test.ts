@@ -1,4 +1,5 @@
 import {
+  DeleteCommand,
   DynamoDBDocumentClient,
   GetCommand,
   QueryCommand,
@@ -9,6 +10,7 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addRole,
+  deleteUser,
   getUserByEmail,
   getUserBySub,
   listUsers,
@@ -65,6 +67,16 @@ describe('getUserByEmail', () => {
     await getUserByEmail('  Friend@Example.COM ');
     const call = ddbMock.commandCalls(QueryCommand)[0]?.args[0].input;
     expect(call?.ExpressionAttributeValues).toEqual({ ':email': 'friend@example.com' });
+  });
+});
+
+describe('deleteUser', () => {
+  it('deletes the item for the sub', async () => {
+    ddbMock.on(DeleteCommand).resolves({});
+
+    await deleteUser('sub-1');
+
+    expect(ddbMock.commandCalls(DeleteCommand)[0]?.args[0].input.Key).toEqual({ sub: 'sub-1' });
   });
 });
 

@@ -9,7 +9,11 @@ import type Provider from 'oidc-provider';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { primaryKey } from '#src/adapter/keys.ts';
 import { assignRole } from '#src/portal/admin/routes.ts';
-import { revokeGrantsRejectingScope, revokeGrantsWithScope } from '#src/portal/admin/revocation.ts';
+import {
+  revokeAllAccess,
+  revokeGrantsRejectingScope,
+  revokeGrantsWithScope,
+} from '#src/portal/admin/revocation.ts';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 
@@ -141,6 +145,81 @@ describe('revokeGrantsRejectingScope', () => {
     };
 
     await revokeGrantsRejectingScope(stubProvider(grants, calls), 'sub-1', 'porto:write');
+
+    expect(calls).toEqual([]);
+  });
+});
+
+describe('revokeAllAccess', () => {
+  function sessionRow(id: string, accountId: string) {
+    return { pk: primaryKey('Session', id), id, modelName: 'Session', payload: { accountId } };
+  }
+
+  function stubSessionProvider(
+    sessions: string[],
+    grants: Record<string, ReturnType<typeof stubGrant>>,
+    calls: string[],
+  ) {
+    const base = stubProvider(grants, calls) as unknown as Record<string, unknown>;
+    return {
+      ...base,
+      Session: {
+        find: vi.fn(async (id: string) =>
+          sessions.includes(id)
+            ? {
+                destroy: async () => {
+                  calls.push(`end-session:${id}`);
+                },
+              }
+            : undefined,
+        ),
+      },
+    } as unknown as Provider;
+  }
+
+  function scanByModel(rows: Record<string, unknown[]>) {
+    ddbMock.on(ScanCommand).callsFake(async (input) => ({
+      Items: rows[input.ExpressionAttributeValues[':modelName']] ?? [],
+    }));
+  }
+
+  it("ends the account's sessions, then revokes all of its grants", async () => {
+    scanByModel({
+      Session: [sessionRow('s-1', 'sub-1'), sessionRow('s-other', 'sub-2')],
+      Grant: [grantRow('g-1', 'sub-1'), grantRow('g-other', 'sub-2')],
+    });
+    const calls: string[] = [];
+    const grants = {
+      'g-1': stubGrant('g-1', { [FIFE]: 'fife:read' }, calls),
+      'g-other': stubGrant('g-other', { [FIFE]: 'fife:read' }, calls),
+    };
+
+    await revokeAllAccess(stubSessionProvider(['s-1', 's-other'], grants, calls), 'sub-1');
+
+    expect(calls).toEqual([
+      'end-session:s-1',
+      'revoke-at:g-1',
+      'revoke-code:g-1',
+      'revoke-rt:g-1',
+      'destroy:g-1',
+    ]);
+  });
+
+  it('revokes a grant that carries no resource scopes', async () => {
+    scanByModel({ Session: [], Grant: [grantRow('g-oidc', 'sub-1')] });
+    const calls: string[] = [];
+    const grants = { 'g-oidc': stubGrant('g-oidc', {}, calls) };
+
+    await revokeAllAccess(stubSessionProvider([], grants, calls), 'sub-1');
+
+    expect(calls).toContain('destroy:g-oidc');
+  });
+
+  it('skips a session that has already expired', async () => {
+    scanByModel({ Session: [sessionRow('s-gone', 'sub-1')], Grant: [] });
+    const calls: string[] = [];
+
+    await revokeAllAccess(stubSessionProvider([], {}, calls), 'sub-1');
 
     expect(calls).toEqual([]);
   });

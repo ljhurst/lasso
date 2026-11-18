@@ -332,6 +332,21 @@ const STYLES = `
 
   button.row-action:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  .row-action.danger {
+    color: var(--error-text);
+    border-color: var(--error-border);
+    background: var(--error-bg);
+  }
+
+  .row-action.danger:not(:disabled):hover {
+    background: var(--error-bg);
+    filter: brightness(1.15);
+  }
+
+  .consequences { margin: 0; padding-left: 20px; font-size: 0.875rem; line-height: 1.6; }
+
+  .confirm { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
   .roles {
     list-style: none;
     margin: 0 0 16px;

@@ -22,6 +22,7 @@ function render(overrides: Partial<Parameters<typeof UserDetailPage>[0]> = {}) {
     accessTokens: [],
     roles: [],
     grantableRoles: [],
+    canDelete: true,
     ...overrides,
   });
 }
@@ -140,6 +141,19 @@ describe('UserDetailPage', () => {
     it('does not disable a removable role', async () => {
       expect(await render({ roles: [held] })).not.toMatch(/<button[^>]*disabled/);
     });
+  });
+
+  it('links to the delete confirmation for another user', async () => {
+    const html = await render();
+
+    expect(html).toContain(`href="/admin/users/${user.sub}/delete"`);
+    expect(html).not.toContain('Delete user…');
+  });
+
+  it('offers no delete for your own account', async () => {
+    const html = await render({ canDelete: false });
+
+    expect(html).not.toContain('/delete"');
   });
 
   it('shows a dash for a session with no apps', async () => {

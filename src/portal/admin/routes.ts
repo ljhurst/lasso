@@ -1,9 +1,10 @@
-import Router from '@koa/router';
+import Router, { type RouterContext } from '@koa/router';
 import type Provider from 'oidc-provider';
 import { requireSameOrigin } from '#src/auth/same-origin.ts';
 import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
 import { readForm } from '#src/form-body.ts';
-import { addRole, getUserBySub, listUsers, removeRole } from '#src/users/store.ts';
+import { logEvent } from '#src/observability/events.ts';
+import { addRole, deleteUser, getUserBySub, listUsers, removeRole } from '#src/users/store.ts';
 import { buildRequirePortalSession, requireAdmin } from '#src/portal/auth/session.ts';
 import {
   byLatestExpiry,
@@ -11,8 +12,13 @@ import {
   listGrants,
   listSessions,
 } from '#src/portal/admin/data.ts';
-import { revokeGrantsRejectingScope, revokeGrantsWithScope } from '#src/portal/admin/revocation.ts';
+import {
+  revokeAllAccess,
+  revokeGrantsRejectingScope,
+  revokeGrantsWithScope,
+} from '#src/portal/admin/revocation.ts';
 import { DashboardPage } from '#src/portal/admin/views/dashboard.tsx';
+import { DeleteUserPage } from '#src/portal/admin/views/delete-user.tsx';
 import { type HeldRole, UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
 import { UsersListPage } from '#src/portal/admin/views/users.tsx';
 import type { User } from '#src/users/types.ts';
@@ -27,6 +33,11 @@ export function canRemoveRole(target: User, role: string, actorSub: string): boo
   const isKnown = target.roles.includes(role) || allResourceScopes.includes(role);
   const isSelfLockout = target.sub === actorSub && role === LASSO_ADMIN_SCOPE;
   return isKnown && !isSelfLockout;
+}
+
+/** Admins can't delete their own account, so they can't lock themselves out. */
+export function canDeleteUser(target: User, actorSub: string): boolean {
+  return target.sub !== actorSub;
 }
 
 export function buildHeldRoles(user: User, actorSub: string): HeldRole[] {
@@ -87,6 +98,7 @@ export function buildAdminRouter(provider: Provider): Router {
       grants: grants.filter((g) => g.accountId === user.sub).sort(byLatestExpiry),
       accessTokens: accessTokens.filter((t) => t.accountId === user.sub).sort(byLatestExpiry),
       roles: buildHeldRoles(user, ctx.state.user.sub),
+      canDelete: canDeleteUser(user, ctx.state.user.sub),
       grantableRoles: allResourceScopes.filter((role) => !user.roles.includes(role)),
     });
   });
@@ -115,5 +127,37 @@ export function buildAdminRouter(provider: Provider): Router {
     ctx.redirect(`/admin/users/${user.sub}`);
   });
 
+  router.get('/users/:sub/delete', async (ctx) => {
+    const user = await findDeletableUser(ctx);
+    if (!user) {
+      return;
+    }
+
+    ctx.type = 'html';
+    ctx.body = await DeleteUserPage({ user });
+  });
+
+  router.post('/users/:sub/delete', async (ctx) => {
+    const user = await findDeletableUser(ctx);
+    if (!user) {
+      return;
+    }
+
+    await revokeAllAccess(provider, user.sub);
+    await deleteUser(user.sub);
+    logEvent({ event: 'user_deleted', sub: user.sub, by: ctx.state.user.sub });
+    ctx.redirect('/admin/users');
+  });
+
   return router;
+}
+
+/** Loads the user in the URL, or redirects away and returns nothing when they can't be deleted. */
+async function findDeletableUser(ctx: RouterContext): Promise<User | undefined> {
+  const user = ctx.params.sub ? await getUserBySub(ctx.params.sub) : undefined;
+  if (user && canDeleteUser(user, ctx.state.user.sub)) {
+    return user;
+  }
+  ctx.redirect(user ? `/admin/users/${user.sub}` : '/admin/users');
+  return undefined;
 }

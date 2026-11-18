@@ -1,4 +1,10 @@
-import { GetCommand, QueryCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DeleteCommand,
+  GetCommand,
+  QueryCommand,
+  ScanCommand,
+  UpdateCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { docClient } from '#src/adapter/client.ts';
 import { env } from '#src/env.ts';
 import { normalizeEmail } from '#src/users/email.ts';
@@ -27,6 +33,10 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
 export async function listUsers(): Promise<User[]> {
   const result = await docClient.send(new ScanCommand({ TableName: env.usersTableName }));
   return (result.Items ?? []) as User[];
+}
+
+export async function deleteUser(sub: string): Promise<void> {
+  await docClient.send(new DeleteCommand({ TableName: env.usersTableName, Key: { sub } }));
 }
 
 export async function addRole(sub: string, role: string): Promise<void> {
