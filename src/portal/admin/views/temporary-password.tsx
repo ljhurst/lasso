@@ -1,5 +1,8 @@
 import type { User } from '#src/users/types.ts';
-import { CopyButton, Facts, Layout, Time } from '#src/portal/views/layout.tsx';
+import { CopyButton } from '#src/portal/views/components/copy-button.tsx';
+import { Facts } from '#src/portal/views/components/facts.tsx';
+import { Time } from '#src/portal/views/components/time.tsx';
+import { Layout } from '#src/portal/views/layout.tsx';
 
 export function TemporaryPasswordPage(props: {
   mode: 'created' | 'reset';

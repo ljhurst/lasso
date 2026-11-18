@@ -1,7 +1,10 @@
 import type { ClientMetadata } from 'oidc-provider';
 import { buildClients } from '#src/config/clients.ts';
 import { resources } from '#src/config/resources.ts';
-import { Empty, Layout, List, Table } from '#src/portal/views/layout.tsx';
+import { Empty } from '#src/portal/views/components/empty.tsx';
+import { List } from '#src/portal/views/components/list.tsx';
+import { Table } from '#src/portal/views/components/table.tsx';
+import { Layout } from '#src/portal/views/layout.tsx';
 
 function clientRow(client: ClientMetadata) {
   return [
