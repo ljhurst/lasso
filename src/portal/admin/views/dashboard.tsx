@@ -4,20 +4,12 @@ import { resources } from '#src/config/resources.ts';
 import { Empty, Layout, List, Table } from '#src/portal/views/layout.tsx';
 
 function clientRow(client: ClientMetadata) {
-  return (
-    <tr>
-      <td safe>{client.client_name}</td>
-      <td>
-        <code safe>{client.client_id}</code>
-      </td>
-      <td>
-        <List items={client.redirect_uris ?? []} mono />
-      </td>
-      <td>
-        <List items={client.grant_types ?? []} />
-      </td>
-    </tr>
-  );
+  return [
+    <span safe>{client.client_name}</span>,
+    <code safe>{client.client_id}</code>,
+    <List items={client.redirect_uris ?? []} mono />,
+    <List items={client.grant_types ?? []} />,
+  ];
 }
 
 export async function DashboardPage() {
@@ -31,9 +23,10 @@ export async function DashboardPage() {
         {clients.length === 0 ? (
           <Empty>No clients registered.</Empty>
         ) : (
-          <Table columns={['Name', 'Client ID', 'Redirect URIs', 'Grant types']}>
-            {clients.map(clientRow)}
-          </Table>
+          <Table
+            columns={['Name', 'Client ID', 'Redirect URIs', 'Grant types']}
+            rows={clients.map(clientRow)}
+          />
         )}
       </section>
       <section>
@@ -41,20 +34,15 @@ export async function DashboardPage() {
         {resourceEntries.length === 0 ? (
           <Empty>No resources registered.</Empty>
         ) : (
-          <Table columns={['Name', 'Resource indicator', 'Scope', 'Access token format']}>
-            {resourceEntries.map(([indicator, resource]) => (
-              <tr>
-                <td safe>{resource.name}</td>
-                <td>
-                  <code safe>{indicator}</code>
-                </td>
-                <td>
-                  <List items={resource.scope?.split(' ') ?? []} mono />
-                </td>
-                <td>{resource.accessTokenFormat}</td>
-              </tr>
-            ))}
-          </Table>
+          <Table
+            columns={['Name', 'Resource indicator', 'Scope', 'Access token format']}
+            rows={resourceEntries.map(([indicator, resource]) => [
+              <span safe>{resource.name}</span>,
+              <code safe>{indicator}</code>,
+              <List items={resource.scope?.split(' ') ?? []} mono />,
+              resource.accessTokenFormat,
+            ])}
+          />
         )}
       </section>
     </Layout>

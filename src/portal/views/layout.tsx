@@ -58,10 +58,11 @@ export function Layout(props: {
   );
 }
 
-export function Table(props: { columns: string[]; children: Children }) {
+export function Table(props: { columns: string[]; rows: Children[][] }) {
   return (
     <div class="table-scroll">
-      <table>
+      {/* biome-ignore lint/a11y/noRedundantRoles: stacked mobile layout sets display:block, which drops table semantics in some browsers */}
+      <table role="table">
         <thead>
           <tr>
             {props.columns.map((column) => (
@@ -69,9 +70,34 @@ export function Table(props: { columns: string[]; children: Children }) {
             ))}
           </tr>
         </thead>
-        <tbody>{props.children}</tbody>
+        <tbody>
+          {props.rows.map((row) => (
+            // biome-ignore lint/a11y/noRedundantRoles: stacked mobile layout sets display:block, which drops table semantics in some browsers
+            <tr role="row">
+              {row.map((cell, index) => (
+                // biome-ignore lint/a11y/noRedundantRoles: stacked mobile layout sets display:block, which drops table semantics in some browsers
+                <td role="cell" data-label={props.columns[index] || undefined}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
       </table>
     </div>
+  );
+}
+
+export function Facts(props: { items: { label: string; value: Children }[] }) {
+  return (
+    <dl class="facts">
+      {props.items.map((item) => (
+        <>
+          <dt safe>{item.label}</dt>
+          <dd>{item.value}</dd>
+        </>
+      ))}
+    </dl>
   );
 }
 
@@ -82,7 +108,7 @@ export function Empty(props: { children: Children }) {
 export function Help(props: { text: string }) {
   return (
     <span class="help" tabindex="0" role="note" aria-label={props.text} data-help={props.text}>
-      ?
+      <span class="help-dot">?</span>
     </span>
   );
 }
@@ -129,7 +155,9 @@ const LOCALIZE_TIMES_SCRIPT = `
 `;
 
 const STYLES = `
-  .shell { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+  :root { --code-pad: 6px; }
+
+  .shell { max-width: 960px; margin: 0 auto; padding: 32px 24px 32px; }
 
   header {
     display: flex;
@@ -175,7 +203,7 @@ const STYLES = `
 
   section { margin-bottom: 40px; }
 
-  h2 { font-size: 1rem; margin: 0 0 12px; }
+  h2 { position: relative; font-size: 1rem; margin: 0 0 12px; }
 
   .table-scroll { overflow-x: auto; }
 
@@ -204,10 +232,12 @@ const STYLES = `
   code {
     font-size: 0.8125rem;
     background: var(--bg);
-    padding: 2px 6px;
+    padding: 2px var(--code-pad);
     border-radius: 4px;
     overflow-wrap: anywhere;
   }
+
+  time { white-space: nowrap; }
 
   ul.stacked {
     list-style: none;
@@ -219,31 +249,40 @@ const STYLES = `
   }
 
   .help {
-    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: -13px -13px -13px -7px;
+    cursor: help;
+    vertical-align: middle;
+  }
+
+  .help-dot {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 18px;
     height: 18px;
-    margin-left: 6px;
     border: 1px solid var(--border);
     border-radius: 50%;
     color: var(--muted);
     font-size: 0.6875rem;
     font-weight: 700;
-    cursor: help;
-    vertical-align: middle;
   }
 
-  .help:hover, .help:focus { color: var(--text); outline: none; }
+  .help:hover .help-dot, .help:focus .help-dot { color: var(--text); }
+
+  .help:focus { outline: none; }
 
   .help:hover::after, .help:focus::after {
     content: attr(data-help);
     position: absolute;
-    top: 24px;
+    top: calc(100% + 4px);
     left: 0;
     z-index: 1;
-    width: 260px;
+    width: min(260px, 100%);
     padding: 10px 12px;
     background: var(--card);
     border: 1px solid var(--border);
@@ -256,6 +295,38 @@ const STYLES = `
   }
 
   .sub { user-select: all; }
+
+  .facts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 24px;
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.875rem;
+  }
+
+  .facts dt { color: var(--muted); font-weight: 600; }
+
+  .facts dd { margin: 0; min-width: 0; }
+
+  .row-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .row-action:hover { background: var(--bg); }
 
   .empty, .empty-cell { color: var(--muted); font-size: 0.875rem; }
 
@@ -447,4 +518,40 @@ const STYLES = `
   }
 
   .modal-close:hover { filter: brightness(1.05); }
+
+  @media (max-width: 640px) {
+    .facts { grid-template-columns: 1fr; gap: 2px; }
+    .facts dd { margin-bottom: 10px; }
+    .facts dd:last-child { margin-bottom: 0; }
+
+    table { display: block; min-width: 0; }
+    thead { display: none; }
+    tbody, tr, td { display: block; }
+    tr { padding: 8px 0; border-bottom: 1px solid var(--border); }
+    tr:last-child { border-bottom: none; }
+    td { border-bottom: none; padding: 6px 14px; }
+
+    td[data-label]::before {
+      content: attr(data-label);
+      display: block;
+      margin-bottom: 2px;
+      color: var(--muted);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .facts code, td code {
+      display: inline-block;
+      max-width: 100%;
+      margin-left: calc(var(--code-pad) * -1);
+      overflow-x: auto;
+      overflow-y: hidden;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    .row-action { display: flex; }
+  }
 `;

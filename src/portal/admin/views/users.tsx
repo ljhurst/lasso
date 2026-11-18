@@ -9,24 +9,19 @@ export function UsersListPage(props: { users: User[] }) {
         {props.users.length === 0 ? (
           <Empty>No users yet.</Empty>
         ) : (
-          <Table columns={['Name', 'Email', 'Roles', '']}>
-            {props.users.map((user) => (
-              <tr>
-                <td safe>
-                  {user.givenName} {user.familyName}
-                </td>
-                <td>
-                  <code safe>{user.email}</code>
-                </td>
-                <td>
-                  <List items={user.roles} mono />
-                </td>
-                <td>
-                  <a href={`/admin/users/${user.sub}`}>View</a>
-                </td>
-              </tr>
-            ))}
-          </Table>
+          <Table
+            columns={['Name', 'Email', 'Roles', '']}
+            rows={props.users.map((user) => [
+              <span safe>
+                {user.givenName} {user.familyName}
+              </span>,
+              <code safe>{user.email}</code>,
+              <List items={user.roles} mono />,
+              <a class="row-action" href={`/admin/users/${user.sub}`}>
+                View
+              </a>,
+            ])}
+          />
         )}
       </section>
     </Layout>

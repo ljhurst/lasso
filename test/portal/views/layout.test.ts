@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Layout, List, Table, Time } from '#src/portal/views/layout.tsx';
+import { Help, Layout, List, Table, Time } from '#src/portal/views/layout.tsx';
 
 describe('Time', () => {
   it('carries the exact time and a readable UTC fallback', () => {
@@ -26,6 +26,43 @@ describe('Layout', () => {
   });
 });
 
+describe('Table', () => {
+  it('labels each cell with its column heading', () => {
+    const html = Table({ columns: ['Name', 'ID'], rows: [['a', 'b']] }) as string;
+
+    expect(html).toContain('<td role="cell" data-label="Name">a</td>');
+    expect(html).toContain('<td role="cell" data-label="ID">b</td>');
+  });
+
+  it('leaves a cell unlabelled when its heading is blank', () => {
+    const html = Table({ columns: ['Name', ''], rows: [['a', 'b']] }) as string;
+
+    expect(html).toContain('<td role="cell">b</td>');
+  });
+
+  it('escapes a hostile heading in its cell label', () => {
+    const html = Table({ columns: ['"><img src=x onerror=alert(1)>'], rows: [['a']] }) as string;
+
+    expect(html).not.toContain('"><img');
+  });
+
+  it('keeps table semantics on the table and its rows', () => {
+    const html = Table({ columns: ['Name'], rows: [['a']] }) as string;
+
+    expect(html).toContain('<table role="table">');
+    expect(html).toContain('<tr role="row">');
+  });
+});
+
+describe('Help', () => {
+  it('carries its text for the tooltip and for screen readers', () => {
+    const html = Help({ text: 'Explains it' }) as string;
+
+    expect(html).toContain('data-help="Explains it"');
+    expect(html).toContain('aria-label="Explains it"');
+  });
+});
+
 describe('portal layout escapes what it prints', () => {
   const HOSTILE = '<img src=x onerror=alert(1)>';
 
@@ -36,7 +73,7 @@ describe('portal layout escapes what it prints', () => {
   });
 
   it('escapes table headings', async () => {
-    const html = await Table({ columns: [HOSTILE], children: '' });
+    const html = await Table({ columns: [HOSTILE], rows: [] });
 
     expect(html).not.toContain(HOSTILE);
   });

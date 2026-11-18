@@ -23,8 +23,6 @@ vi.mock('#src/portal/admin/data.ts', async (importOriginal) => ({
   ...data,
 }));
 
-vi.mock('#src/config/clients.ts', () => ({ clientNames: async () => ({}) }));
-
 vi.mock('#src/portal/admin/revocation.ts', () => ({
   revokeGrantsRejectingScope: vi.fn(),
   revokeGrantsWithScope: vi.fn(),

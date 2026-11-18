@@ -31,4 +31,13 @@ describe('UsersListPage', () => {
     expect(html).not.toContain(HOSTILE);
     expect(html).toContain('&lt;img');
   });
+
+  it('labels each cell and leaves the View link unlabelled', async () => {
+    const html = await UsersListPage({ users: [user({})] });
+
+    expect(html).toContain('data-label="Name"');
+    expect(html).toContain('data-label="Email"');
+    expect(html).toContain('data-label="Roles"');
+    expect(html).toMatch(/<td role="cell"><a class="row-action" href="\/admin\/users\/sub-1">/);
+  });
 });
