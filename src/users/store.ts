@@ -1,6 +1,7 @@
 import {
   DeleteCommand,
   GetCommand,
+  PutCommand,
   QueryCommand,
   ScanCommand,
   UpdateCommand,
@@ -33,6 +34,17 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
 export async function listUsers(): Promise<User[]> {
   const result = await docClient.send(new ScanCommand({ TableName: env.usersTableName }));
   return (result.Items ?? []) as User[];
+}
+
+export async function createUser(user: User): Promise<void> {
+  await docClient.send(
+    new PutCommand({
+      TableName: env.usersTableName,
+      Item: user,
+      ConditionExpression: 'attribute_not_exists(#sub)',
+      ExpressionAttributeNames: { '#sub': 'sub' },
+    }),
+  );
 }
 
 export async function deleteUser(sub: string): Promise<void> {

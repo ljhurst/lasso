@@ -2,6 +2,7 @@ import {
   DeleteCommand,
   DynamoDBDocumentClient,
   GetCommand,
+  PutCommand,
   QueryCommand,
   ScanCommand,
   UpdateCommand,
@@ -10,6 +11,7 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addRole,
+  createUser,
   deleteUser,
   getUserByEmail,
   getUserBySub,
@@ -67,6 +69,19 @@ describe('getUserByEmail', () => {
     await getUserByEmail('  Friend@Example.COM ');
     const call = ddbMock.commandCalls(QueryCommand)[0]?.args[0].input;
     expect(call?.ExpressionAttributeValues).toEqual({ ':email': 'friend@example.com' });
+  });
+});
+
+describe('createUser', () => {
+  it('writes the user only when no one holds that sub, aliasing the reserved word', async () => {
+    ddbMock.on(PutCommand).resolves({});
+
+    await createUser(user);
+
+    const call = ddbMock.commandCalls(PutCommand)[0]?.args[0].input;
+    expect(call?.Item).toEqual(user);
+    expect(call?.ConditionExpression).toBe('attribute_not_exists(#sub)');
+    expect(call?.ExpressionAttributeNames).toEqual({ '#sub': 'sub' });
   });
 });
 

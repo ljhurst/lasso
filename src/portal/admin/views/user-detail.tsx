@@ -1,3 +1,4 @@
+import { accountStatus, STATUS_LABEL } from '#src/users/status.ts';
 import type { User } from '#src/users/types.ts';
 import type { AccessTokenRow, GrantRow, SessionRow } from '#src/portal/admin/data.ts';
 import { Empty, Facts, Help, Layout, List, Table, Time } from '#src/portal/views/layout.tsx';
@@ -34,6 +35,8 @@ export function UserDetailPage(props: {
                 </code>
               ),
             },
+            { label: 'Status', value: <span safe>{STATUS_LABEL[accountStatus(props.user)]}</span> },
+            { label: 'Created', value: <Time seconds={createdAtSeconds(props.user)} /> },
           ]}
         />
       </section>
@@ -52,7 +55,7 @@ export function UserDetailPage(props: {
           <Empty>This user already has every registered role.</Empty>
         ) : (
           <form class="add-role" method="post" action={`/admin/users/${props.user.sub}/roles`}>
-            <select name="role" required aria-label="Role to add">
+            <select name="role" required aria-label="Role to add" class="control">
               <option value="">Choose a role…</option>
               {props.grantableRoles.toSorted().map((role) => (
                 <option value={role} safe>
@@ -60,7 +63,9 @@ export function UserDetailPage(props: {
                 </option>
               ))}
             </select>
-            <button type="submit">Add</button>
+            <button type="submit" class="primary">
+              Add
+            </button>
           </form>
         )}
       </section>
@@ -159,9 +164,9 @@ function RoleRow(props: { held: HeldRole; sub: string }) {
     <li>
       <div class="role-name">
         <code safe>{held.role}</code>
-        {held.registered ? null : <span class="role-note">no longer registered</span>}
+        {held.registered ? null : <span class="note">no longer registered</span>}
         {held.blockedReason ? (
-          <span class="role-note" safe>
+          <span class="note" safe>
             {held.blockedReason}
           </span>
         ) : null}
@@ -179,4 +184,9 @@ function RoleRow(props: { held: HeldRole; sub: string }) {
       </form>
     </li>
   );
+}
+
+function createdAtSeconds(user: User): number | undefined {
+  const created = Date.parse(user.createdAt);
+  return Number.isNaN(created) ? undefined : Math.floor(created / 1000);
 }

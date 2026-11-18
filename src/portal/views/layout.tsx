@@ -52,7 +52,7 @@ export function Layout(props: {
           <main>{props.children}</main>
           <footer safe>v{pkg.version}</footer>
         </div>
-        <script>{LOCALIZE_TIMES_SCRIPT}</script>
+        <script>{LOCALIZE_TIMES_SCRIPT + COPY_SCRIPT + SUBMIT_ONCE_SCRIPT}</script>
       </body>
     </html>
   );
@@ -98,6 +98,27 @@ export function Facts(props: { items: { label: string; value: Children }[] }) {
         </>
       ))}
     </dl>
+  );
+}
+
+export function CopyButton(props: { target: string }) {
+  return (
+    <button
+      type="button"
+      class="copy-icon-button"
+      data-copy-target={props.target}
+      aria-label="Copy"
+      title="Copy"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <rect x="5" y="3" width="8" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3" />
+        <path
+          d="M6.5 3V2.5C6.5 1.94772 6.94772 1.5 7.5 1.5H8.5C9.05228 1.5 9.5 1.94772 9.5 2.5V3"
+          stroke="currentColor"
+          stroke-width="1.3"
+        />
+      </svg>
+    </button>
   );
 }
 
@@ -152,6 +173,44 @@ const LOCALIZE_TIMES_SCRIPT = `
       timeStyle: 'short',
     });
   }
+`;
+
+const CHECK_ICON_SVG =
+  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+
+const COPY_SCRIPT = `
+  document.querySelectorAll('[data-copy-target]').forEach(function (button) {
+    var original = button.innerHTML;
+    button.addEventListener('click', function () {
+      var text = document.getElementById(button.dataset.copyTarget).textContent;
+      navigator.clipboard.writeText(text).then(function () {
+        button.innerHTML = ${JSON.stringify(CHECK_ICON_SVG)};
+        setTimeout(function () {
+          button.innerHTML = original;
+        }, 1500);
+      });
+    });
+  });
+`;
+
+const SUBMIT_ONCE_SCRIPT = `
+  document.querySelectorAll('form[data-once]').forEach(function (form) {
+    form.addEventListener('submit', function () {
+      setTimeout(function () {
+        form.querySelectorAll('button[type="submit"]').forEach(function (button) {
+          button.disabled = true;
+        });
+      }, 0);
+    });
+  });
+
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+      document.querySelectorAll('form[data-once] button[type="submit"]').forEach(function (button) {
+        button.disabled = false;
+      });
+    }
+  });
 `;
 
 const STYLES = `
@@ -312,6 +371,7 @@ const STYLES = `
 
   .facts dd { margin: 0; min-width: 0; }
 
+
   .row-action {
     display: inline-flex;
     align-items: center;
@@ -332,6 +392,24 @@ const STYLES = `
 
   button.row-action:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  .row-action.primary {
+    border-color: transparent;
+    background: var(--accent);
+    color: var(--accent-contrast);
+  }
+
+  .row-action.primary:not(:disabled):hover { background: var(--accent); filter: brightness(1.05); }
+
+  .heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .heading-row h2 { margin: 0; }
+
   .row-action.danger {
     color: var(--error-text);
     border-color: var(--error-border);
@@ -345,7 +423,7 @@ const STYLES = `
 
   .consequences { margin: 0; padding-left: 20px; font-size: 0.875rem; line-height: 1.6; }
 
-  .confirm { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 
   .roles {
     list-style: none;
@@ -380,7 +458,7 @@ const STYLES = `
     min-width: 0;
   }
 
-  .role-note { color: var(--muted); font-size: 0.75rem; }
+  .note { color: var(--muted); font-size: 0.75rem; }
 
   .empty, .empty-cell { color: var(--muted); font-size: 0.875rem; }
 
@@ -388,29 +466,56 @@ const STYLES = `
 
   .add-role { display: flex; align-items: center; gap: 8px; }
 
-  .add-role select {
+  .control {
     min-height: 32px;
     padding: 6px 10px;
     border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--card);
     color: var(--text);
+    font-family: inherit;
     font-size: 0.875rem;
   }
 
-  .add-role button[type="submit"] {
+  button.primary {
     min-height: 32px;
     padding: 6px 12px;
     border: none;
     border-radius: 8px;
     background: var(--accent);
     color: var(--accent-contrast);
+    font-family: inherit;
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
   }
 
-  .add-role button[type="submit"]:hover { filter: brightness(1.05); }
+  button.primary:hover { filter: brightness(1.05); }
+
+  .new-user {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+    max-width: 480px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+  .field.wide, .actions.wide { grid-column: 1 / -1; }
+
+  .actions.wide { margin-top: 4px; }
+
+  .field label { color: var(--muted); font-size: 0.75rem; font-weight: 600; }
+
+  .form-error {
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    border-radius: 8px;
+    color: var(--error-text);
+    font-size: 0.875rem;
+  }
 
   .tiles {
     display: grid;
@@ -548,6 +653,8 @@ const STYLES = `
     padding: 6px 0;
   }
 
+  .command-row code.sub { font-size: 1rem; letter-spacing: 0.04em; }
+
   .copy-icon-button {
     flex-shrink: 0;
     display: flex;
@@ -577,6 +684,7 @@ const STYLES = `
 
   @media (max-width: 640px) {
     .facts { grid-template-columns: 1fr; gap: 2px; }
+    .new-user { grid-template-columns: 1fr; }
     .facts dd { margin-bottom: 10px; }
     .facts dd:last-child { margin-bottom: 0; }
 
@@ -612,6 +720,7 @@ const STYLES = `
   }
 
   @media (max-width: 640px), (pointer: coarse) {
-    .row-action, .add-role select, .add-role button[type="submit"] { min-height: 44px; }
+    .row-action, .control, button.primary, .copy-icon-button { min-height: 44px; }
+    .copy-icon-button { min-width: 44px; align-items: center; justify-content: center; }
   }
 `;

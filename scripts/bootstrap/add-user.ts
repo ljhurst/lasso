@@ -1,17 +1,18 @@
 #!/usr/bin/env node
-// Manual user provisioning (DESIGN §6): Lasso has no self-service signup,
-// so accounts are created and reset by hand with this script, run with an
-// AWS profile that can write the users table directly. A random temp
-// password is generated and printed once — hand it to the person out of
-// band. mustChangePassword forces them to set their own password on first
-// login (src/interactions/routes.ts) before they reach consent.
-import { randomUUID } from 'node:crypto';
+// Command-line user provisioning, for the first admin and for when the
+// admin portal can't be reached; the portal's Users page covers everyday
+// adds. Lasso has no self-service signup. Run with an AWS profile that can
+// write the users table directly. A random temp password is generated and
+// printed once — hand it to the person out of band. mustChangePassword
+// forces them to set their own password on first login
+// (src/interactions/routes.ts) before they reach consent.
 import { parseArgs } from 'node:util';
 
 import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 import { normalizeEmail } from '../../src/users/email.ts';
 import { generateTempPassword, hashPassword } from '../../src/users/password.ts';
+import { buildNewUser } from '../../src/users/provision.ts';
 import type { User } from '../../src/users/types.ts';
 import { createDynamoClient } from './dynamo.ts';
 
@@ -119,24 +120,15 @@ async function createUser(
     throw new Error(`a user with email ${values.email} already exists — use --reset instead`);
   }
 
-  const tempPassword = generateTempPassword();
-  const { hash, salt } = await hashPassword(tempPassword);
-
-  const user: User = {
-    sub: randomUUID(),
+  // Must match LASSO_ADMIN_SCOPE in src/config/resources.ts — not imported
+  // directly since that module requires the full app env (issuer, table
+  // names, SSM params) just for this one constant.
+  const { user, tempPassword } = await buildNewUser({
     email: values.email,
-    emailVerified: true,
     givenName: values['given-name'],
     familyName: values['family-name'],
-    passwordHash: hash,
-    passwordSalt: salt,
-    mustChangePassword: true,
-    // Must match LASSO_ADMIN_SCOPE in src/config/resources.ts — not
-    // imported directly since that module requires the full app env
-    // (issuer, table names, SSM params) just for this one constant.
     roles: values.admin ? ['lasso:admin'] : [],
-    createdAt: new Date().toISOString(),
-  };
+  });
 
   await client.send(new PutCommand({ TableName: table, Item: user }));
 

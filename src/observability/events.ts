@@ -8,6 +8,7 @@ export type AuthEvent =
     }
   | { event: 'temporary_password_accepted'; sub: string; ip: string }
   | { event: 'password_changed'; sub: string; ip: string }
+  | { event: 'user_created'; sub: string; by: string }
   | { event: 'user_deleted'; sub: string; by: string }
   | { event: 'token_issued'; clientId?: string; sub?: string; grantType?: string }
   | { event: 'oidc_error'; kind: string; clientId?: string; message: string };

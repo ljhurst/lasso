@@ -1,12 +1,7 @@
 import { buildMcpAddCommand, buildMcpInspectorCommand } from '#src/config/mcp-command.ts';
 import { AppType } from '#src/config/resources.ts';
-import { Layout } from '#src/portal/views/layout.tsx';
+import { CopyButton, Layout } from '#src/portal/views/layout.tsx';
 import type { UserApp } from '#src/portal/apps/routes.ts';
-
-const CLIPBOARD_ICON_SVG =
-  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5" y="3" width="8" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"></rect><path d="M6.5 3V2.5C6.5 1.94772 6.94772 1.5 7.5 1.5H8.5C9.05228 1.5 9.5 1.94772 9.5 2.5V3" stroke="currentColor" stroke-width="1.3"></path></svg>';
-const CHECK_ICON_SVG =
-  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 
 const MODAL_SCRIPT = `
   document.querySelectorAll('[data-open-modal]').forEach(function (button) {
@@ -23,20 +18,6 @@ const MODAL_SCRIPT = `
     });
   });
 
-  var clipboardIcon = ${JSON.stringify(CLIPBOARD_ICON_SVG)};
-  var checkIcon = ${JSON.stringify(CHECK_ICON_SVG)};
-
-  document.querySelectorAll('[data-copy-target]').forEach(function (button) {
-    button.addEventListener('click', function () {
-      var text = document.getElementById(button.dataset.copyTarget).textContent;
-      navigator.clipboard.writeText(text).then(function () {
-        button.innerHTML = checkIcon;
-        setTimeout(function () {
-          button.innerHTML = clipboardIcon;
-        }, 1500);
-      });
-    });
-  });
 `;
 
 function appTypeLabel(type: AppType): string {
@@ -116,30 +97,7 @@ function commandRow(id: string, command: string) {
       <code id={id} safe>
         {command}
       </code>
-      <button
-        type="button"
-        class="copy-icon-button"
-        data-copy-target={id}
-        aria-label="Copy"
-        title="Copy"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <rect
-            x="5"
-            y="3"
-            width="8"
-            height="10"
-            rx="1.5"
-            stroke="currentColor"
-            stroke-width="1.3"
-          />
-          <path
-            d="M6.5 3V2.5C6.5 1.94772 6.94772 1.5 7.5 1.5H8.5C9.05228 1.5 9.5 1.94772 9.5 2.5V3"
-            stroke="currentColor"
-            stroke-width="1.3"
-          />
-        </svg>
-      </button>
+      <CopyButton target={id} />
     </div>
   );
 }

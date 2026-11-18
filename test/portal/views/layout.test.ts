@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Help, Layout, List, Table, Time } from '#src/portal/views/layout.tsx';
+import { CopyButton, Help, Layout, List, Table, Time } from '#src/portal/views/layout.tsx';
 
 describe('Time', () => {
   it('carries the exact time and a readable UTC fallback', () => {
@@ -51,6 +51,30 @@ describe('Table', () => {
 
     expect(html).toContain('<table role="table">');
     expect(html).toContain('<tr role="row">');
+  });
+});
+
+describe('Layout submit-once script', () => {
+  it('disables the submit buttons of forms marked data-once', async () => {
+    const html = await Layout({ title: 't', active: '/', isAdmin: false, children: 'x' });
+
+    expect(html).toContain('form[data-once]');
+    expect(html).toContain('button.disabled = true');
+  });
+});
+
+describe('CopyButton', () => {
+  it('points at the element whose text it copies', () => {
+    const html = CopyButton({ target: 'temp-password' }) as string;
+
+    expect(html).toContain('data-copy-target="temp-password"');
+    expect(html).toContain('aria-label="Copy"');
+  });
+
+  it('is wired up by the page script', async () => {
+    const html = await Layout({ title: 't', active: '/', isAdmin: false, children: 'x' });
+
+    expect(html).toContain('navigator.clipboard.writeText');
   });
 });
 

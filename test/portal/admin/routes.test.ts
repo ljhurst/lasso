@@ -16,6 +16,8 @@ const store = vi.hoisted(() => ({
   addRole: vi.fn(),
   removeRole: vi.fn(),
   deleteUser: vi.fn(),
+  createUser: vi.fn(),
+  getUserByEmail: vi.fn(),
   getUserBySub: vi.fn(),
   listUsers: vi.fn(),
 }));
@@ -326,5 +328,117 @@ describe('admin user deletion', () => {
 
     expect(response.status).toBe(403);
     expect(store.deleteUser).not.toHaveBeenCalled();
+  });
+});
+
+describe('admin add user', () => {
+  let server: Server;
+  let baseUrl: string;
+
+  beforeAll(() => {
+    const app = new Koa();
+    app.use(buildAdminRouter({} as Provider).routes());
+    server = app.listen(0);
+    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(() => {
+    server.close();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    store.listUsers.mockResolvedValue([]);
+    store.getUserByEmail.mockResolvedValue(undefined);
+  });
+
+  function postUser(fields: Record<string, string>, site = 'same-origin'): Promise<Response> {
+    return fetch(`${baseUrl}/admin/users`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        'sec-fetch-site': site,
+      },
+      body: new URLSearchParams({
+        givenName: 'Friend',
+        familyName: 'Person',
+        email: 'Friend@Example.com',
+        ...fields,
+      }),
+    });
+  }
+
+  it('creates the user and shows the temporary password once, uncached', async () => {
+    const response = await postUser({});
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(store.createUser).toHaveBeenCalledTimes(1);
+    const created = store.createUser.mock.calls[0]?.[0];
+    expect(created).toMatchObject({
+      email: 'friend@example.com',
+      roles: [],
+      mustChangePassword: true,
+    });
+    expect(html).toMatch(/id="temp-password">[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}</);
+  });
+
+  it('logs who created whom, without the email or the password', async () => {
+    await postUser({});
+
+    const created = store.createUser.mock.calls[0]?.[0];
+    expect(logEvent).toHaveBeenCalledWith({
+      event: 'user_created',
+      sub: created.sub,
+      by: 'admin',
+    });
+  });
+
+  it('refuses an email that is already in use, and creates nothing', async () => {
+    store.getUserByEmail.mockResolvedValue(user('sub-1', []));
+
+    const response = await postUser({});
+
+    expect(response.status).toBe(400);
+    expect(await response.text()).toContain('already exists');
+    expect(store.createUser).not.toHaveBeenCalled();
+  });
+
+  it('ignores a role sent with the form, and grants none', async () => {
+    await postUser({ role: 'lasso:admin' });
+
+    expect(store.createUser.mock.calls[0]?.[0]).toMatchObject({ roles: [] });
+  });
+
+  it('serves the add-user page', async () => {
+    const response = await fetch(`${baseUrl}/admin/users/new`);
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('action="/admin/users"');
+  });
+
+  it.each([
+    ['an invalid email', { email: 'nope' }],
+    ['a blank name', { givenName: '  ' }],
+  ])('refuses %s, and creates nothing', async (_name, fields) => {
+    const response = await postUser(fields);
+
+    expect(response.status).toBe(400);
+    expect(store.createUser).not.toHaveBeenCalled();
+  });
+
+  it('keeps what was typed when it refuses', async () => {
+    const html = await (await postUser({ email: 'nope', givenName: 'Kept' })).text();
+
+    expect(html).toContain('value="Kept"');
+  });
+
+  it('refuses a request sent from another site', async () => {
+    const response = await postUser({}, 'cross-site');
+
+    expect(response.status).toBe(403);
+    expect(store.createUser).not.toHaveBeenCalled();
   });
 });
