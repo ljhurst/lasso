@@ -4,14 +4,15 @@ import { Empty } from '#src/portal/views/components/empty.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
 import { Table } from '#src/portal/views/components/table.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
+import { adminUrl } from '#src/portal/paths.ts';
 
 export function UsersListPage(props: { users: User[] }) {
   return (
-    <Layout title="Users" active="/admin/users" isAdmin={true}>
+    <Layout title="Users" active={adminUrl.users()} isAdmin={true}>
       <section>
         <div class="heading-row">
           <h2>Users ({props.users.length})</h2>
-          <a class="row-action primary" href="/admin/users/new">
+          <a class="row-action primary" href={adminUrl.newUser()}>
             Add user
           </a>
         </div>
@@ -21,7 +22,7 @@ export function UsersListPage(props: { users: User[] }) {
           <Table
             columns={['Name', 'Email', 'Roles', 'Status']}
             rows={props.users.toSorted(byFirstName).map((user) => [
-              <a class="name-link" href={`/admin/users/${user.sub}`} safe>
+              <a class="name-link" href={adminUrl.user(user.sub)} safe>
                 {user.givenName} {user.familyName}
               </a>,
               <code safe>{user.email}</code>,

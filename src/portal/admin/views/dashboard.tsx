@@ -5,6 +5,7 @@ import { Empty } from '#src/portal/views/components/empty.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
 import { Table } from '#src/portal/views/components/table.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
+import { adminUrl } from '#src/portal/paths.ts';
 
 function clientRow(client: ClientMetadata) {
   return [
@@ -20,7 +21,7 @@ export async function DashboardPage() {
   const resourceEntries = Object.entries(resources);
 
   return (
-    <Layout title="Clients & resources" active="/admin" isAdmin={true}>
+    <Layout title="Clients & resources" active={adminUrl.dashboard()} isAdmin={true}>
       <section>
         <h2>Clients ({clients.length})</h2>
         {clients.length === 0 ? (

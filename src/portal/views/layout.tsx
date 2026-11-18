@@ -3,11 +3,12 @@ import pkg from '#package.json' with { type: 'json' };
 import { APPLE_TOUCH_ICON_HREF, FAVICON_HREF, LassoMark, THEME_STYLES } from '#src/branding.tsx';
 import PAGE_SCRIPT from '#src/portal/views/page.js' with { type: 'text' };
 import STYLES from '#src/portal/views/styles.css' with { type: 'text' };
+import { adminUrl, APPS_URL } from '#src/portal/paths.ts';
 
-const BASE_NAV_ITEMS = [{ href: '/apps', label: 'My Apps' }];
+const BASE_NAV_ITEMS = [{ href: APPS_URL, label: 'My Apps' }];
 const ADMIN_NAV_ITEMS = [
-  { href: '/admin', label: 'Clients & resources' },
-  { href: '/admin/users', label: 'Users' },
+  { href: adminUrl.dashboard(), label: 'Clients & resources' },
+  { href: adminUrl.users(), label: 'Users' },
 ];
 
 export function Layout(props: {

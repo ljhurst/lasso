@@ -1,6 +1,11 @@
 import type { Children } from '@kitajs/html';
 
-export function Facts(props: { items: { label: string; value: Children }[] }) {
+export interface Fact {
+  label: string;
+  value: Children;
+}
+
+export function Facts(props: { items: Fact[] }) {
   return (
     <dl class="facts">
       {props.items.map((item) => (

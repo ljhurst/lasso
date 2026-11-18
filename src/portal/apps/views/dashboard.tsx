@@ -3,6 +3,7 @@ import { AppType } from '#src/config/resources.ts';
 import { CopyButton } from '#src/portal/views/components/copy-button.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
 import type { UserApp } from '#src/portal/apps/routes.ts';
+import { APPS_URL } from '#src/portal/paths.ts';
 
 const MODAL_SCRIPT = `
   document.querySelectorAll('[data-open-modal]').forEach(function (button) {
@@ -134,7 +135,7 @@ function connectModal({ indicator, resource }: UserApp) {
 
 export async function DashboardPage(props: { apps: UserApp[]; isAdmin: boolean }) {
   return (
-    <Layout title="My Apps" active="/apps" isAdmin={props.isAdmin}>
+    <Layout title="My Apps" active={APPS_URL} isAdmin={props.isAdmin}>
       {props.apps.length === 0 ? (
         <p class="empty">No apps yet — check back once you've been granted access.</p>
       ) : (

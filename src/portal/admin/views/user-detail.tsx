@@ -1,3 +1,4 @@
+import { emailFact } from '#src/portal/admin/views/components/person-facts.tsx';
 import { accountStatus, STATUS_LABEL } from '#src/users/status.ts';
 import type { User } from '#src/users/types.ts';
 import type { AccessTokenRow, GrantRow, SessionRow } from '#src/portal/admin/data.ts';
@@ -8,6 +9,7 @@ import { List } from '#src/portal/views/components/list.tsx';
 import { Table } from '#src/portal/views/components/table.tsx';
 import { Time } from '#src/portal/views/components/time.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
+import { adminUrl } from '#src/portal/paths.ts';
 
 export interface HeldRole {
   role: string;
@@ -25,14 +27,14 @@ export function UserDetailPage(props: {
   canManage: boolean;
 }) {
   return (
-    <Layout title={props.user.email} active="/admin/users" isAdmin={true}>
+    <Layout title={props.user.email} active={adminUrl.users()} isAdmin={true}>
       <section>
         <h2 safe>
           {props.user.givenName} {props.user.familyName}
         </h2>
         <Facts
           items={[
-            { label: 'Email', value: <code safe>{props.user.email}</code> },
+            emailFact(props.user),
             {
               label: 'User ID (sub)',
               value: (
@@ -61,7 +63,7 @@ export function UserDetailPage(props: {
         {props.grantableRoles.length === 0 ? (
           <Empty>This user already has every registered role.</Empty>
         ) : (
-          <form class="add-role" method="post" action={`/admin/users/${props.user.sub}/roles`}>
+          <form class="add-role" method="post" action={adminUrl.addRole(props.user.sub)}>
             <select name="role" required aria-label="Role to add" class="control">
               <option value="">Choose a role…</option>
               {props.grantableRoles.toSorted().map((role) => (
@@ -147,7 +149,7 @@ export function UserDetailPage(props: {
           <p class="empty">
             Replaces their password with a temporary one and signs them out everywhere.
           </p>
-          <a class="row-action caution" href={`/admin/users/${props.user.sub}/reset-password`}>
+          <a class="row-action caution" href={adminUrl.resetPassword(props.user.sub)}>
             Reset password
           </a>
         </section>
@@ -156,7 +158,7 @@ export function UserDetailPage(props: {
         <section>
           <h2>Delete user</h2>
           <p class="empty">Removes the account and signs them out everywhere.</p>
-          <a class="row-action danger" href={`/admin/users/${props.user.sub}/delete`}>
+          <a class="row-action danger" href={adminUrl.deleteUser(props.user.sub)}>
             Delete user
           </a>
         </section>
@@ -189,7 +191,7 @@ function RoleRow(props: { held: HeldRole; sub: string }) {
           </span>
         ) : null}
       </div>
-      <form method="post" action={`/admin/users/${sub}/roles/remove`}>
+      <form method="post" action={adminUrl.removeRole(sub)}>
         <input type="hidden" name="role" value={held.role} />
         <button
           type="submit"
