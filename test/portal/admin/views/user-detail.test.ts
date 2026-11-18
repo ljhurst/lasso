@@ -20,6 +20,7 @@ function render(overrides: Partial<Parameters<typeof UserDetailPage>[0]> = {}) {
     sessions: [],
     grants: [],
     accessTokens: [],
+    roles: [],
     grantableRoles: [],
     ...overrides,
   });
@@ -81,12 +82,64 @@ describe('UserDetailPage', () => {
     expect(html).toContain('role="cell"');
   });
 
-  it('shows the email, sub and roles as labelled facts', async () => {
+  it('shows the email and sub as labelled facts', async () => {
     const html = await render();
 
     expect(html).toMatch(/<dt>Email<\/dt><dd><code>friend@example.com<\/code><\/dd>/);
     expect(html).toContain('<dt>User ID (sub)</dt>');
-    expect(html).toContain('<dt>Roles</dt>');
+    expect(html).not.toContain('<dt>Roles</dt>');
+  });
+
+  describe('roles', () => {
+    const held = { role: 'freal:read', registered: true };
+
+    it('counts the roles and lists each with its own remove form', async () => {
+      const html = await render({
+        roles: [held, { role: 'fife:read', registered: true }],
+      });
+
+      expect(html).toContain('Roles (2)');
+      expect(html).toContain(`action="/admin/users/${user.sub}/roles/remove"`);
+      expect(html).toContain('<input type="hidden" name="role" value="freal:read"/>');
+      expect(html).toContain('aria-label="Remove freal:read"');
+    });
+
+    it('says so when the user has no roles', async () => {
+      expect(await render()).toContain('No roles yet.');
+    });
+
+    it('starts the add dropdown on a placeholder and offers only the roles to grant', async () => {
+      const html = await render({ grantableRoles: ['fife:read', 'lasso:admin'] });
+
+      expect(html).toContain(`action="/admin/users/${user.sub}/roles"`);
+      expect(html).toContain('<select name="role" required');
+      expect(html).toMatch(/<option value="">Choose a role…<\/option><option value="fife:read"/);
+      expect(html).not.toContain('selected');
+    });
+
+    it('replaces the add form when every role is held', async () => {
+      const html = await render({ roles: [held] });
+
+      expect(html).toContain('This user already has every registered role.');
+      expect(html).not.toContain('class="add-role"');
+    });
+
+    it('marks a role that is no longer registered', async () => {
+      const html = await render({ roles: [{ ...held, registered: false }] });
+
+      expect(html).toContain('no longer registered');
+    });
+
+    it('disables removing a role that cannot be removed and says why', async () => {
+      const html = await render({ roles: [{ ...held, blockedReason: 'Locked for a reason' }] });
+
+      expect(html).toMatch(/<button[^>]*disabled/);
+      expect(html).toContain('Locked for a reason');
+    });
+
+    it('does not disable a removable role', async () => {
+      expect(await render({ roles: [held] })).not.toMatch(/<button[^>]*disabled/);
+    });
   });
 
   it('shows a dash for a session with no apps', async () => {
@@ -130,7 +183,7 @@ describe('UserDetailPage', () => {
   });
 
   it.each([
-    ['held', { user: { ...user, roles: [BREAKOUT] } }],
+    ['held', { roles: [{ role: BREAKOUT, registered: true }] }],
     ['to grant', { grantableRoles: [BREAKOUT] }],
   ])('keeps a role %s inside its attribute and escapes its label', async (_name, overrides) => {
     const html = await render(overrides);

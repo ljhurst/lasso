@@ -316,8 +316,8 @@ const STYLES = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
-    padding: 0 16px;
+    min-height: 28px;
+    padding: 0 12px;
     border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--text);
@@ -326,16 +326,56 @@ const STYLES = `
     text-decoration: none;
   }
 
-  .row-action:hover { background: var(--bg); }
+  button.row-action { background: transparent; font-family: inherit; cursor: pointer; }
+
+  .row-action:not(:disabled):hover { background: var(--bg); }
+
+  button.row-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .roles {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.875rem;
+  }
+
+  .roles li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .roles li:last-child { border-bottom: none; }
+
+  .roles form { flex-shrink: 0; margin: 0; }
+
+  .role-name {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .role-note { color: var(--muted); font-size: 0.75rem; }
 
   .empty, .empty-cell { color: var(--muted); font-size: 0.875rem; }
 
   footer { margin-top: 24px; color: var(--muted); font-size: 0.75rem; text-align: center; }
 
-  section form { display: flex; align-items: center; gap: 8px; }
+  .add-role { display: flex; align-items: center; gap: 8px; }
 
-  section form select {
-    padding: 8px 10px;
+  .add-role select {
+    min-height: 32px;
+    padding: 6px 10px;
     border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--card);
@@ -343,8 +383,9 @@ const STYLES = `
     font-size: 0.875rem;
   }
 
-  section form button[type="submit"] {
-    padding: 8px 14px;
+  .add-role button[type="submit"] {
+    min-height: 32px;
+    padding: 6px 12px;
     border: none;
     border-radius: 8px;
     background: var(--accent);
@@ -354,7 +395,7 @@ const STYLES = `
     cursor: pointer;
   }
 
-  section form button[type="submit"]:hover { filter: brightness(1.05); }
+  .add-role button[type="submit"]:hover { filter: brightness(1.05); }
 
   .tiles {
     display: grid;
@@ -552,6 +593,10 @@ const STYLES = `
       white-space: nowrap;
     }
 
-    .row-action { display: flex; }
+    td .row-action { display: flex; }
+  }
+
+  @media (max-width: 640px), (pointer: coarse) {
+    .row-action, .add-role select, .add-role button[type="submit"] { min-height: 44px; }
   }
 `;
