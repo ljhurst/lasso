@@ -3,77 +3,7 @@ import { mockClient } from 'aws-sdk-client-mock';
 import type Koa from 'koa';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Provider from 'oidc-provider';
-import {
-  applyResourceConsent,
-  grantConsent,
-  partitionScopeByRoles,
-} from '#src/interactions/routes.ts';
-
-describe('partitionScopeByRoles', () => {
-  it('grants every requested scope the account has a matching role for', () => {
-    const result = partitionScopeByRoles(
-      ['fife:read', 'fife:write', 'fife:admin'],
-      ['fife:read', 'fife:write', 'fife:admin'],
-    );
-    expect(result).toEqual({ granted: ['fife:read', 'fife:write', 'fife:admin'], denied: [] });
-  });
-
-  it('denies requested scopes the account has no matching role for', () => {
-    const result = partitionScopeByRoles(
-      ['fife:read', 'fife:write', 'fife:admin'],
-      ['fife:read', 'fife:write'],
-    );
-    expect(result).toEqual({ granted: ['fife:read', 'fife:write'], denied: ['fife:admin'] });
-  });
-
-  it('grants nothing when the account has no matching roles', () => {
-    const result = partitionScopeByRoles(['fife:read', 'fife:write'], []);
-    expect(result).toEqual({ granted: [], denied: ['fife:read', 'fife:write'] });
-  });
-});
-
-describe('applyResourceConsent', () => {
-  const indicator = 'https://porto.example.com/';
-  const requested = { [indicator]: ['porto:read', 'porto:write'] };
-
-  function newGrant() {
-    const provider = new Provider('https://lasso.example.com', {});
-    return new provider.Grant({ accountId: 'user-1', clientId: 'mcp-inspector' });
-  }
-
-  it('grants the held scope and records the unheld one so consent is not requested again', () => {
-    const grant = newGrant();
-
-    const { grantedAny } = applyResourceConsent(grant, requested, ['porto:read']);
-
-    expect(grantedAny).toBe(true);
-    expect(grant.getResourceScope(indicator)).toBe('porto:read');
-    // the predicate oidc-provider's rs_scopes_missing check uses to decide whether to prompt again
-    const encountered = new Set(grant.getResourceScopeEncountered(indicator).split(' '));
-    expect(encountered).toEqual(new Set(['porto:read', 'porto:write']));
-  });
-
-  it('grants every scope when the account holds them all', () => {
-    const grant = newGrant();
-
-    const { grantedAny } = applyResourceConsent(grant, requested, ['porto:read', 'porto:write']);
-
-    expect(grantedAny).toBe(true);
-    expect(grant.getResourceScope(indicator).split(' ').sort()).toEqual([
-      'porto:read',
-      'porto:write',
-    ]);
-  });
-
-  it('reports nothing granted when the account holds none of the requested scopes', () => {
-    const grant = newGrant();
-
-    const { grantedAny } = applyResourceConsent(grant, requested, []);
-
-    expect(grantedAny).toBe(false);
-    expect(grant.getResourceScope(indicator)).toBe('');
-  });
-});
+import { grantConsent } from '#src/interactions/routes.ts';
 
 describe('grantConsent', () => {
   const ddbMock = mockClient(DynamoDBDocumentClient);

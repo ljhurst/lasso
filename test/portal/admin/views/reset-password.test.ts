@@ -1,19 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ResetPasswordPage } from '#src/portal/admin/views/reset-password.tsx';
 import { TEMP_PASSWORD_TTL_DAYS } from '#src/users/provision.ts';
+import { makeUser } from '#test/support/users.ts';
 
-const user = {
-  sub: 'b3698a6c-188e-4a4f-8c79-a8e09843fc34',
-  email: 'friend@example.com',
-  emailVerified: true,
-  givenName: 'Friend',
-  familyName: 'Person',
-  passwordHash: 'hash',
-  passwordSalt: 'salt',
-  mustChangePassword: false,
-  roles: [],
-  createdAt: '2026-01-01T00:00:00.000Z',
-};
+const user = makeUser();
 
 describe('ResetPasswordPage', () => {
   it('names the account and posts the reset to its own address, submitted once', async () => {

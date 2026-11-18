@@ -74,7 +74,7 @@ from `infra/`, per the root README).
 ## 2. For authorization_code: grant the scope to each user
 
 Requesting a resource scope in the flow below isn't enough on its own —
-`filterGrantedScope()` (`src/interactions/routes.ts`) only actually grants a
+`applyResourceConsent()` (`src/interactions/consent.ts`) only actually grants a
 resource scope during consent if it's in the logged-in user's `roles` array.
 For every user who should get the new scope:
 

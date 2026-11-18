@@ -1,63 +1,16 @@
-import {
-  DynamoDBDocumentClient,
-  GetCommand,
-  ScanCommand,
-  UpdateCommand,
-} from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import type Provider from 'oidc-provider';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { primaryKey } from '#src/adapter/keys.ts';
-import { assignRole } from '#src/portal/admin/routes.ts';
 import {
   revokeAllAccess,
   revokeGrantsRejectingScope,
   revokeGrantsWithScope,
 } from '#src/portal/admin/revocation.ts';
+import { FIFE, grantRow, PORTO, stubGrant, stubProvider } from './support.ts';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
-
-const FIFE = 'https://fife.example.com';
-const PORTO = 'https://porto.example.com';
-
-function grantRow(id: string, accountId: string) {
-  return { pk: primaryKey('Grant', id), id, modelName: 'Grant', payload: { accountId } };
-}
-
-function stubGrant(
-  jti: string,
-  resources: Record<string, string>,
-  calls: string[],
-  rejected: Record<string, string> = {},
-) {
-  return {
-    jti,
-    resources,
-    rejected: { resources: rejected },
-    getResourceScope: (indicator: string) => resources[indicator] ?? '',
-    getRejectedResourceScope: (indicator: string) => rejected[indicator] ?? '',
-    destroy: vi.fn(async () => {
-      calls.push(`destroy:${jti}`);
-    }),
-  };
-}
-
-function stubRevoker(label: string, calls: string[]) {
-  return {
-    revokeByGrantId: vi.fn(async (grantId: string) => {
-      calls.push(`${label}:${grantId}`);
-    }),
-  };
-}
-
-function stubProvider(grants: Record<string, ReturnType<typeof stubGrant>>, calls: string[]) {
-  return {
-    Grant: { find: vi.fn(async (id: string) => grants[id]) },
-    AccessToken: stubRevoker('revoke-at', calls),
-    AuthorizationCode: stubRevoker('revoke-code', calls),
-    RefreshToken: stubRevoker('revoke-rt', calls),
-  } as unknown as Provider;
-}
 
 beforeEach(() => {
   ddbMock.reset();
@@ -222,29 +175,5 @@ describe('revokeAllAccess', () => {
     await revokeAllAccess(stubSessionProvider([], {}, calls), 'sub-1');
 
     expect(calls).toEqual([]);
-  });
-});
-
-describe('assignRole', () => {
-  it('adds the role before revoking the grants that rejected it', async () => {
-    const calls: string[] = [];
-    ddbMock.on(GetCommand).resolves({ Item: { sub: 'sub-1', roles: ['porto:read'] } });
-    ddbMock.on(UpdateCommand).callsFake(async () => {
-      calls.push('add-role');
-    });
-    ddbMock.on(ScanCommand).resolves({ Items: [grantRow('g-1', 'sub-1')] });
-    const grants = {
-      'g-1': stubGrant('g-1', { [PORTO]: 'porto:read' }, calls, { [PORTO]: 'porto:write' }),
-    };
-
-    await assignRole(stubProvider(grants, calls), 'sub-1', 'porto:write');
-
-    expect(calls).toEqual([
-      'add-role',
-      'revoke-at:g-1',
-      'revoke-code:g-1',
-      'revoke-rt:g-1',
-      'destroy:g-1',
-    ]);
   });
 });

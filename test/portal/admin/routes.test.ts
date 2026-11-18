@@ -4,13 +4,9 @@ import Koa from 'koa';
 import type Provider from 'oidc-provider';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logEvent } from '#src/observability/events.ts';
-import {
-  buildAdminRouter,
-  buildHeldRoles,
-  canManageUser,
-  canRemoveRole,
-} from '#src/portal/admin/routes.ts';
+import { buildAdminRouter } from '#src/portal/admin/routes.ts';
 import { revokeAllAccess } from '#src/portal/admin/revocation.ts';
+import { makeUser } from '#test/support/users.ts';
 
 const store = vi.hoisted(() => ({
   addRole: vi.fn(),
@@ -22,15 +18,15 @@ const store = vi.hoisted(() => ({
   getUserBySub: vi.fn(),
   listUsers: vi.fn(),
 }));
-vi.mock('#src/users/store.ts', () => store);
+vi.mock('#src/users/storage/store.ts', () => store);
 
 const data = vi.hoisted(() => ({
   listSessions: vi.fn(),
   listGrants: vi.fn(),
   listAccessTokens: vi.fn(),
 }));
-vi.mock('#src/portal/admin/data.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('#src/portal/admin/data.ts')>()),
+vi.mock('#src/adapter/records.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#src/adapter/records.ts')>()),
   ...data,
 }));
 
@@ -52,77 +48,8 @@ vi.mock('#src/portal/auth/session.ts', () => ({
 }));
 
 function user(sub: string, roles: string[]) {
-  return {
-    sub,
-    email: `${sub}@example.com`,
-    emailVerified: true,
-    givenName: 'Friend',
-    familyName: 'Person',
-    passwordHash: 'hash',
-    passwordSalt: 'salt',
-    mustChangePassword: false,
-    roles,
-    createdAt: '2026-01-01T00:00:00.000Z',
-  };
+  return makeUser({ sub, roles });
 }
-
-describe('buildHeldRoles', () => {
-  it('lists the roles a user holds, sorted', () => {
-    const roles = buildHeldRoles(user('sub-1', ['fife:read', 'freal:read']), 'admin');
-
-    expect(roles.map((held) => held.role)).toEqual(['fife:read', 'freal:read']);
-  });
-
-  it('marks a held role that is no longer configured', () => {
-    const [held] = buildHeldRoles(user('sub-1', ['retired:read']), 'admin');
-
-    expect(held).toEqual({ role: 'retired:read', registered: false, blockedReason: undefined });
-  });
-
-  it('refuses to let an admin remove their own admin role', () => {
-    const [own] = buildHeldRoles(user('admin', ['lasso:admin']), 'admin');
-    const [theirs] = buildHeldRoles(user('sub-1', ['lasso:admin']), 'admin');
-
-    expect(own?.blockedReason).toBe("Can't remove your own admin role");
-    expect(theirs?.blockedReason).toBeUndefined();
-  });
-});
-
-describe('canManageUser', () => {
-  it("allows managing someone else's account", () => {
-    expect(canManageUser(user('sub-1', []), 'admin')).toBe(true);
-  });
-
-  it('refuses an admin managing their own account', () => {
-    expect(canManageUser(user('admin', ['lasso:admin']), 'admin')).toBe(false);
-  });
-});
-
-describe('canRemoveRole', () => {
-  it('allows removing a role the user holds', () => {
-    expect(canRemoveRole(user('sub-1', ['fife:read']), 'fife:read', 'admin')).toBe(true);
-  });
-
-  it('allows removing a held role that is no longer configured', () => {
-    expect(canRemoveRole(user('sub-1', ['retired:read']), 'retired:read', 'admin')).toBe(true);
-  });
-
-  it('allows a known scope the user no longer holds, so revocation can be retried', () => {
-    expect(canRemoveRole(user('sub-1', []), 'fife:read', 'admin')).toBe(true);
-  });
-
-  it('refuses an unknown role the user does not hold', () => {
-    expect(canRemoveRole(user('sub-1', []), 'made:up', 'admin')).toBe(false);
-  });
-
-  it('refuses an admin removing their own admin role', () => {
-    expect(canRemoveRole(user('admin', ['lasso:admin']), 'lasso:admin', 'admin')).toBe(false);
-  });
-
-  it("allows removing someone else's admin role", () => {
-    expect(canRemoveRole(user('sub-1', ['lasso:admin']), 'lasso:admin', 'admin')).toBe(true);
-  });
-});
 
 describe('admin role changes', () => {
   let server: Server;

@@ -1,18 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { TemporaryPasswordPage } from '#src/portal/admin/views/temporary-password.tsx';
+import { makeUser } from '#test/support/users.ts';
 
-const user = {
-  sub: 'b3698a6c-188e-4a4f-8c79-a8e09843fc34',
-  email: 'friend@example.com',
-  emailVerified: true,
-  givenName: 'Friend',
-  familyName: 'Person',
-  passwordHash: 'hash',
-  passwordSalt: 'salt',
-  mustChangePassword: true,
-  roles: [],
-  createdAt: '2026-01-01T00:00:00.000Z',
-};
+const user = makeUser({ mustChangePassword: true });
 
 const PASSWORD = 'aaaa-bbbb-cccc';
 

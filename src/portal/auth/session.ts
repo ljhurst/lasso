@@ -3,7 +3,7 @@ import type Koa from 'koa';
 import type Provider from 'oidc-provider';
 import { deriveChallenge, generateVerifier, issuerOrigin, setPkceCookie } from '#src/auth/pkce.ts';
 import { LASSO_ADMIN_SCOPE, LASSO_RESOURCE_INDICATOR } from '#src/config/resources.ts';
-import { getUserBySub } from '#src/users/store.ts';
+import { getUserBySub } from '#src/users/storage/store.ts';
 import { NoAccessPage } from '#src/portal/views/no-access.tsx';
 
 export const PORTAL_CLIENT_ID = 'lasso-portal';

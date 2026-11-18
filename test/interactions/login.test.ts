@@ -11,13 +11,13 @@ const store = vi.hoisted(() => ({
   getUserBySub: vi.fn(),
   updatePassword: vi.fn(),
 }));
-vi.mock('#src/users/store.ts', () => store);
+vi.mock('#src/users/storage/store.ts', () => store);
 
 const throttle = vi.hoisted(() => ({
   reserveLoginAttempt: vi.fn(),
   clearLoginAttempts: vi.fn(),
 }));
-vi.mock('#src/users/login-throttle.ts', () => throttle);
+vi.mock('#src/users/storage/login-throttle.ts', () => throttle);
 
 vi.mock('#src/users/password.ts', async (importOriginal) => {
   const original = await importOriginal<typeof import('#src/users/password.ts')>();

@@ -1,30 +1,10 @@
 import Router from '@koa/router';
 import type Provider from 'oidc-provider';
-import {
-  LASSO_RESOURCE_INDICATOR,
-  type NamedResourceServer,
-  resources,
-} from '#src/config/resources.ts';
-import { partitionScopeByRoles } from '#src/interactions/routes.ts';
+import { getUserApps } from '#src/portal/apps/apps.ts';
 import type { User } from '#src/users/types.ts';
 import { buildRequirePortalSession } from '#src/portal/auth/session.ts';
 import { DashboardPage } from '#src/portal/apps/views/dashboard.tsx';
 import { APPS_URL } from '#src/portal/paths.ts';
-
-export interface UserApp {
-  indicator: string;
-  resource: NamedResourceServer;
-}
-
-export function getUserApps(roles: string[]): UserApp[] {
-  return Object.entries(resources)
-    .filter(([indicator]) => indicator !== LASSO_RESOURCE_INDICATOR)
-    .filter(
-      ([, resource]) =>
-        partitionScopeByRoles(resource.scope?.split(' ') ?? [], roles).granted.length > 0,
-    )
-    .map(([indicator, resource]) => ({ indicator, resource }));
-}
 
 export function buildAppsRouter(provider: Provider): Router {
   const router = new Router({ prefix: APPS_URL });

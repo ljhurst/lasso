@@ -1,13 +1,12 @@
 import Router, { type RouterContext } from '@koa/router';
 import type Provider from 'oidc-provider';
 import { requireSameOrigin } from '#src/auth/same-origin.ts';
-import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
+import { allResourceScopes } from '#src/config/resources.ts';
 import { readForm } from '#src/form-body.ts';
 import { ADMIN_PREFIX, adminUrl, ROUTE } from '#src/portal/paths.ts';
 import { logEvent } from '#src/observability/events.ts';
 import { buildNewUser, issueTemporaryPassword, parseNewUser } from '#src/users/provision.ts';
 import {
-  addRole,
   createUser,
   deleteUser,
   getUserByEmail,
@@ -15,64 +14,25 @@ import {
   listUsers,
   removeRole,
   setTemporaryPassword,
-} from '#src/users/store.ts';
+} from '#src/users/storage/store.ts';
 import { buildRequirePortalSession, requireAdmin } from '#src/portal/auth/session.ts';
+import { listAccessTokens, listGrants, listSessions } from '#src/adapter/records.ts';
+import { revokeAllAccess, revokeGrantsWithScope } from '#src/portal/admin/revocation.ts';
 import {
+  buildHeldRoles,
   byLatestExpiry,
-  listAccessTokens,
-  listGrants,
-  listSessions,
-} from '#src/portal/admin/data.ts';
-import {
-  revokeAllAccess,
-  revokeGrantsRejectingScope,
-  revokeGrantsWithScope,
-} from '#src/portal/admin/revocation.ts';
+  canManageUser,
+  canRemoveRole,
+} from '#src/portal/admin/policy.ts';
+import { assignRole } from '#src/portal/admin/roles.ts';
 import { DashboardPage } from '#src/portal/admin/views/dashboard.tsx';
 import { DeleteUserPage } from '#src/portal/admin/views/delete-user.tsx';
-import { type HeldRole, UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
+import { UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
 import { type NewUserForm, NewUserPage } from '#src/portal/admin/views/new-user.tsx';
 import { ResetPasswordPage } from '#src/portal/admin/views/reset-password.tsx';
 import { TemporaryPasswordPage } from '#src/portal/admin/views/temporary-password.tsx';
 import { UsersListPage } from '#src/portal/admin/views/users.tsx';
 import type { User } from '#src/users/types.ts';
-
-/**
- * Whether an admin may remove `role` from `target`. Roles the target holds are
- * removable even after leaving the config, and known scopes are accepted even
- * once gone so a revocation that failed partway can be retried. Admins can't
- * drop their own admin role.
- */
-export function canRemoveRole(target: User, role: string, actorSub: string): boolean {
-  const isKnown = target.roles.includes(role) || allResourceScopes.includes(role);
-  const isSelfLockout = target.sub === actorSub && role === LASSO_ADMIN_SCOPE;
-  return isKnown && !isSelfLockout;
-}
-
-/** Admins can't delete or reset their own account, so they can't lock themselves out. */
-export function canManageUser(target: User, actorSub: string): boolean {
-  return target.sub !== actorSub;
-}
-
-export function buildHeldRoles(user: User, actorSub: string): HeldRole[] {
-  return user.roles.toSorted().map((role) => ({
-    role,
-    registered: allResourceScopes.includes(role),
-    blockedReason: canRemoveRole(user, role, actorSub)
-      ? undefined
-      : "Can't remove your own admin role",
-  }));
-}
-
-/**
- * Gives `sub` the role, then clears any grant that rejected it. The role goes
- * first so a login between the two steps sees it; repeating the call retries
- * a failed revocation because adding a held role is a no-op.
- */
-export async function assignRole(provider: Provider, sub: string, role: string): Promise<void> {
-  await addRole(sub, role);
-  await revokeGrantsRejectingScope(provider, sub, role);
-}
 
 export function buildAdminRouter(provider: Provider): Router {
   const router = new Router({ prefix: ADMIN_PREFIX });

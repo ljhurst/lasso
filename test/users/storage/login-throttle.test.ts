@@ -5,7 +5,7 @@ import {
   clearLoginAttempts,
   MAX_FAILED_LOGINS,
   reserveLoginAttempt,
-} from '#src/users/login-throttle.ts';
+} from '#src/users/storage/login-throttle.ts';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 

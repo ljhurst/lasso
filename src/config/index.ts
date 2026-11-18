@@ -3,7 +3,7 @@ import { DynamoAdapter } from '#src/adapter/dynamo-adapter.ts';
 import { ErrorPage } from '#src/interactions/views/error.tsx';
 import { LogoutPage } from '#src/interactions/views/logout.tsx';
 import { PostLogoutPage } from '#src/interactions/views/post-logout.tsx';
-import { getUserBySub } from '#src/users/store.ts';
+import { getUserBySub } from '#src/users/storage/store.ts';
 import { buildClients } from '#src/config/clients.ts';
 import { getJwks } from '#src/config/jwks.ts';
 import { allResourceScopes, getResourceServerInfo } from '#src/config/resources.ts';
