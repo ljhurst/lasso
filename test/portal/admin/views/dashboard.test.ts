@@ -41,6 +41,13 @@ describe('admin DashboardPage', () => {
     expect(html).toContain('href="/admin/clients/new"');
   });
 
+  it('links each resource to its page and offers to add one', async () => {
+    const html = await DashboardPage({ clients: [], resources: RESOURCES });
+
+    expect(html).toContain('href="/admin/resources/aHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20v"');
+    expect(html).toContain('href="/admin/resources/new"');
+  });
+
   it('says so when no clients are registered', async () => {
     expect(await DashboardPage({ clients: [], resources: RESOURCES })).toContain(
       'No clients registered.',

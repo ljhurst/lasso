@@ -16,7 +16,7 @@ vi.mock('#src/clients/services.ts', async () => {
 
 vi.mock('#src/resources/services.ts', async () => {
   const { registryWithBuiltIns } = await import('#test/support/resources.ts');
-  return { resourceRegistry: registryWithBuiltIns() };
+  return { resourceRegistry: registryWithBuiltIns(), resourceStore: {} };
 });
 
 vi.mock('#src/observability/events.ts', () => ({ logEvent: vi.fn() }));

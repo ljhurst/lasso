@@ -60,6 +60,27 @@ export async function revokeClientAccess(provider: Provider, clientId: string): 
   }
 }
 
+/** Revokes every grant, for any account, that reaches `resource`, along with the tokens issued under it. */
+export async function revokeResourceAccess(provider: Provider, resource: string): Promise<void> {
+  await revokeGrantRows(provider, await listGrants(), (grant) =>
+    Object.keys(grant.resources ?? {}).includes(resource),
+  );
+}
+
+/** Revokes every grant, for any account, that holds one of `scopes` on `resource`. */
+export async function revokeResourceScopes(
+  provider: Provider,
+  resource: string,
+  scopes: string[],
+): Promise<void> {
+  await revokeGrantRows(provider, await listGrants(), (grant) =>
+    grant
+      .getResourceScope(resource)
+      .split(' ')
+      .some((scope) => scopes.includes(scope)),
+  );
+}
+
 async function revokeGrantsWhere(
   provider: Provider,
   sub: string,

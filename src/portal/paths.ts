@@ -17,6 +17,10 @@ export const ROUTE = {
   deleteClient: '/clients/:clientId/delete',
   addClientScope: '/clients/:clientId/scopes',
   removeClientScope: '/clients/:clientId/scopes/remove',
+  newResource: '/resources/new',
+  resources: '/resources',
+  resource: '/resources/:resource',
+  deleteResource: '/resources/:resource/delete',
 } as const;
 
 /** Links and redirects to the admin routes, built from the same patterns the router uses. */
@@ -35,6 +39,10 @@ export const adminUrl = {
   deleteClient: (clientId: string) => build(ROUTE.deleteClient, clientId),
   addClientScope: (clientId: string) => build(ROUTE.addClientScope, clientId),
   removeClientScope: (clientId: string) => build(ROUTE.removeClientScope, clientId),
+  newResource: () => build(ROUTE.newResource),
+  resources: () => build(ROUTE.resources),
+  resource: (id: string) => build(ROUTE.resource, id),
+  deleteResource: (id: string) => build(ROUTE.deleteResource, id),
 };
 
 function build(pattern: string, param = ''): string {

@@ -6,6 +6,8 @@ import { primaryKey } from '#src/adapter/keys.ts';
 import {
   revokeAllAccess,
   revokeClientAccess,
+  revokeResourceAccess,
+  revokeResourceScopes,
   revokeGrantsRejectingScope,
   revokeGrantsWithScope,
 } from '#src/portal/admin/revocation.ts';
@@ -236,5 +238,41 @@ describe('revokeClientAccess', () => {
       'destroy:g-2',
       'destroy-token:t-1',
     ]);
+  });
+});
+
+describe('revokeResourceAccess', () => {
+  it("revokes every account's grant that reaches the resource and no other", async () => {
+    ddbMock.on(ScanCommand).resolves({
+      Items: [grantRow('g-1', 'sub-1'), grantRow('g-2', 'sub-2'), grantRow('g-3', 'sub-1')],
+    });
+    const calls: string[] = [];
+    const grants = {
+      'g-1': stubGrant('g-1', { [FIFE]: 'fife:read' }, calls),
+      'g-2': stubGrant('g-2', { [FIFE]: 'fife:write', [PORTO]: 'porto:read' }, calls),
+      'g-3': stubGrant('g-3', { [PORTO]: 'porto:read' }, calls),
+    };
+
+    await revokeResourceAccess(stubProvider(grants, calls), FIFE);
+
+    expect(calls.filter((c) => c.startsWith('destroy'))).toEqual(['destroy:g-1', 'destroy:g-2']);
+  });
+});
+
+describe('revokeResourceScopes', () => {
+  it('revokes only grants that hold one of the removed scopes on that resource', async () => {
+    ddbMock.on(ScanCommand).resolves({
+      Items: [grantRow('g-1', 'sub-1'), grantRow('g-2', 'sub-2'), grantRow('g-3', 'sub-3')],
+    });
+    const calls: string[] = [];
+    const grants = {
+      'g-1': stubGrant('g-1', { [FIFE]: 'fife:read fife:write' }, calls),
+      'g-2': stubGrant('g-2', { [FIFE]: 'fife:read' }, calls),
+      'g-3': stubGrant('g-3', { [PORTO]: 'fife:write' }, calls),
+    };
+
+    await revokeResourceScopes(stubProvider(grants, calls), FIFE, ['fife:write']);
+
+    expect(calls.filter((c) => c.startsWith('destroy'))).toEqual(['destroy:g-1']);
   });
 });

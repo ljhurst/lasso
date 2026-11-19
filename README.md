@@ -26,7 +26,7 @@ audience-scoped tokens per app. Built on
 ## Features
 
 - OIDC implementation for OAuth SSO needs
-- Admin portal to manage clients and users, and view resources
+- Admin portal to manage clients, resources and users
 
 ## Usage
 

@@ -49,12 +49,12 @@ const EXAMPLE = 'https://api.example.com/';
 let server: TestServer;
 
 beforeAll(async () => {
-  const handler = await createLiveApp({
+  const live = await createLiveApp({
     build: () => buildApp(registry),
     readVersion: async () => (await registry.scopes()).join(' '),
     ttlMs: 0,
   });
-  server = await serve(handler as RequestListener);
+  server = await serve(live.handler as RequestListener);
 });
 
 afterAll(() => {

@@ -10,6 +10,7 @@ function setup(initial = 'v1') {
   let time = 0;
   const builds: string[] = [];
   const errors: unknown[] = [];
+  const rebuilt: string[] = [];
   const control = {
     setVersion: (next: string) => {
       version = next;
@@ -21,28 +22,31 @@ function setup(initial = 'v1') {
     failBuilds: false,
     reads: 0,
   };
-  const create = () =>
-    createLiveApp({
-      build: async () => {
-        if (control.failBuilds && builds.length > 0) {
-          throw new Error('build failed');
-        }
-        builds.push(version);
-        const built = version;
-        return { version: built, handler: () => built };
-      },
-      readVersion: async () => {
-        control.reads += 1;
-        if (control.failReads) {
-          throw new Error('read failed');
-        }
-        return version;
-      },
-      ttlMs: 1000,
-      now: () => time,
-      onError: (error) => errors.push(error),
-    });
-  return { control, builds, errors, create };
+  const create = async () =>
+    (
+      await createLiveApp({
+        build: async () => {
+          if (control.failBuilds && builds.length > 0) {
+            throw new Error('build failed');
+          }
+          builds.push(version);
+          const built = version;
+          return { version: built, handler: () => built };
+        },
+        readVersion: async () => {
+          control.reads += 1;
+          if (control.failReads) {
+            throw new Error('read failed');
+          }
+          return version;
+        },
+        ttlMs: 1000,
+        now: () => time,
+        onError: (error) => errors.push(error),
+        onRebuild: (version) => rebuilt.push(version),
+      })
+    ).handler;
+  return { control, builds, errors, rebuilt, create };
 }
 
 describe('createLiveApp', () => {
@@ -131,7 +135,7 @@ describe('createLiveApp', () => {
 
   it('works with the real clock too', async () => {
     vi.useFakeTimers();
-    const handle = await createLiveApp({
+    const { handler } = await createLiveApp({
       build: async () => ({ version: 'a', handler: () => 'a' }),
       readVersion: async () => 'a',
       ttlMs: 10,
@@ -139,7 +143,45 @@ describe('createLiveApp', () => {
 
     vi.advanceTimersByTime(20);
 
-    expect(await handle(req, res)).toBe('a');
+    expect(await handler(req, res)).toBe('a');
     vi.useRealTimers();
+  });
+
+  it('tells the caller each time it rebuilds, and only then', async () => {
+    const { create, control, rebuilt } = setup();
+    const handle = await create();
+
+    control.advance(1000);
+    await handle(req, res);
+    expect(rebuilt).toEqual([]);
+
+    control.setVersion('v2');
+    control.advance(1000);
+    await handle(req, res);
+    expect(rebuilt).toEqual(['v2']);
+  });
+});
+
+describe('invalidate', () => {
+  it('makes the next request look for a change without waiting out the interval', async () => {
+    let version = 'v1';
+    let time = 0;
+    const live = await createLiveApp({
+      build: async () => {
+        const built = version;
+        return { version: built, handler: () => built };
+      },
+      readVersion: async () => version,
+      ttlMs: 10_000,
+      now: () => time,
+    });
+
+    version = 'v2';
+    time = 5;
+    expect(await live.handler(req, res)).toBe('v1');
+
+    live.invalidate();
+
+    expect(await live.handler(req, res)).toBe('v2');
   });
 });

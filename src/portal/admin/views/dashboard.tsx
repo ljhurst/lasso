@@ -1,5 +1,6 @@
 import { type ClientRecord, clientTypeOf } from '#src/clients/types.ts';
 import { CLIENT_TYPE_LABEL } from '#src/portal/admin/clients/views/client-type.ts';
+import { resourceId } from '#src/resources/id.ts';
 import type { Resource } from '#src/resources/types.ts';
 import { Empty } from '#src/portal/views/components/empty.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
@@ -44,14 +45,21 @@ export async function DashboardPage(props: { clients: ClientRecord[]; resources:
         )}
       </section>
       <section>
-        <h2>Resources ({props.resources.length})</h2>
+        <div class="heading-row">
+          <h2>Resources ({props.resources.length})</h2>
+          <a class="row-action primary" href={adminUrl.newResource()}>
+            Add resource
+          </a>
+        </div>
         {props.resources.length === 0 ? (
           <Empty>No resources registered.</Empty>
         ) : (
           <Table
             columns={['Name', 'Resource indicator', 'Scope', 'Access token format']}
             rows={props.resources.map((resource) => [
-              <span safe>{resource.name}</span>,
+              <a class="name-link" href={adminUrl.resource(resourceId(resource.indicator))} safe>
+                {resource.name}
+              </a>,
               <code safe>{resource.indicator}</code>,
               <List items={resource.scopes} mono />,
               ACCESS_TOKEN_FORMAT,

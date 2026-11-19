@@ -13,34 +13,37 @@ other direction (your app initiating login), see `lasso-connect-client`.
 
 ## 1. Pick a resource indicator
 
-A stable URL identifying your project, usually its own base URL (e.g. the
-Lambda Function URL or custom domain), no trailing path beyond `/`. Must be
-unique across the resources in `src/resources/seed.ts`.
+A stable URL identifying your project (RFC 8707), usually its own base URL
+or custom domain, no trailing path beyond `/`. It must be https (or http on
+localhost) and unique among the registered resources.
 
-## 2. Register the resource in Lasso (this repo)
+## 2. Register the resource in Lasso
 
-Edit `src/resources/seed.ts`:
+Resources live in the `lj-lasso-resources` table, not in code, and a new one
+works within seconds with no deploy.
 
-```ts
-// add to `seedResources`:
-seed('https://your-project.example.com/', 'Your Project',
-  ['yourproject:read', 'yourproject:write'], // define whatever scopes you need
-  { type: AppType.Mcp, url: 'https://your-project.example.com/mcp' }, // optional, recommended
-),
+**Admin portal (everyday):** Clients & resources → Add resource. Enter the
+indicator, a name, the scopes (one per line, `<project>:<action>`), and
+optionally how the apps page shows it (web app, MCP server or API) and its
+link. For an MCP server, users granted a scope also get ready-made
+`claude mcp add` and MCP Inspector commands on the apps page.
+
+**CLI (when the portal can't be reached):**
+
+```bash
+npm run add-resource -- --resource https://your-project.example.com/ \
+  --name "Your Project" --scope yourproject:read --scope yourproject:write \
+  --app-type mcp --app-url https://your-project.example.com/mcp
 ```
 
-Scopes are free-form strings namespaced by project (`<project>:<action>`
-convention). They're added to the provider's scope list automatically — no other
-config needed.
+Add `--dry-run` to check it against the table without writing. The CLI runs
+the same code as the portal.
 
-`app` is optional but recommended: it's what makes the resource show up on
-the self-service `/apps` dashboard (`src/portal/apps/`). `type` is
-`AppType.Web | AppType.Mcp | AppType.Api`; for `AppType.Mcp` it also
-surfaces ready-made `claude mcp add` / MCP Inspector commands to users
-granted the scope.
-
-Commit, then deploy Lasso (`scripts/build_lambda.sh` + `terraform apply` from
-`infra/`, per the root README) so the new resource is live.
+Scopes become roles: grant them to users on the Users page, and to
+`client_credentials` clients on their Client page. `lasso:admin` and Lasso's
+own indicator are reserved. Deleting a resource, or removing a scope from it,
+is refused while a client still holds a scope only that resource offers, and
+it ends the grants that reached it.
 
 ## 3. In your project: verify tokens against Lasso's JWKS
 

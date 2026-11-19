@@ -15,6 +15,10 @@ export type AuthEvent =
   | { event: 'client_updated'; clientId: string; by: string }
   | { event: 'client_deleted'; clientId: string; by: string }
   | { event: 'client_delete_failed'; clientId: string; by: string; error: string }
+  | { event: 'resource_created'; resource: string; by: string }
+  | { event: 'resource_updated'; resource: string; by: string }
+  | { event: 'resource_deleted'; resource: string; by: string }
+  | { event: 'app_rebuilt'; scopes: number }
   | { event: 'token_issued'; clientId?: string; sub?: string; grantType?: string }
   | { event: 'oidc_error'; kind: string; clientId?: string; message: string };
 
