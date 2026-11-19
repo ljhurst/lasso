@@ -32,7 +32,9 @@ export function ResourceDetailPage(props: {
         <Facts
           items={[
             { label: 'Resource', value: <code safe>{resource.indicator}</code> },
-            { label: 'Scopes', value: <List items={resource.scopes} mono /> },
+            ...(resource.builtIn
+              ? [{ label: 'Scopes', value: <List items={resource.scopes} mono /> }]
+              : []),
             ...(props.createdAt
               ? [
                   {

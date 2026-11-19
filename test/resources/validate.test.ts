@@ -5,8 +5,10 @@ import { makeResource } from '#test/support/resources.ts';
 
 const RESERVED = { scopes: ['lasso:admin'], resources: ['https://lasso.example.com'] };
 
-const check = (overrides: Parameters<typeof makeResource>[0] = {}, app?: ResourceApp) =>
-  validateResource(makeResource(overrides).metadata, app, RESERVED);
+const check = (overrides: Parameters<typeof makeResource>[0] = {}, app?: ResourceApp) => {
+  const record = makeResource(overrides);
+  return validateResource(record.resource, record.metadata, app, RESERVED);
+};
 
 describe('validateResource', () => {
   it('accepts a resource with scopes and an app link', () => {

@@ -65,6 +65,20 @@ describe('ResourceDetailPage', () => {
     expect(html).toMatch(/<option value="mcp" selected>/);
   });
 
+  it('lists the scopes once, in the form, not also in the facts above it', async () => {
+    const html = await ResourceDetailPage({ resource });
+
+    expect(html.split('example:write').length - 1).toBe(1);
+    expect(html).toContain('<textarea');
+  });
+
+  it('lists the scopes of a built-in resource in the facts, since it has no form', async () => {
+    const html = await ResourceDetailPage({ resource: { ...resource, builtIn: true } });
+
+    expect(html).toContain('example:write');
+    expect(html).not.toContain('<textarea');
+  });
+
   it('fills the form from the resource, and from what was typed after an error', async () => {
     const fresh = await ResourceDetailPage({ resource });
     const failed = await ResourceDetailPage({

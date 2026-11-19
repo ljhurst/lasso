@@ -15,7 +15,7 @@ function clientRow(client: ClientRecord) {
     </a>,
     <code safe>{client.clientId}</code>,
     <span safe>{CLIENT_TYPE_LABEL[clientTypeOf(client.metadata)]}</span>,
-    <List items={client.metadata.redirect_uris ?? []} mono />,
+    <List items={(client.metadata.redirect_uris ?? []).toSorted()} mono />,
     <List items={client.metadata.grant_types} />,
   ];
 }
@@ -61,7 +61,7 @@ export async function DashboardPage(props: { clients: ClientRecord[]; resources:
                 {resource.name}
               </a>,
               <code safe>{resource.indicator}</code>,
-              <List items={resource.scopes} mono />,
+              <List items={resource.scopes.toSorted()} mono />,
               ACCESS_TOKEN_FORMAT,
             ])}
           />

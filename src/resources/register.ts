@@ -34,14 +34,10 @@ export async function registerResource(
   const record: ResourceRecord = {
     resource: input.resource,
     createdAt: now.toISOString(),
-    metadata: {
-      resource: input.resource,
-      resource_name: input.name,
-      scopes_supported: input.scopes,
-    },
+    metadata: { resource_name: input.name, scopes_supported: input.scopes },
     ...appField(input),
   };
-  const problem = validateResource(record.metadata, record.app, services.reserved);
+  const problem = validateResource(record.resource, record.metadata, record.app, services.reserved);
   if (problem) {
     return { error: problem };
   }
@@ -77,7 +73,7 @@ export async function updateResource(
     metadata: { ...existing.metadata, resource_name: edits.name, scopes_supported: edits.scopes },
     ...appField(edits, existing.app),
   };
-  const problem = validateResource(record.metadata, record.app, services.reserved);
+  const problem = validateResource(record.resource, record.metadata, record.app, services.reserved);
   if (problem) {
     return { error: problem };
   }

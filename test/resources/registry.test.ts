@@ -87,6 +87,24 @@ describe('resource registry', () => {
     expect(store.get).not.toHaveBeenCalled();
   });
 
+  it('reads an older row that still repeats the indicator inside its metadata, trusting the key', async () => {
+    const older = {
+      ...makeResource(),
+      metadata: {
+        resource: 'https://stale.example.com/',
+        resource_name: 'Old',
+        scopes_supported: ['old:read'],
+      },
+    } as ResourceRecord;
+    const registry = createResourceRegistry(storeOf([older]), []);
+
+    expect(await registry.get('https://api.example.com/')).toMatchObject({
+      indicator: 'https://api.example.com/',
+      name: 'Old',
+      scopes: ['old:read'],
+    });
+  });
+
   it('carries the portal app link through', async () => {
     const record = makeResource({}, { type: 'mcp', url: 'https://api.example.com/mcp' });
     const registry = createResourceRegistry(storeOf([record]), []);

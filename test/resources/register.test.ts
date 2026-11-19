@@ -26,12 +26,19 @@ describe('registerResource', () => {
       resource: 'https://api.example.com/',
       createdAt: '2026-02-03T04:05:06.000Z',
       metadata: {
-        resource: 'https://api.example.com/',
         resource_name: 'Example API',
         scopes_supported: ['example:read', 'example:write'],
       },
       app: { type: 'mcp', url: 'https://api.example.com/mcp' },
     });
+  });
+
+  it('stores the indicator once, as the key, and not again inside the metadata', async () => {
+    const services = fakeResourceServices();
+
+    await registerResource(services, input);
+
+    expect(services.rows.get('https://api.example.com/')?.metadata).not.toHaveProperty('resource');
   });
 
   it('stores no app link when none is chosen', async () => {
@@ -88,7 +95,6 @@ describe('updateResource', () => {
       resource: 'https://api.example.com/',
       createdAt: '2026-01-01T00:00:00.000Z',
       metadata: {
-        resource: 'https://api.example.com/',
         resource_name: 'Renamed',
         scopes_supported: ['example:read', 'example:admin'],
       },

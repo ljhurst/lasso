@@ -4,19 +4,18 @@ import type { ResourceStore } from '#src/resources/storage/store.ts';
 import type { ResourceRecord } from '#src/resources/types.ts';
 
 export function makeResource(
-  overrides: Partial<ResourceRecord['metadata']> = {},
+  overrides: { resource?: string; resource_name?: string; scopes_supported?: string[] } = {},
   app?: ResourceRecord['app'],
 ): ResourceRecord {
-  const metadata = {
-    resource: 'https://api.example.com/',
-    resource_name: 'Example API',
-    scopes_supported: ['example:read', 'example:write'],
-    ...overrides,
-  };
+  const { resource = 'https://api.example.com/', ...rest } = overrides;
   return {
-    resource: metadata.resource,
+    resource,
     createdAt: '2026-01-01T00:00:00.000Z',
-    metadata,
+    metadata: {
+      resource_name: 'Example API',
+      scopes_supported: ['example:read', 'example:write'],
+      ...rest,
+    },
     ...(app && { app }),
   };
 }

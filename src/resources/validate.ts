@@ -11,12 +11,13 @@ const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
  * `reservedResources` are indicators it owns (its own API).
  */
 export function validateResource(
+  indicator: string,
   resource: RegisteredResource,
   app: ResourceApp | undefined,
   reserved: { scopes: readonly string[]; resources: readonly string[] },
 ): string | undefined {
   return (
-    validateIndicator(resource.resource, reserved.resources) ??
+    validateIndicator(indicator, reserved.resources) ??
     validateName(resource.resource_name) ??
     validateScopes(resource.scopes_supported, reserved.scopes) ??
     validateApp(app)
