@@ -170,7 +170,11 @@ replaced. The scope list is also what a client may hold, what discovery
 advertises and what a client's own scope allow-list is checked against, and
 oidc-provider reads it once when it starts. So each instance checks the
 registered scopes every few seconds and builds a new provider when they
-change; resource changes take effect within seconds, with no restart.
+change; resource changes take effect within seconds, with no restart. The
+instance that handled a change looks again at once. Admins add, edit and delete
+resources in the portal or with `npm run add-resource`; deleting one, or
+removing a scope from it, is refused while a client holds a scope only that
+resource offers, and ends the grants that reached it.
 
 Emails are trimmed and lowercased on creation and on every lookup, so a phone
 keyboard's capitalization can't lock someone out.

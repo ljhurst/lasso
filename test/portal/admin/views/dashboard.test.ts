@@ -41,6 +41,46 @@ describe('admin DashboardPage', () => {
     expect(html).toContain('href="/admin/clients/new"');
   });
 
+  it('links each resource to its page and offers to add one', async () => {
+    const html = await DashboardPage({ clients: [], resources: RESOURCES });
+
+    expect(html).toContain('href="/admin/resources/aHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20v"');
+    expect(html).toContain('href="/admin/resources/new"');
+  });
+
+  it('shows redirect URIs and scopes in sorted order, whatever order they were stored in', async () => {
+    const html = await DashboardPage({
+      clients: [
+        makeClient({
+          redirect_uris: [
+            'https://z.example.com/cb',
+            'http://localhost:4321/cb',
+            'https://a.example.com/cb',
+          ],
+        }),
+      ],
+      resources: [
+        {
+          indicator: 'https://api.example.com/',
+          name: 'Example API',
+          scopes: ['example:write', 'example:admin', 'example:read'],
+          builtIn: false,
+        },
+      ],
+    });
+
+    const order = (items: string[]) => items.map((item) => html.indexOf(item));
+    const uris = order([
+      'http://localhost:4321/cb',
+      'https://a.example.com/cb',
+      'https://z.example.com/cb',
+    ]);
+    const scopes = order(['example:admin', 'example:read', 'example:write']);
+    expect(uris).toEqual([...uris].sort((a, b) => a - b));
+    expect(scopes).toEqual([...scopes].sort((a, b) => a - b));
+    expect(Math.min(...uris)).toBeGreaterThan(-1);
+  });
+
   it('says so when no clients are registered', async () => {
     expect(await DashboardPage({ clients: [], resources: RESOURCES })).toContain(
       'No clients registered.',

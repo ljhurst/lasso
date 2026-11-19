@@ -17,6 +17,10 @@ describe('adminUrl', () => {
     ['clients', adminUrl.clients(), '/admin/clients'],
     ['client', adminUrl.client('my-app'), '/admin/clients/my-app'],
     ['deleteClient', adminUrl.deleteClient('my-app'), '/admin/clients/my-app/delete'],
+    ['newResource', adminUrl.newResource(), '/admin/resources/new'],
+    ['resources', adminUrl.resources(), '/admin/resources'],
+    ['resource', adminUrl.resource('aHR0cHM'), '/admin/resources/aHR0cHM'],
+    ['deleteResource', adminUrl.deleteResource('aHR0cHM'), '/admin/resources/aHR0cHM/delete'],
     ['addClientScope', adminUrl.addClientScope('my-app'), '/admin/clients/my-app/scopes'],
     [
       'removeClientScope',

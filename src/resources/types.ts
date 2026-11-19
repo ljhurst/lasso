@@ -13,9 +13,11 @@ export interface ResourceApp {
   logo?: string;
 }
 
-/** The resource's identity and scopes, named as in OAuth Protected Resource Metadata. */
+/**
+ * What a resource says about itself, named as in OAuth Protected Resource
+ * Metadata. Its identifier is the row's key, so it is not repeated here.
+ */
 export interface RegisteredResource {
-  resource: string;
   resource_name: string;
   scopes_supported: string[];
 }

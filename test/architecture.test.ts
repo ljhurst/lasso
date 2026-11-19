@@ -27,9 +27,14 @@ const FORBIDDEN: Record<string, string[]> = {
 /** Parts of the admin portal that must stay independent of each other. */
 const PATH_RULES = [
   { within: 'src/portal/admin/clients/', mustNotImport: '#src/portal/admin/users/' },
+  { within: 'src/portal/admin/clients/', mustNotImport: '#src/portal/admin/resources/' },
+  { within: 'src/portal/admin/resources/', mustNotImport: '#src/portal/admin/clients/' },
+  { within: 'src/portal/admin/resources/', mustNotImport: '#src/portal/admin/users/' },
   { within: 'src/portal/admin/users/', mustNotImport: '#src/portal/admin/clients/' },
+  { within: 'src/portal/admin/users/', mustNotImport: '#src/portal/admin/resources/' },
   { within: 'src/portal/admin/views/components/', mustNotImport: '#src/portal/admin/users/' },
   { within: 'src/portal/admin/views/components/', mustNotImport: '#src/portal/admin/clients/' },
+  { within: 'src/portal/admin/views/components/', mustNotImport: '#src/portal/admin/resources/' },
 ];
 
 const IMPORT = /from '#src\/([a-z]+)\//g;
