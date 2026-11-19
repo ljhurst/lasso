@@ -31,11 +31,6 @@ export interface TemporaryPassword {
   expiresAt: number;
 }
 
-export interface TemporaryPasswordUpdate {
-  UpdateExpression: string;
-  ExpressionAttributeValues: Record<string, string | number | boolean>;
-}
-
 export type ParsedNewUser = { details: NewUserDetails } | { error: string };
 
 /** A fresh temporary password and its hash, valid for the temporary-password lifetime; the password itself is never stored. */
@@ -44,24 +39,6 @@ export async function issueTemporaryPassword(nowMs = Date.now()): Promise<Tempor
   const { hash, salt } = await hashPassword(tempPassword);
   const expiresAt = Math.floor(nowMs / 1000) + TEMP_PASSWORD_TTL_SECONDS;
   return { tempPassword, hash, salt, expiresAt };
-}
-
-/** The write that puts an existing user back on a temporary password. */
-export function temporaryPasswordUpdate(
-  temp: TemporaryPassword,
-  resetAt: string,
-): TemporaryPasswordUpdate {
-  return {
-    UpdateExpression:
-      'SET passwordHash = :hash, passwordSalt = :salt, mustChangePassword = :true, tempPasswordExpiresAt = :expiresAt, passwordResetAt = :resetAt',
-    ExpressionAttributeValues: {
-      ':hash': temp.hash,
-      ':salt': temp.salt,
-      ':true': true,
-      ':expiresAt': temp.expiresAt,
-      ':resetAt': resetAt,
-    },
-  };
 }
 
 /** The temporary password is returned once and only its hash is kept on the user. */

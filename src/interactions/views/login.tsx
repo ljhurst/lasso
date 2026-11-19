@@ -1,4 +1,4 @@
-import { AuthLayout, SubmitButton } from '#src/interactions/views/layout.tsx';
+import { AuthLayout, SubmitButton } from '#src/views/auth-layout.tsx';
 
 export function LoginPage(props: { uid: string; error?: string }) {
   return (

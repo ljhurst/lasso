@@ -6,10 +6,11 @@ import {
   ScanCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '#src/adapter/client.ts';
+import { docClient } from '#src/aws/dynamo.ts';
 import { env } from '#src/env.ts';
 import { normalizeEmail } from '#src/users/email.ts';
-import { type TemporaryPassword, temporaryPasswordUpdate } from '#src/users/provision.ts';
+import type { TemporaryPassword } from '#src/users/provision.ts';
+import { temporaryPasswordUpdate } from '#src/users/storage/expressions.ts';
 import type { User } from '#src/users/types.ts';
 
 export async function getUserBySub(sub: string): Promise<User | undefined> {

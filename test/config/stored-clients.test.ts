@@ -7,7 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { DynamoAdapter } from '#src/adapter/dynamo-adapter.ts';
 import { makeClient, makeConfidentialClient } from '#test/support/clients.ts';
 
-vi.mock('#src/config/ssm.ts', () => ({ getParameter: vi.fn(async () => 'table-secret') }));
+vi.mock('#src/aws/ssm.ts', () => ({ getParameter: vi.fn(async () => 'table-secret') }));
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const records = new Map([

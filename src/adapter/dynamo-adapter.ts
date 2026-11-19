@@ -8,7 +8,7 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import type { Adapter, AdapterPayload } from 'oidc-provider';
 import { env } from '#src/env.ts';
-import { docClient } from '#src/adapter/client.ts';
+import { docClient } from '#src/aws/dynamo.ts';
 import { type LassoItem, primaryKey, toItem, uidIndexKey } from '#src/adapter/keys.ts';
 import { CLIENT_MODEL, findRegisteredClient } from '#src/adapter/registered-client.ts';
 

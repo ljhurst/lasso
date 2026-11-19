@@ -1,4 +1,5 @@
 import type { ResourceServer } from 'oidc-provider';
+import { LASSO_ADMIN_SCOPE } from '#src/config/scopes.ts';
 import { env } from '#src/env.ts';
 
 export const AppType = {
@@ -33,7 +34,6 @@ const FREAL_RESOURCE_INDICATOR = 'https://freal-api.bylukehurst.com/';
 const FREAL_APP_URL = 'https://freal.bylukehurst.com/';
 
 export const LASSO_RESOURCE_INDICATOR = env.issuer;
-export const LASSO_ADMIN_SCOPE = 'lasso:admin';
 
 export const resources: Record<string, NamedResourceServer> = {
   [PORTO_RESOURCE_INDICATOR]: {

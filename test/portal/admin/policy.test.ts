@@ -7,7 +7,8 @@ import {
   canManageUser,
   canRemoveRole,
 } from '#src/portal/admin/policy.ts';
-import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
+import { allResourceScopes } from '#src/config/resources.ts';
+import { LASSO_ADMIN_SCOPE } from '#src/config/scopes.ts';
 import { makeUser } from '#test/support/users.ts';
 
 function user(sub: string, roles: string[]) {

@@ -4,7 +4,7 @@ import Provider from 'oidc-provider';
 
 import { originGuard } from '#src/auth/origin-verify.ts';
 import { buildConfiguration } from '#src/config/index.ts';
-import { getParameter } from '#src/config/ssm.ts';
+import { getParameter } from '#src/aws/ssm.ts';
 import { env } from '#src/env.ts';
 import { buildInteractionRouter } from '#src/interactions/routes.ts';
 import { attachProviderEvents } from '#src/observability/provider-events.ts';

@@ -1,4 +1,4 @@
-import { getParameter } from '#src/config/ssm.ts';
+import { getParameter } from '#src/aws/ssm.ts';
 import { env } from '#src/env.ts';
 
 interface Jwks {

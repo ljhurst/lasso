@@ -1,5 +1,5 @@
 import { DeleteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '#src/adapter/client.ts';
+import { docClient } from '#src/aws/dynamo.ts';
 import { env } from '#src/env.ts';
 
 export const MAX_FAILED_LOGINS = 5;

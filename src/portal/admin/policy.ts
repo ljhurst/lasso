@@ -1,5 +1,6 @@
-import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
-import { PORTAL_CLIENT_ID } from '#src/portal/auth/session.ts';
+import { allResourceScopes } from '#src/config/resources.ts';
+import { LASSO_ADMIN_SCOPE } from '#src/config/scopes.ts';
+import { PORTAL_CLIENT_ID } from '#src/portal/auth/portal-client.ts';
 import type { HeldRole } from '#src/portal/admin/types.ts';
 import type { User } from '#src/users/types.ts';
 
