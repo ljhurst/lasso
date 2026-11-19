@@ -1,7 +1,7 @@
-import { randomBytes } from 'node:crypto';
 import type Koa from 'koa';
 import type Provider from 'oidc-provider';
 import { deriveChallenge, generateVerifier, issuerOrigin, setPkceCookie } from '#src/auth/pkce.ts';
+import { randomToken } from '#src/auth/random.ts';
 import { LASSO_ADMIN_SCOPE } from '#src/config/scopes.ts';
 import { LASSO_RESOURCE_INDICATOR } from '#src/config/resources.ts';
 import { PORTAL_CLIENT_ID } from '#src/portal/auth/portal-client.ts';
@@ -16,7 +16,7 @@ export function hasAdminScope(scope: string[]): boolean {
 
 function redirectToLogin(ctx: Koa.Context): void {
   const verifier = generateVerifier();
-  const state = randomBytes(16).toString('base64url');
+  const state = randomToken(16);
   const origin = issuerOrigin();
 
   setPkceCookie(ctx, PORTAL_PKCE_AREA, { verifier, state, returnTo: ctx.originalUrl });

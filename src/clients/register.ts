@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomToken } from '#src/auth/random.ts';
 import { secretParamFor } from '#src/clients/secret-param.ts';
 import type { SecretStore } from '#src/clients/secrets.ts';
 import type { ClientStore } from '#src/clients/storage/store.ts';
@@ -67,7 +67,7 @@ export async function registerClient(
     return { client };
   }
 
-  const secret = randomBytes(32).toString('base64url');
+  const secret = randomToken();
   try {
     await services.secrets.put(secretParamFor(client.clientId), secret);
   } catch (error) {

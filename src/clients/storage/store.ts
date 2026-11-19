@@ -3,8 +3,8 @@ import {
   type DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
-  ScanCommand,
 } from '@aws-sdk/lib-dynamodb';
+import { scanAll } from '#src/aws/dynamo.ts';
 import type { ClientRecord } from '#src/clients/types.ts';
 
 export interface ClientStore {
@@ -24,8 +24,8 @@ export function createClientStore(db: DynamoDBDocumentClient, tableName: string)
     },
 
     async list() {
-      const result = await db.send(new ScanCommand({ TableName: tableName }));
-      return ((result.Items ?? []) as ClientRecord[]).toSorted((a, b) =>
+      const items = await scanAll(db, { TableName: tableName });
+      return (items as unknown as ClientRecord[]).toSorted((a, b) =>
         a.metadata.client_name.localeCompare(b.metadata.client_name),
       );
     },

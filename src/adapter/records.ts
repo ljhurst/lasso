@@ -1,5 +1,4 @@
-import { ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '#src/aws/dynamo.ts';
+import { docClient, scanAll } from '#src/aws/dynamo.ts';
 import type { LassoItem } from '#src/adapter/keys.ts';
 import { env } from '#src/env.ts';
 
@@ -28,21 +27,12 @@ export interface AccessTokenRow {
 }
 
 async function scanByModel(modelName: string): Promise<LassoItem[]> {
-  const items: LassoItem[] = [];
-  let startKey: Record<string, unknown> | undefined;
-  do {
-    const result = await docClient.send(
-      new ScanCommand({
-        TableName: env.oidcTableName,
-        FilterExpression: 'modelName = :modelName',
-        ExpressionAttributeValues: { ':modelName': modelName },
-        ExclusiveStartKey: startKey,
-      }),
-    );
-    items.push(...((result.Items ?? []) as LassoItem[]));
-    startKey = result.LastEvaluatedKey;
-  } while (startKey);
-  return items;
+  const items = await scanAll(docClient, {
+    TableName: env.oidcTableName,
+    FilterExpression: 'modelName = :modelName',
+    ExpressionAttributeValues: { ':modelName': modelName },
+  });
+  return items as unknown as LassoItem[];
 }
 
 export async function listSessions(): Promise<SessionRow[]> {

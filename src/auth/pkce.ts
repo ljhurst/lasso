@@ -1,4 +1,5 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash } from 'node:crypto';
+import { randomToken } from '#src/auth/random.ts';
 import type Koa from 'koa';
 import { env } from '#src/env.ts';
 
@@ -20,7 +21,7 @@ export function issuerOrigin(): string {
 }
 
 export function generateVerifier(): string {
-  return randomBytes(32).toString('base64url');
+  return randomToken();
 }
 
 export function deriveChallenge(verifier: string): string {

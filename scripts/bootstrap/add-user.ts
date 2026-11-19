@@ -8,13 +8,10 @@
 // (src/interactions/routes.ts) before they reach consent.
 import { parseArgs } from 'node:util';
 
-import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-
 import { LASSO_ADMIN_SCOPE } from '../../src/config/scopes.ts';
 import { normalizeEmail } from '../../src/users/email.ts';
 import { buildNewUser, issueTemporaryPassword } from '../../src/users/provision.ts';
-import { temporaryPasswordUpdate } from '../../src/users/storage/expressions.ts';
-import type { User } from '../../src/users/types.ts';
+import { createUserStore, type UserStore } from '../../src/users/storage/user-store.ts';
 import { createDynamoClient } from './dynamo.ts';
 
 const { values: rawValues } = parseArgs({
@@ -37,55 +34,22 @@ const values = {
   reset: rawValues.reset && normalizeEmail(rawValues.reset),
 };
 
-async function findByEmail(
-  client: ReturnType<typeof createDynamoClient>,
-  table: string,
-  email: string,
-): Promise<User | undefined> {
-  const result = await client.send(
-    new QueryCommand({
-      TableName: table,
-      IndexName: 'email-index',
-      KeyConditionExpression: 'email = :email',
-      ExpressionAttributeValues: { ':email': email },
-      Limit: 1,
-    }),
-  );
-  return result.Items?.[0] as User | undefined;
-}
-
-async function resetPassword(
-  client: ReturnType<typeof createDynamoClient>,
-  table: string,
-  email: string,
-): Promise<void> {
-  const user = await findByEmail(client, table, email);
+async function resetPassword(store: UserStore, email: string): Promise<void> {
+  const user = await store.getByEmail(email);
   if (!user) {
     throw new Error(`no user found with email ${email}`);
   }
 
   const temp = await issueTemporaryPassword();
-
-  await client.send(
-    new UpdateCommand({
-      TableName: table,
-      Key: { sub: user.sub },
-      ...temporaryPasswordUpdate(temp, new Date().toISOString()),
-    }),
-  );
+  await store.setTemporaryPassword(user.sub, temp);
 
   console.log(
     `Reset password for ${email}. Temporary password: ${temp.tempPassword} (expires ${new Date(temp.expiresAt * 1000).toISOString()})`,
   );
 }
 
-async function grantRole(
-  client: ReturnType<typeof createDynamoClient>,
-  table: string,
-  email: string,
-  role: string,
-): Promise<void> {
-  const user = await findByEmail(client, table, email);
+async function grantRole(store: UserStore, email: string, role: string): Promise<void> {
+  const user = await store.getByEmail(email);
   if (!user) {
     throw new Error(`no user found with email ${email}`);
   }
@@ -95,28 +59,16 @@ async function grantRole(
     return;
   }
 
-  await client.send(
-    new UpdateCommand({
-      TableName: table,
-      Key: { sub: user.sub },
-      UpdateExpression: 'SET #roles = :roles',
-      ExpressionAttributeNames: { '#roles': 'roles' },
-      ExpressionAttributeValues: { ':roles': [...user.roles, role] },
-    }),
-  );
-
+  await store.addRole(user.sub, role);
   console.log(`Granted ${role} to ${email}.`);
 }
 
-async function createUser(
-  client: ReturnType<typeof createDynamoClient>,
-  table: string,
-): Promise<void> {
+async function createUser(store: UserStore): Promise<void> {
   if (!values.email || !values['given-name'] || !values['family-name']) {
     throw new Error('--email, --given-name, and --family-name are required to create a user');
   }
 
-  if (await findByEmail(client, table, values.email)) {
+  if (await store.getByEmail(values.email)) {
     throw new Error(`a user with email ${values.email} already exists — use --reset instead`);
   }
 
@@ -127,16 +79,16 @@ async function createUser(
     roles: values.admin ? [LASSO_ADMIN_SCOPE] : [],
   });
 
-  await client.send(new PutCommand({ TableName: table, Item: user }));
+  await store.create(user);
 
   console.log(`Created ${values.email} (sub ${user.sub}). Temporary password: ${tempPassword}`);
 }
 
 async function main(): Promise<void> {
-  const client = createDynamoClient(values.profile, values.region);
+  const store = createUserStore(createDynamoClient(values.profile, values.region), values.table);
 
   if (values.reset) {
-    await resetPassword(client, values.table, values.reset);
+    await resetPassword(store, values.reset);
     return;
   }
 
@@ -144,11 +96,11 @@ async function main(): Promise<void> {
     if (!values.email) {
       throw new Error('--email is required with --grant-role');
     }
-    await grantRole(client, values.table, values.email, values['grant-role']);
+    await grantRole(store, values.email, values['grant-role']);
     return;
   }
 
-  await createUser(client, values.table);
+  await createUser(store);
 }
 
 main().catch((error: unknown) => {
