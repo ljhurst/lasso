@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_EMAIL_LENGTH, MAX_NAME_LENGTH } from '#src/users/provision.ts';
-import { NewUserPage } from '#src/portal/admin/views/new-user.tsx';
+import { NewUserPage } from '#src/portal/admin/users/views/new-user.tsx';
 
 const BREAKOUT = '"><img src=x onerror=alert(1)>';
 

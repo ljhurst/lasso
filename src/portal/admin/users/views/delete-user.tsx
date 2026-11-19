@@ -1,5 +1,6 @@
 import type { User } from '#src/users/types.ts';
-import { aboutUser, ConfirmPage } from '#src/portal/admin/views/components/confirm-page.tsx';
+import { ConfirmPage } from '#src/portal/admin/views/components/confirm-page.tsx';
+import { aboutUser } from '#src/portal/admin/users/views/about-user.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
 
 export function DeleteUserPage(props: { user: User }) {

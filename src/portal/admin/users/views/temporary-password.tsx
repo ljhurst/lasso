@@ -1,9 +1,9 @@
 import type { User } from '#src/users/types.ts';
-import { emailFact } from '#src/portal/admin/views/components/person-facts.tsx';
+import { emailFact } from '#src/portal/admin/users/views/person-facts.tsx';
 import { CopyButton } from '#src/portal/views/components/copy-button.tsx';
 import { Facts } from '#src/portal/views/components/facts.tsx';
 import { Time } from '#src/portal/views/components/time.tsx';
-import { Layout } from '#src/portal/views/layout.tsx';
+import { AdminLayout } from '#src/portal/admin/views/components/admin-layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
 import { fullName } from '#src/users/name.ts';
 
@@ -16,14 +16,10 @@ export function TemporaryPasswordPage(props: {
   const { mode, user } = props;
   const heading = `${mode === 'created' ? 'Created' : 'Password reset for'} ${fullName(user)}`;
   return (
-    <Layout
+    <AdminLayout
+      section="users"
       title="Temporary password"
-      active={adminUrl.users()}
-      isAdmin={true}
-      crumbs={[
-        { label: 'Users', href: adminUrl.users() },
-        { label: fullName(user), href: adminUrl.user(user.sub) },
-      ]}
+      crumbs={[{ label: fullName(user), href: adminUrl.user(user.sub) }]}
     >
       <section>
         <h2 safe>{heading}</h2>
@@ -64,6 +60,6 @@ export function TemporaryPasswordPage(props: {
           )}
         </div>
       </section>
-    </Layout>
+    </AdminLayout>
   );
 }

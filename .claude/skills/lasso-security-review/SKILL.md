@@ -86,7 +86,8 @@ touches. Answer pass or fail for each, with the file and line that proves it.
 2. Every admin route sits behind the same-origin and admin checks:
    `router.use(requireSameOrigin, requirePortalSession, requireAdmin)` is the
    first thing in `buildAdminRouter` (`src/portal/admin/routes.ts`), and no
-   admin route is added outside it.
+   admin route is added outside it. `test/portal/admin/gate.test.ts` requests
+   every route on the router with the session gate refusing; it must pass.
 3. A failed login, whatever the reason, returns the same page and still
    spends a password check (`authenticate` in `src/interactions/routes.ts`).
 4. Consent never grants a scope the account's roles don't hold

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ResetPasswordPage } from '#src/portal/admin/views/reset-password.tsx';
+import { ResetPasswordPage } from '#src/portal/admin/users/views/reset-password.tsx';
 import { TEMP_PASSWORD_TTL_DAYS } from '#src/users/provision.ts';
 import { makeUser } from '#test/support/users.ts';
 

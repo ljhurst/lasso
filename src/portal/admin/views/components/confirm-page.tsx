@@ -1,16 +1,15 @@
 import type { Children } from '@kitajs/html';
-import { PersonFacts } from '#src/portal/admin/views/components/person-facts.tsx';
-import { adminUrl } from '#src/portal/paths.ts';
+import {
+  AdminLayout,
+  type AdminSection,
+} from '#src/portal/admin/views/components/admin-layout.tsx';
 import type { Crumb } from '#src/portal/views/components/breadcrumbs.tsx';
-import { Layout } from '#src/portal/views/layout.tsx';
-import { fullName } from '#src/users/name.ts';
-import type { User } from '#src/users/types.ts';
 
 /** A step-before-you-do-it page: what it affects, what will happen, then act or cancel. */
 export function ConfirmPage(props: {
   title: string;
   heading: string;
-  active: string;
+  section: AdminSection;
   crumbs: Crumb[];
   facts: Children;
   error?: string;
@@ -21,7 +20,7 @@ export function ConfirmPage(props: {
   children: Children;
 }) {
   return (
-    <Layout title={props.title} active={props.active} isAdmin={true} crumbs={props.crumbs}>
+    <AdminLayout section={props.section} title={props.title} crumbs={props.crumbs}>
       <section>
         <h2 safe>{props.heading}</h2>
         {props.facts}
@@ -43,19 +42,6 @@ export function ConfirmPage(props: {
           </a>
         </form>
       </section>
-    </Layout>
+    </AdminLayout>
   );
-}
-
-/** The page props that say a confirm page is about one user. */
-export function aboutUser(user: User) {
-  return {
-    active: adminUrl.users(),
-    crumbs: [
-      { label: 'Users', href: adminUrl.users() },
-      { label: fullName(user), href: adminUrl.user(user.sub) },
-    ],
-    facts: <PersonFacts user={user} />,
-    cancelHref: adminUrl.user(user.sub),
-  };
 }

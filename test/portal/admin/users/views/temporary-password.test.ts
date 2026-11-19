@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TemporaryPasswordPage } from '#src/portal/admin/views/temporary-password.tsx';
+import { TemporaryPasswordPage } from '#src/portal/admin/users/views/temporary-password.tsx';
 import { makeUser } from '#test/support/users.ts';
 
 const user = makeUser({ mustChangePassword: true });

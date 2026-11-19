@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { UsersListPage } from '#src/portal/admin/views/users.tsx';
+import { UsersListPage } from '#src/portal/admin/users/views/users.tsx';
 import { makeUser } from '#test/support/users.ts';
 
 const HOSTILE = '<img src=x onerror=alert(1)>';

@@ -1,5 +1,5 @@
 import { MAX_EMAIL_LENGTH, MAX_NAME_LENGTH } from '#src/users/provision.ts';
-import { Layout } from '#src/portal/views/layout.tsx';
+import { AdminLayout } from '#src/portal/admin/views/components/admin-layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
 
 export interface NewUserForm {
@@ -13,12 +13,7 @@ const EMPTY_FORM: NewUserForm = { givenName: '', familyName: '', email: '' };
 export function NewUserPage(props: { error?: string; values?: NewUserForm }) {
   const values = props.values ?? EMPTY_FORM;
   return (
-    <Layout
-      title="Add a user"
-      active={adminUrl.users()}
-      isAdmin={true}
-      crumbs={[{ label: 'Users', href: adminUrl.users() }]}
-    >
+    <AdminLayout section="users" title="Add a user">
       <section>
         <h2>Add a user</h2>
         {props.error ? (
@@ -76,6 +71,6 @@ export function NewUserPage(props: { error?: string; values?: NewUserForm }) {
           </div>
         </form>
       </section>
-    </Layout>
+    </AdminLayout>
   );
 }

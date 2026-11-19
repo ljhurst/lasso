@@ -16,7 +16,7 @@ import { ClientDetailPage } from '#src/portal/admin/clients/views/client-detail.
 import { ClientSecretPage } from '#src/portal/admin/clients/views/client-secret.tsx';
 import { DeleteClientPage } from '#src/portal/admin/clients/views/delete-client.tsx';
 import { NewClientPage } from '#src/portal/admin/clients/views/new-client.tsx';
-import { assignableClientScopes, canManageClient } from '#src/portal/admin/policy.ts';
+import { assignableClientScopes, canManageClient } from '#src/portal/admin/clients/policy.ts';
 import { revokeClientAccess } from '#src/portal/admin/revocation.ts';
 import { adminUrl, ROUTE } from '#src/portal/paths.ts';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
+import { UserDetailPage } from '#src/portal/admin/users/views/user-detail.tsx';
 import { makeUser } from '#test/support/users.ts';
 
 const user = makeUser({ roles: ['freal:read'] });

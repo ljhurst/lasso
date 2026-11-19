@@ -4,7 +4,7 @@ import { resources } from '#src/config/resources.ts';
 import { Empty } from '#src/portal/views/components/empty.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
 import { Table } from '#src/portal/views/components/table.tsx';
-import { Layout } from '#src/portal/views/layout.tsx';
+import { AdminLayout } from '#src/portal/admin/views/components/admin-layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
 
 function clientRow(client: ClientRecord) {
@@ -24,7 +24,7 @@ export async function DashboardPage(props: { clients: ClientRecord[] }) {
   const resourceEntries = Object.entries(resources);
 
   return (
-    <Layout title="Clients & resources" active={adminUrl.dashboard()} isAdmin={true}>
+    <AdminLayout section="clients" title="Clients & resources" index>
       <section>
         <div class="heading-row">
           <h2>Clients ({clients.length})</h2>
@@ -57,6 +57,6 @@ export async function DashboardPage(props: { clients: ClientRecord[] }) {
           />
         )}
       </section>
-    </Layout>
+    </AdminLayout>
   );
 }
