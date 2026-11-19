@@ -47,7 +47,7 @@ export async function registerClient(
     createdAt: now.toISOString(),
     metadata: buildMetadata(input),
   };
-  const problem = validateClient(client.metadata, knownScopes);
+  const problem = validateClient(client.clientId, client.metadata, knownScopes);
   if (problem) {
     return { error: problem };
   }
@@ -99,7 +99,7 @@ export async function updateClient(
       ...(isPublic ? uriFields(edits) : { scope: edits.scopes.join(' ') }),
     },
   };
-  const problem = validateClient(client.metadata, knownScopes);
+  const problem = validateClient(client.clientId, client.metadata, knownScopes);
   if (problem) {
     return { error: problem };
   }
@@ -157,7 +157,7 @@ export async function removeClient(services: ClientServices, clientId: string): 
 }
 
 function buildMetadata(input: NewClientInput): RegisteredClient {
-  const base = { client_id: input.clientId, client_name: input.name };
+  const base = { client_name: input.name };
 
   if (input.clientType === 'confidential') {
     return {

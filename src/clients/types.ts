@@ -7,9 +7,12 @@ export type ApplicationType = 'web' | 'native';
 /** Public clients cannot keep a secret and sign users in; confidential clients hold one and authenticate themselves. */
 export type ClientType = 'public' | 'confidential';
 
-/** The client metadata Lasso registers, named as in the OAuth and OIDC client registration specs. */
+/**
+ * The client metadata Lasso registers, named as in the OAuth and OIDC client
+ * registration specs. The client's identifier is the row's key, so it is not
+ * repeated here.
+ */
 export interface RegisteredClient {
-  client_id: string;
   client_name: string;
   token_endpoint_auth_method: AuthMethod;
   grant_types: GrantType[];
