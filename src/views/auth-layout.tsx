@@ -1,7 +1,12 @@
 import type { Children } from '@kitajs/html';
 import pkg from '#package.json' with { type: 'json' };
-import { APPLE_TOUCH_ICON_HREF, FAVICON_HREF, LassoMark, THEME_STYLES } from '#src/branding.tsx';
-import { DOCTYPE } from '#src/doctype.ts';
+import {
+  APPLE_TOUCH_ICON_HREF,
+  FAVICON_HREF,
+  LassoMark,
+  THEME_STYLES,
+} from '#src/views/branding.tsx';
+import { DOCTYPE } from '#src/views/doctype.ts';
 
 const AUTH_STYLES = `
   body {

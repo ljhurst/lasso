@@ -1,5 +1,5 @@
 import { SSMClient } from '@aws-sdk/client-ssm';
-import { docClient } from '#src/adapter/client.ts';
+import { docClient } from '#src/aws/dynamo.ts';
 import type { ClientServices } from '#src/clients/register.ts';
 import { createSsmSecretStore } from '#src/clients/secrets.ts';
 import { createClientStore } from '#src/clients/storage/store.ts';

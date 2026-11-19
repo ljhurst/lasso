@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AuthLayout } from '#src/interactions/views/layout.tsx';
+import { AuthLayout } from '#src/views/auth-layout.tsx';
 
 describe('AuthLayout', () => {
   it('starts with a doctype so browsers do not use quirks mode', async () => {

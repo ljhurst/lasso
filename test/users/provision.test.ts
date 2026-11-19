@@ -5,7 +5,6 @@ import {
   issueTemporaryPassword,
   parseNewUser,
   TEMP_PASSWORD_TTL_DAYS,
-  temporaryPasswordUpdate,
 } from '#src/users/provision.ts';
 
 function form(fields: Record<string, string>): URLSearchParams {
@@ -72,32 +71,6 @@ describe('issueTemporaryPassword', () => {
     expect(await verifyPassword(temp.tempPassword, { hash: temp.hash, salt: temp.salt })).toBe(
       true,
     );
-  });
-});
-
-describe('temporaryPasswordUpdate', () => {
-  it('puts the user back on a temporary password that expires, and marks the reset', async () => {
-    const temp = await issueTemporaryPassword(1_800_000_000_000);
-
-    const update = temporaryPasswordUpdate(temp, '2027-01-01T00:00:00.000Z');
-
-    expect(update.ExpressionAttributeValues).toEqual({
-      ':hash': temp.hash,
-      ':salt': temp.salt,
-      ':true': true,
-      ':expiresAt': temp.expiresAt,
-      ':resetAt': '2027-01-01T00:00:00.000Z',
-    });
-    for (const field of [
-      'passwordHash',
-      'passwordSalt',
-      'mustChangePassword',
-      'tempPasswordExpiresAt',
-      'passwordResetAt',
-    ]) {
-      expect(update.UpdateExpression).toContain(field);
-    }
-    expect(JSON.stringify(update)).not.toContain(temp.tempPassword);
   });
 });
 

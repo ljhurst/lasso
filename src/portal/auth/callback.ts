@@ -1,6 +1,7 @@
 import type Koa from 'koa';
 import { clearPkceCookie, readPkceCookie, issuerOrigin } from '#src/auth/pkce.ts';
-import { PORTAL_CLIENT_ID, PORTAL_PKCE_AREA } from '#src/portal/auth/session.ts';
+import { PORTAL_CLIENT_ID } from '#src/portal/auth/portal-client.ts';
+import { PORTAL_PKCE_AREA } from '#src/portal/auth/session.ts';
 
 export async function handlePortalCallback(ctx: Koa.Context): Promise<void> {
   const pkce = readPkceCookie(ctx, PORTAL_PKCE_AREA);

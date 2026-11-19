@@ -1,5 +1,5 @@
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '#src/adapter/client.ts';
+import { docClient } from '#src/aws/dynamo.ts';
 import type { LassoItem } from '#src/adapter/keys.ts';
 import { env } from '#src/env.ts';
 

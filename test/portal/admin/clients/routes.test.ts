@@ -25,7 +25,6 @@ vi.mock('#src/portal/admin/revocation.ts', () => ({
 }));
 
 vi.mock('#src/portal/auth/session.ts', () => ({
-  PORTAL_CLIENT_ID: 'lasso-portal',
   buildRequirePortalSession: () => async (ctx: Koa.Context, next: Koa.Next) => {
     ctx.state.user = { sub: 'admin' };
     ctx.state.isAdmin = true;

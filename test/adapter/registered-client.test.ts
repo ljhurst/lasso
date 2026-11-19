@@ -5,7 +5,7 @@ import { DynamoAdapter } from '#src/adapter/dynamo-adapter.ts';
 import { makeClient, makeConfidentialClient } from '#test/support/clients.ts';
 
 const getParameter = vi.hoisted(() => vi.fn());
-vi.mock('#src/config/ssm.ts', () => ({ getParameter }));
+vi.mock('#src/aws/ssm.ts', () => ({ getParameter }));
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 

@@ -1,4 +1,4 @@
-import { AuthLayout } from '#src/interactions/views/layout.tsx';
+import { AuthLayout } from '#src/views/auth-layout.tsx';
 
 export function LogoutPage(props: { form: string; clientName?: string }) {
   return (

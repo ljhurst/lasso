@@ -1,4 +1,4 @@
-import { AuthLayout, SubmitButton } from '#src/interactions/views/layout.tsx';
+import { AuthLayout, SubmitButton } from '#src/views/auth-layout.tsx';
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '#src/users/password.ts';
 
 export function ChangePasswordPage(props: { uid: string; email: string; error?: string }) {

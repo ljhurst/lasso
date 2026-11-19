@@ -10,12 +10,10 @@ import { parseArgs } from 'node:util';
 
 import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
+import { LASSO_ADMIN_SCOPE } from '../../src/config/scopes.ts';
 import { normalizeEmail } from '../../src/users/email.ts';
-import {
-  buildNewUser,
-  issueTemporaryPassword,
-  temporaryPasswordUpdate,
-} from '../../src/users/provision.ts';
+import { buildNewUser, issueTemporaryPassword } from '../../src/users/provision.ts';
+import { temporaryPasswordUpdate } from '../../src/users/storage/expressions.ts';
 import type { User } from '../../src/users/types.ts';
 import { createDynamoClient } from './dynamo.ts';
 
@@ -122,14 +120,11 @@ async function createUser(
     throw new Error(`a user with email ${values.email} already exists — use --reset instead`);
   }
 
-  // Must match LASSO_ADMIN_SCOPE in src/config/resources.ts — not imported
-  // directly since that module requires the full app env (issuer, table
-  // names, SSM params) just for this one constant.
   const { user, tempPassword } = await buildNewUser({
     email: values.email,
     givenName: values['given-name'],
     familyName: values['family-name'],
-    roles: values.admin ? ['lasso:admin'] : [],
+    roles: values.admin ? [LASSO_ADMIN_SCOPE] : [],
   });
 
   await client.send(new PutCommand({ TableName: table, Item: user }));

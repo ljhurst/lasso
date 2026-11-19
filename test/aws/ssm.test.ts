@@ -6,7 +6,7 @@ const ssmMock = mockClient(SSMClient);
 
 async function loadSsm() {
   vi.resetModules();
-  return import('#src/config/ssm.ts');
+  return import('#src/aws/ssm.ts');
 }
 
 describe('getParameters', () => {

@@ -2,7 +2,7 @@ import type { AdapterPayload } from 'oidc-provider';
 import { clientServices } from '#src/clients/services.ts';
 import { secretParamFor } from '#src/clients/secret-param.ts';
 import { clientTypeOf } from '#src/clients/types.ts';
-import { getParameter } from '#src/config/ssm.ts';
+import { getParameter } from '#src/aws/ssm.ts';
 
 export const CLIENT_MODEL = 'Client';
 

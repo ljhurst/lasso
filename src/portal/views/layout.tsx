@@ -1,7 +1,12 @@
 import type { Children } from '@kitajs/html';
-import { DOCTYPE } from '#src/doctype.ts';
+import { DOCTYPE } from '#src/views/doctype.ts';
 import pkg from '#package.json' with { type: 'json' };
-import { APPLE_TOUCH_ICON_HREF, FAVICON_HREF, LassoMark, THEME_STYLES } from '#src/branding.tsx';
+import {
+  APPLE_TOUCH_ICON_HREF,
+  FAVICON_HREF,
+  LassoMark,
+  THEME_STYLES,
+} from '#src/views/branding.tsx';
 import PAGE_SCRIPT from '#src/portal/views/page.js' with { type: 'text' };
 import STYLES from '#src/portal/views/styles.css' with { type: 'text' };
 import { type Crumb, Breadcrumbs } from '#src/portal/views/components/breadcrumbs.tsx';
