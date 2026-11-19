@@ -5,9 +5,10 @@ import {
   canManageUser,
   canRemoveRole,
 } from '#src/portal/admin/users/policy.ts';
-import { allResourceScopes } from '#src/config/resources.ts';
-import { LASSO_ADMIN_SCOPE } from '#src/config/scopes.ts';
+import { LASSO_ADMIN_SCOPE } from '#src/resources/scopes.ts';
 import { makeUser } from '#test/support/users.ts';
+
+const KNOWN = ['fife:read', 'freal:read', 'lasso:admin'];
 
 function user(sub: string, roles: string[]) {
   return makeUser({ sub, roles });
@@ -15,20 +16,20 @@ function user(sub: string, roles: string[]) {
 
 describe('buildHeldRoles', () => {
   it('lists the roles a user holds, sorted', () => {
-    const roles = buildHeldRoles(user('sub-1', ['fife:read', 'freal:read']), 'admin');
+    const roles = buildHeldRoles(user('sub-1', ['fife:read', 'freal:read']), 'admin', KNOWN);
 
     expect(roles.map((held) => held.role)).toEqual(['fife:read', 'freal:read']);
   });
 
   it('marks a held role that is no longer configured', () => {
-    const [held] = buildHeldRoles(user('sub-1', ['retired:read']), 'admin');
+    const [held] = buildHeldRoles(user('sub-1', ['retired:read']), 'admin', KNOWN);
 
     expect(held).toEqual({ role: 'retired:read', registered: false, blockedReason: undefined });
   });
 
   it('refuses to let an admin remove their own admin role', () => {
-    const [own] = buildHeldRoles(user('admin', ['lasso:admin']), 'admin');
-    const [theirs] = buildHeldRoles(user('sub-1', ['lasso:admin']), 'admin');
+    const [own] = buildHeldRoles(user('admin', ['lasso:admin']), 'admin', KNOWN);
+    const [theirs] = buildHeldRoles(user('sub-1', ['lasso:admin']), 'admin', KNOWN);
 
     expect(own?.blockedReason).toBe("Can't remove your own admin role");
     expect(theirs?.blockedReason).toBeUndefined();
@@ -47,27 +48,31 @@ describe('canManageUser', () => {
 
 describe('canRemoveRole', () => {
   it('allows removing a role the user holds', () => {
-    expect(canRemoveRole(user('sub-1', ['fife:read']), 'fife:read', 'admin')).toBe(true);
+    expect(canRemoveRole(user('sub-1', ['fife:read']), 'fife:read', 'admin', KNOWN)).toBe(true);
   });
 
   it('allows removing a held role that is no longer configured', () => {
-    expect(canRemoveRole(user('sub-1', ['retired:read']), 'retired:read', 'admin')).toBe(true);
+    expect(canRemoveRole(user('sub-1', ['retired:read']), 'retired:read', 'admin', KNOWN)).toBe(
+      true,
+    );
   });
 
   it('allows a known scope the user no longer holds, so revocation can be retried', () => {
-    expect(canRemoveRole(user('sub-1', []), 'fife:read', 'admin')).toBe(true);
+    expect(canRemoveRole(user('sub-1', []), 'fife:read', 'admin', KNOWN)).toBe(true);
   });
 
   it('refuses an unknown role the user does not hold', () => {
-    expect(canRemoveRole(user('sub-1', []), 'made:up', 'admin')).toBe(false);
+    expect(canRemoveRole(user('sub-1', []), 'made:up', 'admin', KNOWN)).toBe(false);
   });
 
   it('refuses an admin removing their own admin role', () => {
-    expect(canRemoveRole(user('admin', ['lasso:admin']), 'lasso:admin', 'admin')).toBe(false);
+    expect(canRemoveRole(user('admin', ['lasso:admin']), 'lasso:admin', 'admin', KNOWN)).toBe(
+      false,
+    );
   });
 
   it("allows removing someone else's admin role", () => {
-    expect(canRemoveRole(user('sub-1', ['lasso:admin']), 'lasso:admin', 'admin')).toBe(true);
+    expect(canRemoveRole(user('sub-1', ['lasso:admin']), 'lasso:admin', 'admin', KNOWN)).toBe(true);
   });
 });
 

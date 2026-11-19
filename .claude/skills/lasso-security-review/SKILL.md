@@ -82,7 +82,7 @@ Answer each question against the diff. Skip a question the diff cannot affect.
 Check these against the code as it stands after the change, whatever the diff
 touches. Answer pass or fail for each, with the file and line that proves it.
 
-1. The origin guard is registered before every router in `src/server.ts`.
+1. The origin guard is registered before every router in `buildApp` (`src/app.ts`); `test/dynamic-resources.test.ts` checks it still guards every router on a rebuilt provider.
 2. Every admin route sits behind the same-origin and admin checks:
    `router.use(requireSameOrigin, requirePortalSession, requireAdmin)` is the
    first thing in `buildAdminRouter` (`src/portal/admin/routes.ts`), and no

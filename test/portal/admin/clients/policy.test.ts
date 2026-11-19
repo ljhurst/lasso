@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allResourceScopes } from '#src/config/resources.ts';
-import { LASSO_ADMIN_SCOPE } from '#src/config/scopes.ts';
+import { LASSO_ADMIN_SCOPE } from '#src/resources/scopes.ts';
 import { assignableClientScopes, canManageClient } from '#src/portal/admin/clients/policy.ts';
 
 describe('canManageClient', () => {
@@ -11,11 +10,13 @@ describe('canManageClient', () => {
 });
 
 describe('assignableClientScopes', () => {
-  it('offers every scope except the admin one', () => {
-    expect(assignableClientScopes).not.toContain(LASSO_ADMIN_SCOPE);
-    expect(assignableClientScopes).toEqual(
-      allResourceScopes.filter((scope) => scope !== LASSO_ADMIN_SCOPE),
-    );
-    expect(assignableClientScopes.length).toBeGreaterThan(0);
+  it('offers every scope resources offer except the admin one', () => {
+    const offered = ['fife:read', LASSO_ADMIN_SCOPE, 'porto:write'];
+
+    expect(assignableClientScopes(offered)).toEqual(['fife:read', 'porto:write']);
+  });
+
+  it('offers nothing when no resource offers a scope', () => {
+    expect(assignableClientScopes([])).toEqual([]);
   });
 });

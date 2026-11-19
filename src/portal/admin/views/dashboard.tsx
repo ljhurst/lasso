@@ -1,6 +1,6 @@
 import { type ClientRecord, clientTypeOf } from '#src/clients/types.ts';
 import { CLIENT_TYPE_LABEL } from '#src/portal/admin/clients/views/client-type.ts';
-import { resources } from '#src/config/resources.ts';
+import type { Resource } from '#src/resources/types.ts';
 import { Empty } from '#src/portal/views/components/empty.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
 import { Table } from '#src/portal/views/components/table.tsx';
@@ -19,9 +19,11 @@ function clientRow(client: ClientRecord) {
   ];
 }
 
-export async function DashboardPage(props: { clients: ClientRecord[] }) {
+/** Lasso issues every access token as a signed JWT, so resource servers can verify them offline. */
+const ACCESS_TOKEN_FORMAT = 'jwt';
+
+export async function DashboardPage(props: { clients: ClientRecord[]; resources: Resource[] }) {
   const { clients } = props;
-  const resourceEntries = Object.entries(resources);
 
   return (
     <AdminLayout section="clients" title="Clients & resources" index>
@@ -42,17 +44,17 @@ export async function DashboardPage(props: { clients: ClientRecord[] }) {
         )}
       </section>
       <section>
-        <h2>Resources ({resourceEntries.length})</h2>
-        {resourceEntries.length === 0 ? (
+        <h2>Resources ({props.resources.length})</h2>
+        {props.resources.length === 0 ? (
           <Empty>No resources registered.</Empty>
         ) : (
           <Table
             columns={['Name', 'Resource indicator', 'Scope', 'Access token format']}
-            rows={resourceEntries.map(([indicator, resource]) => [
+            rows={props.resources.map((resource) => [
               <span safe>{resource.name}</span>,
-              <code safe>{indicator}</code>,
-              <List items={resource.scope?.split(' ') ?? []} mono />,
-              resource.accessTokenFormat,
+              <code safe>{resource.indicator}</code>,
+              <List items={resource.scopes} mono />,
+              ACCESS_TOKEN_FORMAT,
             ])}
           />
         )}

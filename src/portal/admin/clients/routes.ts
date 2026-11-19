@@ -19,25 +19,31 @@ import { NewClientPage } from '#src/portal/admin/clients/views/new-client.tsx';
 import { assignableClientScopes, canManageClient } from '#src/portal/admin/clients/policy.ts';
 import { revokeClientAccess } from '#src/portal/admin/revocation.ts';
 import { adminUrl, ROUTE } from '#src/portal/paths.ts';
+import { resourceRegistry } from '#src/resources/services.ts';
 
 const DELETE_FAILED =
   "Couldn't delete this client. Nothing that can't be retried was removed; try again.";
+
+async function assignableScopes(): Promise<string[]> {
+  return assignableClientScopes(await resourceRegistry.scopes());
+}
 
 /** Adds the client pages to the admin router, so they sit behind its session and admin checks. */
 export function addClientRoutes(router: Router, provider: Provider): void {
   router.get(ROUTE.newClient, async (ctx) => {
     ctx.type = 'html';
-    ctx.body = await NewClientPage({ scopeChoices: assignableClientScopes });
+    ctx.body = await NewClientPage({ scopeChoices: await assignableScopes() });
   });
 
   router.post(ROUTE.clients, async (ctx) => {
     const input = parseNewClient(await readForm(ctx));
-    const result = await registerClient(clientServices, input, assignableClientScopes);
+    const assignable = await assignableScopes();
+    const result = await registerClient(clientServices, input, assignable);
     if ('error' in result) {
       ctx.status = 400;
       ctx.type = 'html';
       ctx.body = await NewClientPage({
-        scopeChoices: assignableClientScopes,
+        scopeChoices: assignable,
         error: result.error,
         values: input,
       });
@@ -64,7 +70,7 @@ export function addClientRoutes(router: Router, provider: Provider): void {
     ctx.type = 'html';
     ctx.body = await ClientDetailPage({
       client,
-      grantableScopes: grantableScopes(client),
+      grantableScopes: await grantableScopes(client),
       canManage: canManageClient(client.clientId),
     });
   });
@@ -80,14 +86,14 @@ export function addClientRoutes(router: Router, provider: Provider): void {
       clientServices,
       client.clientId,
       edits,
-      assignableClientScopes,
+      await assignableScopes(),
     );
     if ('error' in result) {
       ctx.status = 400;
       ctx.type = 'html';
       ctx.body = await ClientDetailPage({
         client,
-        grantableScopes: grantableScopes(client),
+        grantableScopes: await grantableScopes(client),
         canManage: true,
         error: result.error,
         values: edits,
@@ -99,7 +105,7 @@ export function addClientRoutes(router: Router, provider: Provider): void {
     ctx.type = 'html';
     ctx.body = await ClientDetailPage({
       client: result.client,
-      grantableScopes: grantableScopes(result.client),
+      grantableScopes: await grantableScopes(result.client),
       canManage: true,
       saved: true,
     });
@@ -112,7 +118,7 @@ export function addClientRoutes(router: Router, provider: Provider): void {
     }
 
     const scope = (await readForm(ctx)).get('scope');
-    if (scope && grantableScopes(client).includes(scope)) {
+    if (scope && (await grantableScopes(client)).includes(scope)) {
       await saveScopes(ctx, client, [...scopesOf(client.metadata), scope]);
     }
     ctx.redirect(adminUrl.client(client.clientId));
@@ -177,12 +183,12 @@ export function addClientRoutes(router: Router, provider: Provider): void {
 }
 
 /** Scopes a confidential client could still be given; none for a public client. */
-function grantableScopes(client: ClientRecord): string[] {
+async function grantableScopes(client: ClientRecord): Promise<string[]> {
   if (clientTypeOf(client.metadata) === 'public') {
     return [];
   }
   const held = scopesOf(client.metadata);
-  return assignableClientScopes.filter((scope) => !held.includes(scope));
+  return (await assignableScopes()).filter((scope) => !held.includes(scope));
 }
 
 async function saveScopes(
@@ -194,7 +200,7 @@ async function saveScopes(
     clientServices,
     client.clientId,
     scopes,
-    assignableClientScopes,
+    await assignableScopes(),
   );
   if ('error' in result) {
     return false;

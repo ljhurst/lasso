@@ -69,6 +69,13 @@ data "aws_iam_policy_document" "lambda_permissions" {
   }
 
   statement {
+    sid       = "ResourcesTableRead"
+    effect    = "Allow"
+    actions   = ["dynamodb:GetItem", "dynamodb:Scan"]
+    resources = [aws_dynamodb_table.lasso_resources.arn]
+  }
+
+  statement {
     sid    = "ClientsTableAccess"
     effect = "Allow"
     actions = [

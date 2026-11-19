@@ -15,27 +15,23 @@ other direction (your app initiating login), see `lasso-connect-client`.
 
 A stable URL identifying your project, usually its own base URL (e.g. the
 Lambda Function URL or custom domain), no trailing path beyond `/`. Must be
-unique across `src/config/resources.ts`.
+unique across the resources in `src/resources/seed.ts`.
 
 ## 2. Register the resource in Lasso (this repo)
 
-Edit `src/config/resources.ts`:
+Edit `src/resources/seed.ts`:
 
 ```ts
-const YOUR_PROJECT_RESOURCE_INDICATOR = 'https://your-project.example.com/';
-
-// add to `resources`:
-[YOUR_PROJECT_RESOURCE_INDICATOR]: {
-  name: 'Your Project',
-  scope: 'yourproject:read yourproject:write', // define whatever scopes you need
-  accessTokenFormat: 'jwt',
-  app: { type: AppType.Mcp, url: YOUR_PROJECT_RESOURCE_INDICATOR }, // optional, recommended
-},
+// add to `seedResources`:
+seed('https://your-project.example.com/', 'Your Project',
+  ['yourproject:read', 'yourproject:write'], // define whatever scopes you need
+  { type: AppType.Mcp, url: 'https://your-project.example.com/mcp' }, // optional, recommended
+),
 ```
 
 Scopes are free-form strings namespaced by project (`<project>:<action>`
-convention). They're automatically merged into the global scope list via
-`allResourceScopes` — no other config needed.
+convention). They're added to the provider's scope list automatically — no other
+config needed.
 
 `app` is optional but recommended: it's what makes the resource show up on
 the self-service `/apps` dashboard (`src/portal/apps/`). `type` is
