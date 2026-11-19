@@ -32,15 +32,15 @@ describe('DynamoAdapter', () => {
 
   it('finds an item by its model-scoped primary key', async () => {
     ddbMock.on(GetCommand).resolves({
-      Item: { pk: 'Client#client-1', modelName: 'Client', id: 'client-1', payload: { foo: 'bar' } },
+      Item: { pk: 'Grant#grant-1', modelName: 'Grant', id: 'grant-1', payload: { foo: 'bar' } },
     });
-    const adapter = new DynamoAdapter('Client');
+    const adapter = new DynamoAdapter('Grant');
 
-    const result = await adapter.find('client-1');
+    const result = await adapter.find('grant-1');
 
     expect(result).toEqual({ foo: 'bar' });
     const [call] = ddbMock.commandCalls(GetCommand);
-    expect(call?.args[0].input.Key).toEqual({ pk: 'Client#client-1' });
+    expect(call?.args[0].input.Key).toEqual({ pk: 'Grant#grant-1' });
   });
 
   it('returns undefined when the item does not exist', async () => {

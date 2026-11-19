@@ -10,6 +10,7 @@ import type { Adapter, AdapterPayload } from 'oidc-provider';
 import { env } from '#src/env.ts';
 import { docClient } from '#src/adapter/client.ts';
 import { type LassoItem, primaryKey, toItem, uidIndexKey } from '#src/adapter/keys.ts';
+import { CLIENT_MODEL, findRegisteredClient } from '#src/adapter/registered-client.ts';
 
 const BATCH_WRITE_LIMIT = 25;
 
@@ -26,6 +27,9 @@ export class DynamoAdapter implements Adapter {
   }
 
   async find(id: string): Promise<AdapterPayload | undefined> {
+    if (this.name === CLIENT_MODEL) {
+      return findRegisteredClient(id);
+    }
     const result = await docClient.send(
       new GetCommand({ TableName: env.oidcTableName, Key: { pk: primaryKey(this.name, id) } }),
     );

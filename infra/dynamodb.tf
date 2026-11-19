@@ -100,3 +100,14 @@ resource "aws_dynamodb_table" "lasso_users" {
     }
   }
 }
+
+resource "aws_dynamodb_table" "lasso_clients" {
+  name         = "lj-lasso-clients"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "clientId"
+
+  attribute {
+    name = "clientId"
+    type = "S"
+  }
+}

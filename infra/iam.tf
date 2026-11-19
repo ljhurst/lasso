@@ -45,7 +45,7 @@ data "aws_iam_policy_document" "lambda_permissions" {
     actions = ["ssm:GetParameters"]
     resources = [
       "${local.ssm_param_arn_prefix}${local.jwks_ssm_param}",
-      "${local.ssm_param_arn_prefix}${local.porto_victoria_secret_ssm_param}",
+      "${local.ssm_param_arn_prefix}${local.client_secret_ssm_path}/*",
       "${local.ssm_param_arn_prefix}${local.cookie_key_ssm_param}",
       "${local.ssm_param_arn_prefix}${local.origin_verify_ssm_param}",
     ]
@@ -66,6 +66,13 @@ data "aws_iam_policy_document" "lambda_permissions" {
       aws_dynamodb_table.lasso_users.arn,
       "${aws_dynamodb_table.lasso_users.arn}/index/*",
     ]
+  }
+
+  statement {
+    sid       = "ClientsTableRead"
+    effect    = "Allow"
+    actions   = ["dynamodb:GetItem"]
+    resources = [aws_dynamodb_table.lasso_clients.arn]
   }
 
   statement {
