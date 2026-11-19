@@ -42,9 +42,9 @@ If nothing meets the bar, say so, and list what you checked and ruled out.
 
 Answer each question against the diff. Skip a question the diff cannot affect.
 
-- **Clients and redirects** (`src/config/clients.ts`): exact redirect URI
-  matching, PKCE required, no new wildcard or localhost origin, client
-  secrets only in SSM.
+- **Clients and redirects** (`src/clients/`, `src/portal/admin/clients/`):
+  exact redirect URI matching, PKCE required, no new wildcard or localhost
+  origin, client secrets only in SSM, no client can be given the admin scope.
 - **Scopes and roles** (`src/interactions/consent.ts`, `src/users/access.ts`): consent grants only
   scopes the account's roles allow, denied scopes are rejected so the consent
   loop ends, and each resource gets its own audience.
@@ -91,8 +91,9 @@ touches. Answer pass or fail for each, with the file and line that proves it.
    spends a password check (`authenticate` in `src/interactions/routes.ts`).
 4. Consent never grants a scope the account's roles don't hold
    (`partitionScopeByRoles` in `src/users/access.ts` is the only path).
-5. Redirect URIs in `src/config/clients.ts` are exact strings. List every
-   `localhost` or `127.0.0.1` entry so a new one is noticed.
+5. Redirect URIs are exact strings and pass `validateClient`
+   (`src/clients/validate.ts`). Scan the prod `lj-lasso-clients` table and
+   list every `localhost` or `127.0.0.1` entry so a new one is noticed.
 6. Every cookie the code sets is `httpOnly`, `sameSite`, signed where it
    carries state, and `secure` when served over https.
 7. No log line carries a password, token, code, typed email, query string or

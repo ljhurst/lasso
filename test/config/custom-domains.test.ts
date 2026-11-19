@@ -1,12 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { buildClients } from '#src/config/clients.ts';
 import { allResourceScopes, getResourceServerInfo, resources } from '#src/config/resources.ts';
 import { getUserApps } from '#src/portal/apps/apps.ts';
-
-vi.mock('#src/config/ssm.ts', () => ({
-  getParameter: vi.fn().mockResolvedValue('client-secret'),
-}));
 
 const PORTO = 'https://porto.bylukehurst.com/';
 
@@ -72,75 +67,16 @@ describe('portal listings', () => {
   });
 });
 
-describe('victoria-viewer client', () => {
-  it('uses the custom domain callbacks and no Lambda URL ones', async () => {
-    const clients = await buildClients();
-    const viewer = clients.find((client) => client.client_id === 'victoria-viewer');
-
-    expect(viewer?.redirect_uris).toContain(
-      'https://victoria-viewer.bylukehurst.com/auth/callback',
-    );
-    expect(viewer?.post_logout_redirect_uris).toContain(
-      'https://victoria-viewer.bylukehurst.com/logged-out',
-    );
-    for (const uri of [
-      ...(viewer?.redirect_uris ?? []),
-      ...(viewer?.post_logout_redirect_uris ?? []),
-    ]) {
-      expect(uri).not.toContain('.lambda-url.');
-    }
-  });
-});
-
 describe('fife', () => {
   it('links the portal to its own hostname', () => {
     expect(
       getResourceServerInfo('https://fi37z0j9pg.execute-api.us-east-1.amazonaws.com/prod'),
     ).toMatchObject({ name: 'Fife', app: { url: 'https://fife.bylukehurst.com/' } });
   });
-
-  it('uses its own hostname for callbacks and no CloudFront ones', async () => {
-    const clients = await buildClients();
-    const fife = clients.find((client) => client.client_id === 'fife');
-
-    expect(fife?.redirect_uris).toContain('https://fife.bylukehurst.com/auth/after-login/');
-    expect(fife?.post_logout_redirect_uris).toContain('https://fife.bylukehurst.com/');
-    for (const uri of [
-      ...(fife?.redirect_uris ?? []),
-      ...(fife?.post_logout_redirect_uris ?? []),
-    ]) {
-      expect(uri).not.toContain('.cloudfront.net');
-    }
-  });
-});
-
-describe('freal client', () => {
-  it('is a public PKCE client that can refresh and returns only to its own hostname', async () => {
-    const clients = await buildClients();
-    const freal = clients.find((client) => client.client_id === 'freal');
-
-    expect(freal).toMatchObject({
-      token_endpoint_auth_method: 'none',
-      grant_types: ['authorization_code', 'refresh_token'],
-    });
-    expect(freal?.redirect_uris).toEqual([
-      'http://localhost:4321/auth/callback',
-      'https://freal.bylukehurst.com/auth/callback',
-    ]);
-    expect(freal?.post_logout_redirect_uris).toContain('https://freal.bylukehurst.com/');
-  });
 });
 
 describe('lasso issuer', () => {
-  it('names no Lambda URL in any client redirect or resource', async () => {
-    const clients = await buildClients();
-    const uris = clients.flatMap((client) => [
-      ...(client.redirect_uris ?? []),
-      ...(client.post_logout_redirect_uris ?? []),
-    ]);
-
-    expect(
-      [...uris, ...Object.keys(resources)].filter((uri) => uri.includes('.lambda-url.')),
-    ).toEqual([]);
+  it('names no Lambda URL in any resource', () => {
+    expect(Object.keys(resources).filter((uri) => uri.includes('.lambda-url.'))).toEqual([]);
   });
 });

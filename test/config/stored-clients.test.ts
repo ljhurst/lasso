@@ -5,14 +5,14 @@ import { mockClient } from 'aws-sdk-client-mock';
 import Provider from 'oidc-provider';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DynamoAdapter } from '#src/adapter/dynamo-adapter.ts';
-import { makeClient, makeMachineClient } from '#test/support/clients.ts';
+import { makeClient, makeConfidentialClient } from '#test/support/clients.ts';
 
 vi.mock('#src/config/ssm.ts', () => ({ getParameter: vi.fn(async () => 'table-secret') }));
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const records = new Map([
   ['my-app', makeClient()],
-  ['my-service', makeMachineClient()],
+  ['my-service', makeConfidentialClient()],
 ]);
 
 let server: Server;

@@ -2,7 +2,7 @@ import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DynamoAdapter } from '#src/adapter/dynamo-adapter.ts';
-import { makeClient, makeMachineClient } from '#test/support/clients.ts';
+import { makeClient, makeConfidentialClient } from '#test/support/clients.ts';
 
 const getParameter = vi.hoisted(() => vi.fn());
 vi.mock('#src/config/ssm.ts', () => ({ getParameter }));
@@ -29,13 +29,35 @@ describe('DynamoAdapter for the Client model', () => {
   });
 
   it('adds the secret from SSM for a confidential client', async () => {
-    ddbMock.on(GetCommand).resolves({ Item: makeMachineClient() });
+    ddbMock.on(GetCommand).resolves({ Item: makeConfidentialClient() });
     getParameter.mockResolvedValue('s3cret');
 
     const payload = await new DynamoAdapter('Client').find('my-service');
 
     expect(getParameter).toHaveBeenCalledWith('/lasso/client/my-service-secret');
     expect(payload).toMatchObject({ client_secret: 's3cret' });
+  });
+
+  it('hands oidc-provider exactly the standard metadata, nothing of ours', async () => {
+    const record = makeClient();
+    ddbMock.on(GetCommand).resolves({ Item: record });
+
+    const payload = await new DynamoAdapter('Client').find('my-app');
+
+    expect(payload).toEqual(record.metadata);
+  });
+
+  it('trusts the id it was asked for, not one written inside the row', async () => {
+    const record = makeConfidentialClient();
+    ddbMock.on(GetCommand).resolves({
+      Item: { ...record, metadata: { ...record.metadata, client_id: 'someone-else' } },
+    });
+    getParameter.mockResolvedValue('s3cret');
+
+    const payload = await new DynamoAdapter('Client').find('my-service');
+
+    expect(getParameter).toHaveBeenCalledWith('/lasso/client/my-service-secret');
+    expect(payload).toMatchObject({ client_id: 'my-service' });
   });
 
   it('returns undefined for an unknown client', async () => {

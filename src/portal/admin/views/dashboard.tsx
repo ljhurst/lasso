@@ -1,5 +1,5 @@
-import type { ClientMetadata } from 'oidc-provider';
-import { buildClients } from '#src/config/clients.ts';
+import { type ClientRecord, clientTypeOf } from '#src/clients/types.ts';
+import { CLIENT_TYPE_LABEL } from '#src/portal/admin/clients/views/client-type.ts';
 import { resources } from '#src/config/resources.ts';
 import { Empty } from '#src/portal/views/components/empty.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
@@ -7,28 +7,36 @@ import { Table } from '#src/portal/views/components/table.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
 
-function clientRow(client: ClientMetadata) {
+function clientRow(client: ClientRecord) {
   return [
-    <span safe>{client.client_name}</span>,
-    <code safe>{client.client_id}</code>,
-    <List items={client.redirect_uris ?? []} mono />,
-    <List items={client.grant_types ?? []} />,
+    <a class="name-link" href={adminUrl.client(client.clientId)} safe>
+      {client.metadata.client_name}
+    </a>,
+    <code safe>{client.clientId}</code>,
+    <span safe>{CLIENT_TYPE_LABEL[clientTypeOf(client.metadata)]}</span>,
+    <List items={client.metadata.redirect_uris ?? []} mono />,
+    <List items={client.metadata.grant_types} />,
   ];
 }
 
-export async function DashboardPage() {
-  const clients = await buildClients();
+export async function DashboardPage(props: { clients: ClientRecord[] }) {
+  const { clients } = props;
   const resourceEntries = Object.entries(resources);
 
   return (
     <Layout title="Clients & resources" active={adminUrl.dashboard()} isAdmin={true}>
       <section>
-        <h2>Clients ({clients.length})</h2>
+        <div class="heading-row">
+          <h2>Clients ({clients.length})</h2>
+          <a class="row-action primary" href={adminUrl.newClient()}>
+            Add client
+          </a>
+        </div>
         {clients.length === 0 ? (
           <Empty>No clients registered.</Empty>
         ) : (
           <Table
-            columns={['Name', 'Client ID', 'Redirect URIs', 'Grant types']}
+            columns={['Name', 'Client ID', 'Type', 'Redirect URIs', 'Grant types']}
             rows={clients.map(clientRow)}
           />
         )}

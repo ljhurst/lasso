@@ -26,7 +26,7 @@ export function createClientStore(db: DynamoDBDocumentClient, tableName: string)
     async list() {
       const result = await db.send(new ScanCommand({ TableName: tableName }));
       return ((result.Items ?? []) as ClientRecord[]).toSorted((a, b) =>
-        a.name.localeCompare(b.name),
+        a.metadata.client_name.localeCompare(b.metadata.client_name),
       );
     },
 

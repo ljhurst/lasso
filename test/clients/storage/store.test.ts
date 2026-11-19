@@ -40,12 +40,12 @@ describe('client store', () => {
   it('lists clients sorted by name', async () => {
     ddbMock.on(ScanCommand).resolves({
       Items: [
-        makeClient({ clientId: 'b', name: 'Beta' }),
-        makeClient({ clientId: 'a', name: 'Alpha' }),
+        makeClient({ client_id: 'b', client_name: 'Beta' }),
+        makeClient({ client_id: 'a', client_name: 'Alpha' }),
       ],
     });
 
-    expect((await store.list()).map((c) => c.name)).toEqual(['Alpha', 'Beta']);
+    expect((await store.list()).map((c) => c.metadata.client_name)).toEqual(['Alpha', 'Beta']);
   });
 
   it('creates only when the id is free', async () => {

@@ -16,60 +16,37 @@ client for login AND may need to be a resource if it has its own API).
 ## Which grant type?
 
 - **A human logs in via redirect/browser** → `authorization_code` (+ PKCE).
-  Most web apps.
+  Most web apps. Register it as a **public** client.
 - **Service A calls service B with no user present** → `client_credentials`.
-  See `porto-victoria` in `src/config/clients.ts` for a worked example.
+  Register it as a **confidential** client; it gets a secret.
 
-## 1. Register the client in Lasso (this repo)
+## 1. Register the client in Lasso
 
-Edit `src/config/clients.ts`, add an entry to the array returned by
-`buildClients()`.
+Clients live in the `lj-lasso-clients` table, not in code, and a new one works
+on its next request with no deploy.
 
-For a browser app (authorization_code):
+**Admin portal (everyday):** Clients & resources → Add client. Enter a client
+ID, a name, and for a public client its redirect URIs (https, or http on
+localhost) and post-logout URIs; for a confidential client, the scopes it may
+request. A confidential client's secret
+is shown once on the next page; store it where the service reads its config.
 
-```ts
-{
-  client_id: 'your-project',
-  client_name: 'Your Project',
-  redirect_uris: [
-    'http://localhost:PORT/auth/callback',   // local dev
-    'https://your-project.example.com/auth/callback',
-  ],
-  token_endpoint_auth_method: 'none',   // public client — PKCE, no secret
-  grant_types: ['authorization_code', 'refresh_token'],
-  response_types: ['code'],
-  application_type: 'web',
-},
+**CLI (when the portal can't be reached):**
+
+```bash
+npm run add-client -- --id your-project --name "Your Project" \
+  --redirect-uri http://localhost:PORT/auth/callback \
+  --redirect-uri https://your-project.example.com/auth/callback
+
+npm run add-client -- --id your-service --name "Your Service" --type confidential \
+  --scope target-resource:read --scope target-resource:write
 ```
 
-For a machine-to-machine service (client_credentials):
-
-```ts
-{
-  client_id: 'your-service-name',
-  client_name: 'Your Service',
-  client_secret: await getClientSecret(env.clientSecretSsmParams.yourServiceName),
-  token_endpoint_auth_method: 'client_secret_basic',
-  grant_types: ['client_credentials'],
-  response_types: [],
-  scope: 'target-resource:read target-resource:write', // scopes on the resource you're calling
-},
-```
-
-For the confidential-client case, also:
-
-- Add `LASSO_CLIENT__YOUR_SERVICE_NAME_SECRET_SSM_PARAM` to `src/env.ts`
-  (`clientSecretSsmParams`).
-- Generate the secret with `scripts/bootstrap/generate-client-secret.ts` and
-  store it in SSM per that script's usage — mirrors how
-  `portoVictoria`'s secret is provisioned.
-- Add the parameter name to the `locals` in `infra/ssm.tf`, and its ARN to
-  the `ssm:GetParameters` statement in `infra/iam.tf`. Don't add an
-  `aws_ssm_parameter` resource: Terraform would read the secret value into
-  state.
-
-Commit, then deploy Lasso (`scripts/build_lambda.sh` + `terraform apply`
-from `infra/`, per the root README).
+The CLI runs the same code as the portal and prints a confidential client's
+secret once.
+Secrets are SecureString parameters at `/lasso/client/<id>-secret`; Terraform
+never manages them. A confidential client can't be given `lasso:admin`, and the portal's
+own client (`lasso-portal`) can't be edited or deleted from the portal.
 
 ## 2. For authorization_code: grant the scope to each user
 
