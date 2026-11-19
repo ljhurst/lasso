@@ -11,6 +11,10 @@ export const ROUTE = {
   removeRole: '/users/:sub/roles/remove',
   deleteUser: '/users/:sub/delete',
   resetPassword: '/users/:sub/reset-password',
+  newClient: '/clients/new',
+  clients: '/clients',
+  client: '/clients/:clientId',
+  deleteClient: '/clients/:clientId/delete',
 } as const;
 
 /** Links and redirects to the admin routes, built from the same patterns the router uses. */
@@ -23,9 +27,13 @@ export const adminUrl = {
   removeRole: (sub: string) => build(ROUTE.removeRole, sub),
   deleteUser: (sub: string) => build(ROUTE.deleteUser, sub),
   resetPassword: (sub: string) => build(ROUTE.resetPassword, sub),
+  newClient: () => build(ROUTE.newClient),
+  clients: () => build(ROUTE.clients),
+  client: (clientId: string) => build(ROUTE.client, clientId),
+  deleteClient: (clientId: string) => build(ROUTE.deleteClient, clientId),
 };
 
-function build(pattern: string, sub = ''): string {
+function build(pattern: string, param = ''): string {
   const path = pattern === '/' ? ADMIN_PREFIX : `${ADMIN_PREFIX}${pattern}`;
-  return path.replace(':sub', encodeURIComponent(sub));
+  return path.replace(/:\w+/, encodeURIComponent(param));
 }

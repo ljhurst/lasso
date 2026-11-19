@@ -41,7 +41,6 @@ export default defineConfig({
       LASSO_THROTTLE_TABLE_NAME: 'lj-lasso-throttle-test',
       LASSO_JWKS_SSM_PARAM: '/lasso/jwks-test',
       LASSO_COOKIE_KEY_SSM_PARAM: '/lasso/cookie-key-test',
-      LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM: '/lasso/porto-victoria-client-secret-test',
       LASSO_ISSUER: 'https://lasso.example.com',
     },
   },

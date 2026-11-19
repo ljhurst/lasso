@@ -41,6 +41,23 @@ describe('getParameters', () => {
     expect(ssmMock.commandCalls(GetParametersCommand)).toHaveLength(1);
   });
 
+  it('fetches a value again once its cache entry is five minutes old', async () => {
+    vi.useFakeTimers();
+    ssmMock
+      .on(GetParametersCommand)
+      .resolvesOnce({ Parameters: [{ Name: '/a', Value: 'old' }] })
+      .resolves({ Parameters: [{ Name: '/a', Value: 'rotated' }] });
+    const { getParameter } = await loadSsm();
+
+    expect(await getParameter('/a')).toBe('old');
+    vi.advanceTimersByTime(4 * 60 * 1000);
+    expect(await getParameter('/a')).toBe('old');
+    vi.advanceTimersByTime(2 * 60 * 1000);
+    expect(await getParameter('/a')).toBe('rotated');
+
+    vi.useRealTimers();
+  });
+
   it('only requests names that are not cached yet', async () => {
     ssmMock
       .on(GetParametersCommand, { Names: ['/a'] })

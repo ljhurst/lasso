@@ -1,6 +1,6 @@
 import { TEMP_PASSWORD_TTL_DAYS } from '#src/users/provision.ts';
 import type { User } from '#src/users/types.ts';
-import { ConfirmPage } from '#src/portal/admin/views/components/confirm-page.tsx';
+import { aboutUser, ConfirmPage } from '#src/portal/admin/views/components/confirm-page.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
 
 export function ResetPasswordPage(props: { user: User }) {
@@ -9,7 +9,7 @@ export function ResetPasswordPage(props: { user: User }) {
     <ConfirmPage
       title="Reset password"
       heading="Reset this password?"
-      user={user}
+      {...aboutUser(user)}
       action={adminUrl.resetPassword(user.sub)}
       submitLabel="Reset password"
       tone="caution"

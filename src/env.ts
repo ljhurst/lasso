@@ -14,9 +14,6 @@ export const env = {
   throttleTableName: required('LASSO_THROTTLE_TABLE_NAME'),
   jwksSsmParam: required('LASSO_JWKS_SSM_PARAM'),
   cookieKeySsmParam: required('LASSO_COOKIE_KEY_SSM_PARAM'),
-  clientSecretSsmParams: {
-    portoVictoria: required('LASSO_CLIENT__PORTO_VICTORIA_SECRET_SSM_PARAM'),
-  },
   issuer: required('LASSO_ISSUER'),
   originVerifySsmParam: process.env.AWS_LAMBDA_FUNCTION_NAME
     ? required('LASSO_ORIGIN_VERIFY_SSM_PARAM')

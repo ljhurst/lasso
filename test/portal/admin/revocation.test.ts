@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { primaryKey } from '#src/adapter/keys.ts';
 import {
   revokeAllAccess,
+  revokeClientAccess,
   revokeGrantsRejectingScope,
   revokeGrantsWithScope,
 } from '#src/portal/admin/revocation.ts';
@@ -175,5 +176,65 @@ describe('revokeAllAccess', () => {
     await revokeAllAccess(stubSessionProvider([], {}, calls), 'sub-1');
 
     expect(calls).toEqual([]);
+  });
+});
+
+describe('revokeClientAccess', () => {
+  it("revokes every account's grants for the client and destroys its own tokens", async () => {
+    ddbMock.on(ScanCommand).callsFake((input) => {
+      if (input.ExpressionAttributeValues[':modelName'] === 'Grant') {
+        return {
+          Items: [
+            { ...grantRow('g-1', 'sub-1'), payload: { accountId: 'sub-1', clientId: 'my-app' } },
+            { ...grantRow('g-2', 'sub-2'), payload: { accountId: 'sub-2', clientId: 'my-app' } },
+            { ...grantRow('g-3', 'sub-1'), payload: { accountId: 'sub-1', clientId: 'other' } },
+          ],
+        };
+      }
+      return {
+        Items: [
+          {
+            pk: primaryKey('AccessToken', 't-1'),
+            id: 't-1',
+            modelName: 'AccessToken',
+            payload: { clientId: 'my-app' },
+          },
+          {
+            pk: primaryKey('AccessToken', 't-2'),
+            id: 't-2',
+            modelName: 'AccessToken',
+            payload: { clientId: 'other' },
+          },
+        ],
+      };
+    });
+    const calls: string[] = [];
+    const grants = {
+      'g-1': stubGrant('g-1', { [FIFE]: 'fife:read' }, calls),
+      'g-2': stubGrant('g-2', { [FIFE]: 'fife:read' }, calls),
+      'g-3': stubGrant('g-3', { [FIFE]: 'fife:read' }, calls),
+    };
+    const provider = stubProvider(grants, calls) as unknown as {
+      AccessToken: Record<string, unknown>;
+    };
+    provider.AccessToken.find = vi.fn(async (id: string) => ({
+      destroy: async () => {
+        calls.push(`destroy-token:${id}`);
+      },
+    }));
+
+    await revokeClientAccess(provider as unknown as Provider, 'my-app');
+
+    expect(calls).toEqual([
+      'revoke-at:g-1',
+      'revoke-code:g-1',
+      'revoke-rt:g-1',
+      'destroy:g-1',
+      'revoke-at:g-2',
+      'revoke-code:g-2',
+      'revoke-rt:g-2',
+      'destroy:g-2',
+      'destroy-token:t-1',
+    ]);
   });
 });

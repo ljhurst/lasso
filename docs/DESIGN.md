@@ -154,8 +154,8 @@ oidc-provider asks the adapter for any client it doesn't already know, and the
 adapter answers from that table, so a new client works on its next request.
 A confidential client's secret stays in SSM under `/lasso/client/`; the row
 only names the parameter, because oidc-provider compares secrets in plaintext
-and so they can't be hashed like passwords. Clients listed in the config file
-take precedence over table rows with the same id.
+and so they can't be hashed like passwords. Admins add, edit and delete
+clients in the portal or with `npm run add-client`; both run the same code.
 
 Emails are trimmed and lowercased on creation and on every lookup, so a phone
 keyboard's capitalization can't lock someone out.

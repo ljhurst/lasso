@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assignableClientScopes,
   buildHeldRoles,
   byLatestExpiry,
+  canManageClient,
   canManageUser,
   canRemoveRole,
 } from '#src/portal/admin/policy.ts';
+import { allResourceScopes, LASSO_ADMIN_SCOPE } from '#src/config/resources.ts';
 import { makeUser } from '#test/support/users.ts';
 
 function user(sub: string, roles: string[]) {
@@ -91,5 +94,22 @@ describe('byLatestExpiry', () => {
     ];
 
     expect(rows.sort(byLatestExpiry).map((r) => r.id)).toEqual(['a', 'b', 'c', 'd']);
+  });
+});
+
+describe('canManageClient', () => {
+  it('protects the client the portal signs admins in with', () => {
+    expect(canManageClient('lasso-portal')).toBe(false);
+    expect(canManageClient('fife')).toBe(true);
+  });
+});
+
+describe('assignableClientScopes', () => {
+  it('offers every scope except the admin one', () => {
+    expect(assignableClientScopes).not.toContain(LASSO_ADMIN_SCOPE);
+    expect(assignableClientScopes).toEqual(
+      allResourceScopes.filter((scope) => scope !== LASSO_ADMIN_SCOPE),
+    );
+    expect(assignableClientScopes.length).toBeGreaterThan(0);
   });
 });

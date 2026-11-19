@@ -25,6 +25,8 @@ import {
   canRemoveRole,
 } from '#src/portal/admin/policy.ts';
 import { assignRole } from '#src/portal/admin/roles.ts';
+import { addClientRoutes } from '#src/portal/admin/clients/routes.ts';
+import { clientServices } from '#src/clients/services.ts';
 import { DashboardPage } from '#src/portal/admin/views/dashboard.tsx';
 import { DeleteUserPage } from '#src/portal/admin/views/delete-user.tsx';
 import { UserDetailPage } from '#src/portal/admin/views/user-detail.tsx';
@@ -42,8 +44,10 @@ export function buildAdminRouter(provider: Provider): Router {
 
   router.get(ROUTE.dashboard, async (ctx) => {
     ctx.type = 'html';
-    ctx.body = await DashboardPage();
+    ctx.body = await DashboardPage({ clients: await clientServices.store.list() });
   });
+
+  addClientRoutes(router, provider);
 
   router.get(ROUTE.users, async (ctx) => {
     ctx.type = 'html';

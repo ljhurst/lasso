@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConfirmPage } from '#src/portal/admin/views/components/confirm-page.tsx';
+import { aboutUser, ConfirmPage } from '#src/portal/admin/views/components/confirm-page.tsx';
 import { makeUser } from '#test/support/users.ts';
 
 const user = makeUser();
@@ -8,7 +8,7 @@ function render(overrides: Partial<Parameters<typeof ConfirmPage>[0]> = {}) {
   return ConfirmPage({
     title: 'Do it',
     heading: 'Do this?',
-    user,
+    ...aboutUser(user),
     action: '/admin/users/sub-1/do-it',
     submitLabel: 'Do it now',
     tone: 'danger',
@@ -18,6 +18,19 @@ function render(overrides: Partial<Parameters<typeof ConfirmPage>[0]> = {}) {
 }
 
 describe('ConfirmPage', () => {
+  it('shows whatever facts and breadcrumbs it is given', async () => {
+    const html = await render({
+      facts: '<dl>The facts</dl>',
+      crumbs: [{ label: 'Clients', href: '/admin/clients' }],
+      cancelHref: '/admin/clients/x',
+      active: '/admin',
+    });
+
+    expect(html).toContain('<dl>The facts</dl>');
+    expect(html).toContain('<li><a href="/admin/clients">Clients</a></li>');
+    expect(html).toContain('href="/admin/clients/x"');
+  });
+
   it('names who it affects', async () => {
     const html = await render();
 

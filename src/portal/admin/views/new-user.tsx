@@ -26,7 +26,7 @@ export function NewUserPage(props: { error?: string; values?: NewUserForm }) {
             {props.error}
           </p>
         ) : null}
-        <form class="new-user" method="post" action={adminUrl.users()} data-once>
+        <form class="form-grid" method="post" action={adminUrl.users()} data-once>
           <div class="field">
             <label for="givenName">Given name</label>
             <input

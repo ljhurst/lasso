@@ -1,5 +1,6 @@
 import type Provider from 'oidc-provider';
-import { listGrants, listSessions } from '#src/adapter/records.ts';
+import { listAccessTokens, listGrants, listSessions } from '#src/adapter/records.ts';
+import type { GrantRow } from '#src/adapter/records.ts';
 
 type Grant = InstanceType<Provider['Grant']>;
 
@@ -44,13 +45,35 @@ export async function revokeAllAccess(provider: Provider, sub: string): Promise<
   await revokeGrantsWhere(provider, sub, () => true);
 }
 
+/**
+ * Revokes every grant and token issued to `clientId`, including tokens a
+ * client obtained for itself with no grant behind them.
+ */
+export async function revokeClientAccess(provider: Provider, clientId: string): Promise<void> {
+  const grants = (await listGrants()).filter((row) => row.clientId === clientId);
+  await revokeGrantRows(provider, grants, () => true);
+
+  const tokens = (await listAccessTokens()).filter((row) => row.clientId === clientId);
+  for (const row of tokens) {
+    const token = await provider.AccessToken.find(row.id);
+    await token?.destroy();
+  }
+}
+
 async function revokeGrantsWhere(
   provider: Provider,
   sub: string,
   matches: (grant: Grant) => boolean,
 ): Promise<void> {
   const rows = (await listGrants()).filter((row) => row.accountId === sub);
+  await revokeGrantRows(provider, rows, matches);
+}
 
+async function revokeGrantRows(
+  provider: Provider,
+  rows: GrantRow[],
+  matches: (grant: Grant) => boolean,
+): Promise<void> {
   for (const row of rows) {
     const grant = await provider.Grant.find(row.id);
     if (!grant || !matches(grant)) {

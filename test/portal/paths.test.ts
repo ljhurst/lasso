@@ -13,6 +13,10 @@ describe('adminUrl', () => {
     ['removeRole', adminUrl.removeRole(SUB), `/admin/users/${SUB}/roles/remove`],
     ['deleteUser', adminUrl.deleteUser(SUB), `/admin/users/${SUB}/delete`],
     ['resetPassword', adminUrl.resetPassword(SUB), `/admin/users/${SUB}/reset-password`],
+    ['newClient', adminUrl.newClient(), '/admin/clients/new'],
+    ['clients', adminUrl.clients(), '/admin/clients'],
+    ['client', adminUrl.client('my-app'), '/admin/clients/my-app'],
+    ['deleteClient', adminUrl.deleteClient('my-app'), '/admin/clients/my-app/delete'],
   ])('builds the %s address', (_name, url, expected) => {
     expect(url).toBe(expected);
   });
@@ -28,6 +32,16 @@ describe('adminUrl', () => {
     expect(adminUrl.removeRole('x')).toBe(forSub(ROUTE.removeRole));
     expect(adminUrl.deleteUser('x')).toBe(forSub(ROUTE.deleteUser));
     expect(adminUrl.resetPassword('x')).toBe(forSub(ROUTE.resetPassword));
+    expect(adminUrl.newClient()).toBe(`${ADMIN_PREFIX}${ROUTE.newClient}`);
+    expect(adminUrl.clients()).toBe(`${ADMIN_PREFIX}${ROUTE.clients}`);
+    expect(adminUrl.client('x')).toBe(`${ADMIN_PREFIX}${ROUTE.client.replace(':clientId', 'x')}`);
+    expect(adminUrl.deleteClient('x')).toBe(
+      `${ADMIN_PREFIX}${ROUTE.deleteClient.replace(':clientId', 'x')}`,
+    );
+  });
+
+  it('encodes a client id so it cannot add path segments', () => {
+    expect(adminUrl.client('a/../b')).toBe('/admin/clients/a%2F..%2Fb');
   });
 
   it('encodes a sub so it cannot add path segments', () => {

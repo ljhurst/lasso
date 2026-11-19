@@ -1,6 +1,6 @@
 # Least-privilege IAM role for the Lambda (DESIGN §5): scoped DynamoDB
-# table + GSI access, SSM read on exactly the two parameters this service
-# uses, CloudWatch Logs.
+# table + GSI access, SSM read on the parameters this service uses and
+# read/write on client secrets, CloudWatch Logs.
 
 data "aws_iam_policy_document" "lambda_assume_role" {
   statement {
@@ -69,10 +69,22 @@ data "aws_iam_policy_document" "lambda_permissions" {
   }
 
   statement {
-    sid       = "ClientsTableRead"
-    effect    = "Allow"
-    actions   = ["dynamodb:GetItem"]
+    sid    = "ClientsTableAccess"
+    effect = "Allow"
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:Scan",
+    ]
     resources = [aws_dynamodb_table.lasso_clients.arn]
+  }
+
+  statement {
+    sid       = "WriteClientSecrets"
+    effect    = "Allow"
+    actions   = ["ssm:PutParameter", "ssm:DeleteParameter"]
+    resources = ["${local.ssm_param_arn_prefix}${local.client_secret_ssm_path}/*"]
   }
 
   statement {
