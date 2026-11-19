@@ -3,7 +3,7 @@ import { ClientDetailPage } from '#src/portal/admin/clients/views/client-detail.
 import { ClientSecretPage } from '#src/portal/admin/clients/views/client-secret.tsx';
 import { DeleteClientPage } from '#src/portal/admin/clients/views/delete-client.tsx';
 import { NewClientPage } from '#src/portal/admin/clients/views/new-client.tsx';
-import { makeClient, makeMachineClient } from '#test/support/clients.ts';
+import { makeClient, makeConfidentialClient } from '#test/support/clients.ts';
 
 const HOSTILE = '"><img src=x onerror=alert(1)>';
 const CHOICES = ['victoria:read', 'victoria:write'];
@@ -13,7 +13,13 @@ describe('NewClientPage', () => {
     const html = await NewClientPage({ scopeChoices: CHOICES });
 
     expect(html).toMatch(/<form[^>]*action="\/admin\/clients"[^>]*data-once/);
-    for (const name of ['clientId', 'name', 'kind', 'redirectUris', 'postLogoutRedirectUris']) {
+    for (const name of [
+      'clientId',
+      'name',
+      'clientType',
+      'redirectUris',
+      'postLogoutRedirectUris',
+    ]) {
       expect(html).toContain(`name="${name}"`);
     }
     expect(html).toContain('name="scope" value="victoria:read"');
@@ -26,7 +32,7 @@ describe('NewClientPage', () => {
       values: {
         clientId: 'x',
         name: HOSTILE,
-        kind: 'service',
+        clientType: 'confidential',
         applicationType: 'native',
         redirectUris: [HOSTILE],
         postLogoutRedirectUris: [],
@@ -36,7 +42,7 @@ describe('NewClientPage', () => {
 
     expect(html).not.toContain(HOSTILE);
     expect(html).toContain('role="alert"');
-    expect(html).toMatch(/value="service"[^>]*checked/);
+    expect(html).toMatch(/value="confidential"[^>]*checked/);
     expect(html).toMatch(/name="scope" value="victoria:write" checked/);
   });
 });
@@ -44,7 +50,7 @@ describe('NewClientPage', () => {
 describe('ClientDetailPage', () => {
   it('lets an admin edit an app and delete it, without scopes', async () => {
     const html = await ClientDetailPage({
-      client: makeClient({ name: HOSTILE, redirectUris: [HOSTILE] }),
+      client: makeClient({ client_name: HOSTILE, redirect_uris: [HOSTILE] }),
       scopeChoices: CHOICES,
       canManage: true,
     });
@@ -57,7 +63,7 @@ describe('ClientDetailPage', () => {
 
   it('shows a service its scopes and secret parameter, never a secret', async () => {
     const html = await ClientDetailPage({
-      client: makeMachineClient(),
+      client: makeConfidentialClient(),
       scopeChoices: CHOICES,
       canManage: true,
     });
@@ -99,7 +105,7 @@ describe('ClientDetailPage', () => {
 
 describe('ClientSecretPage', () => {
   it('shows the secret with a copy button and says it is shown once', async () => {
-    const html = await ClientSecretPage({ client: makeMachineClient(), secret: 'abc-123' });
+    const html = await ClientSecretPage({ client: makeConfidentialClient(), secret: 'abc-123' });
 
     expect(html).toContain('abc-123');
     expect(html).toContain('data-copy-target="client-secret"');
@@ -108,7 +114,7 @@ describe('ClientSecretPage', () => {
 
   it('escapes hostile text', async () => {
     const html = await ClientSecretPage({
-      client: makeMachineClient({ name: HOSTILE }),
+      client: makeConfidentialClient({ client_name: HOSTILE }),
       secret: HOSTILE,
     });
 
@@ -118,7 +124,7 @@ describe('ClientSecretPage', () => {
 
 describe('DeleteClientPage', () => {
   it('names the client, posts to its delete address and cancels back to it', async () => {
-    const html = await DeleteClientPage({ client: makeClient({ name: HOSTILE }) });
+    const html = await DeleteClientPage({ client: makeClient({ client_name: HOSTILE }) });
 
     expect(html).not.toContain(HOSTILE);
     expect(html).toContain('action="/admin/clients/my-app/delete"');
@@ -127,7 +133,7 @@ describe('DeleteClientPage', () => {
 
   it('mentions the secret only for a service', async () => {
     const app = await DeleteClientPage({ client: makeClient() });
-    const service = await DeleteClientPage({ client: makeMachineClient() });
+    const service = await DeleteClientPage({ client: makeConfidentialClient() });
 
     expect(app).not.toContain('Deletes its secret');
     expect(service).toContain('Deletes its secret');

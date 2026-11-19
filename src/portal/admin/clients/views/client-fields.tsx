@@ -1,3 +1,4 @@
+import type { ClientType } from '#src/clients/types.ts';
 import { MAX_CLIENT_NAME_LENGTH } from '#src/clients/validate.ts';
 
 export interface ClientFieldValues {
@@ -7,13 +8,13 @@ export interface ClientFieldValues {
   scopes: string[];
 }
 
-/** The fields shared by the new-client and edit-client forms; `kind` hides the ones that don't apply. */
+/** The fields shared by the new-client and edit-client forms; `clientType` hides the ones that don't apply. */
 export function ClientFields(props: {
   values: ClientFieldValues;
   scopeChoices: readonly string[];
-  kind?: 'app' | 'service';
+  clientType?: ClientType;
 }) {
-  const { values, kind } = props;
+  const { values, clientType } = props;
   return (
     <>
       <div class="field wide">
@@ -29,14 +30,14 @@ export function ClientFields(props: {
           value={values.name}
         />
       </div>
-      {kind === 'service' ? null : (
+      {clientType === 'confidential' ? null : (
         <>
           <div class="field wide">
             <label for="redirectUris">Redirect URIs</label>
             <textarea class="control mono" id="redirectUris" name="redirectUris" rows="4" safe>
               {values.redirectUris.join('\n')}
             </textarea>
-            <span class="note">One per line. https, or http on localhost. Apps only.</span>
+            <span class="note">One per line. https, or http on localhost.</span>
           </div>
           <div class="field wide">
             <label for="postLogoutRedirectUris">Post-logout redirect URIs</label>
@@ -53,7 +54,7 @@ export function ClientFields(props: {
           </div>
         </>
       )}
-      {kind === 'app' ? null : (
+      {clientType === 'public' ? null : (
         <fieldset class="field wide checks">
           <legend>Scopes</legend>
           {props.scopeChoices.map((scope) => (
@@ -67,7 +68,7 @@ export function ClientFields(props: {
               <code safe>{scope}</code>
             </label>
           ))}
-          <span class="note">What a service may ask for. Services only.</span>
+          <span class="note">What a confidential client may ask for.</span>
         </fieldset>
       )}
     </>

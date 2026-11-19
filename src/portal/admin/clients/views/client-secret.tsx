@@ -14,7 +14,7 @@ export function ClientSecretPage(props: { client: ClientRecord; secret: string }
       crumbs={[{ label: 'Clients & resources', href: adminUrl.dashboard() }]}
     >
       <section>
-        <h2 safe>Created {client.name}</h2>
+        <h2 safe>Created {client.metadata.client_name}</h2>
         <Facts items={[{ label: 'Client ID', value: <code safe>{client.clientId}</code> }]} />
       </section>
       <section>
@@ -26,7 +26,7 @@ export function ClientSecretPage(props: { client: ClientRecord; secret: string }
           <CopyButton target="client-secret" />
         </div>
         <p class="empty">
-          Shown once. Store it where the service reads its configuration. It can't be viewed again.
+          Shown once. Store it where the client reads its configuration. It can't be viewed again.
         </p>
         <div class="actions">
           <a class="row-action primary" href={adminUrl.client(client.clientId)}>

@@ -16,9 +16,9 @@ client for login AND may need to be a resource if it has its own API).
 ## Which grant type?
 
 - **A human logs in via redirect/browser** → `authorization_code` (+ PKCE).
-  Most web apps. Register it as an **app**.
+  Most web apps. Register it as a **public** client.
 - **Service A calls service B with no user present** → `client_credentials`.
-  Register it as a **service**; it gets a secret.
+  Register it as a **confidential** client; it gets a secret.
 
 ## 1. Register the client in Lasso
 
@@ -26,8 +26,9 @@ Clients live in the `lj-lasso-clients` table, not in code, and a new one works
 on its next request with no deploy.
 
 **Admin portal (everyday):** Clients & resources → Add client. Enter a client
-ID, a name, and for an app its redirect URIs (https, or http on localhost) and
-post-logout URIs; for a service, the scopes it may request. A service's secret
+ID, a name, and for a public client its redirect URIs (https, or http on
+localhost) and post-logout URIs; for a confidential client, the scopes it may
+request. A confidential client's secret
 is shown once on the next page; store it where the service reads its config.
 
 **CLI (when the portal can't be reached):**
@@ -37,13 +38,14 @@ npm run add-client -- --id your-project --name "Your Project" \
   --redirect-uri http://localhost:PORT/auth/callback \
   --redirect-uri https://your-project.example.com/auth/callback
 
-npm run add-client -- --id your-service --name "Your Service" --kind service \
+npm run add-client -- --id your-service --name "Your Service" --type confidential \
   --scope target-resource:read --scope target-resource:write
 ```
 
-The CLI runs the same code as the portal and prints a service's secret once.
+The CLI runs the same code as the portal and prints a confidential client's
+secret once.
 Secrets are SecureString parameters at `/lasso/client/<id>-secret`; Terraform
-never manages them. A service can't be given `lasso:admin`, and the portal's
+never manages them. A confidential client can't be given `lasso:admin`, and the portal's
 own client (`lasso-portal`) can't be edited or deleted from the portal.
 
 ## 2. For authorization_code: grant the scope to each user

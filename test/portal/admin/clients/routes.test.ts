@@ -8,7 +8,7 @@ import { logEvent } from '#src/observability/events.ts';
 import { revokeClientAccess } from '#src/portal/admin/revocation.ts';
 import { buildAdminRouter } from '#src/portal/admin/routes.ts';
 import type { FakeClientServices } from '#test/support/client-services.ts';
-import { makeClient, makeMachineClient } from '#test/support/clients.ts';
+import { makeClient, makeConfidentialClient } from '#test/support/clients.ts';
 
 vi.mock('#src/clients/services.ts', async () => {
   const { fakeClientServices } = await import('#test/support/client-services.ts');
@@ -35,7 +35,7 @@ vi.mock('#src/portal/auth/session.ts', () => ({
 }));
 
 const services = clientServices as FakeClientServices;
-const PORTAL = makeClient({ clientId: 'lasso-portal', name: 'Lasso Portal' });
+const PORTAL = makeClient({ client_id: 'lasso-portal', client_name: 'Lasso Portal' });
 
 let server: Server;
 let baseUrl: string;
@@ -57,7 +57,7 @@ beforeEach(() => {
   services.secrets.values.clear();
   services.rows.set(PORTAL.clientId, PORTAL);
   services.rows.set('my-app', makeClient());
-  services.rows.set('my-service', makeMachineClient());
+  services.rows.set('my-service', makeConfidentialClient());
 });
 
 function post(path: string, fields: Record<string, string | string[]>, site = 'same-origin') {
@@ -105,14 +105,16 @@ describe('creating a client', () => {
     const response = await post('/admin/clients', {
       clientId: 'new-app',
       name: 'New App',
-      kind: 'app',
+      clientType: 'public',
       applicationType: 'web',
       redirectUris: 'https://new.example.com/cb',
     });
 
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toBe('/admin/clients/new-app');
-    expect(services.rows.get('new-app')?.redirectUris).toEqual(['https://new.example.com/cb']);
+    expect(services.rows.get('new-app')?.metadata.redirect_uris).toEqual([
+      'https://new.example.com/cb',
+    ]);
     expect(logEvent).toHaveBeenCalledWith({
       event: 'client_created',
       clientId: 'new-app',
@@ -124,7 +126,7 @@ describe('creating a client', () => {
     const response = await post('/admin/clients', {
       clientId: 'new-svc',
       name: 'New Service',
-      kind: 'service',
+      clientType: 'confidential',
       scope: 'victoria:read',
     });
     const html = await response.text();
@@ -140,7 +142,7 @@ describe('creating a client', () => {
     const response = await post('/admin/clients', {
       clientId: 'bad',
       name: 'Typed Name',
-      kind: 'app',
+      clientType: 'public',
       redirectUris: 'http://evil.example.com/cb',
     });
     const html = await response.text();
@@ -155,7 +157,7 @@ describe('creating a client', () => {
     const response = await post('/admin/clients', {
       clientId: 'sneaky',
       name: 'Sneaky',
-      kind: 'service',
+      clientType: 'confidential',
       scope: 'lasso:admin',
     });
 
@@ -167,7 +169,12 @@ describe('creating a client', () => {
   it('refuses a request from another site', async () => {
     const response = await post(
       '/admin/clients',
-      { clientId: 'x-app', name: 'X', kind: 'app', redirectUris: 'https://x.example.com/cb' },
+      {
+        clientId: 'x-app',
+        name: 'X',
+        clientType: 'public',
+        redirectUris: 'https://x.example.com/cb',
+      },
       'cross-site',
     );
 
@@ -185,9 +192,9 @@ describe('editing a client', () => {
 
     expect(response.status).toBe(200);
     expect(await response.text()).toContain('Saved.');
-    expect(services.rows.get('my-app')).toMatchObject({
-      name: 'Renamed',
-      redirectUris: ['https://app.example.com/other'],
+    expect(services.rows.get('my-app')?.metadata).toMatchObject({
+      client_name: 'Renamed',
+      redirect_uris: ['https://app.example.com/other'],
     });
     expect(logEvent).toHaveBeenCalledWith({
       event: 'client_updated',
@@ -204,7 +211,7 @@ describe('editing a client', () => {
 
     expect(response.status).toBe(400);
     expect(await response.text()).toContain('value="Renamed"');
-    expect(services.rows.get('my-app')?.name).toBe('My App');
+    expect(services.rows.get('my-app')?.metadata.client_name).toBe('My App');
   });
 
   it('never changes the portal client', async () => {

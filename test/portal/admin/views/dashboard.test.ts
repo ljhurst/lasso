@@ -11,6 +11,7 @@ describe('admin DashboardPage', () => {
       new Set([
         'Name',
         'Client ID',
+        'Type',
         'Redirect URIs',
         'Grant types',
         'Resource indicator',
@@ -21,7 +22,7 @@ describe('admin DashboardPage', () => {
   });
 
   it('links each client to its page and offers to add one', async () => {
-    const html = await DashboardPage({ clients: [makeClient({ clientId: 'my-app' })] });
+    const html = await DashboardPage({ clients: [makeClient({ client_id: 'my-app' })] });
 
     expect(html).toContain('href="/admin/clients/my-app"');
     expect(html).toContain('href="/admin/clients/new"');
@@ -33,7 +34,7 @@ describe('admin DashboardPage', () => {
 
   it('escapes a hostile client name', async () => {
     const hostile = '<img src=x onerror=alert(1)>';
-    const html = await DashboardPage({ clients: [makeClient({ name: hostile })] });
+    const html = await DashboardPage({ clients: [makeClient({ client_name: hostile })] });
 
     expect(html).not.toContain(hostile);
   });

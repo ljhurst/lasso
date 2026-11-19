@@ -7,7 +7,7 @@ import { MAX_CLIENT_NAME_LENGTH } from '#src/clients/validate.ts';
 const EMPTY_FORM: NewClientInput = {
   clientId: '',
   name: '',
-  kind: 'app',
+  clientType: 'public',
   applicationType: 'web',
   redirectUris: [],
   postLogoutRedirectUris: [],
@@ -50,14 +50,24 @@ export function NewClientPage(props: {
             <span class="note">Lowercase letters, digits and hyphens. Can't be changed later.</span>
           </div>
           <fieldset class="field wide checks">
-            <legend>Kind</legend>
+            <legend>Client type</legend>
             <label class="check">
-              <input type="radio" name="kind" value="app" checked={values.kind === 'app'} />
-              App that signs users in
+              <input
+                type="radio"
+                name="clientType"
+                value="public"
+                checked={values.clientType === 'public'}
+              />
+              Public: signs users in with PKCE, no secret
             </label>
             <label class="check">
-              <input type="radio" name="kind" value="service" checked={values.kind === 'service'} />
-              Service that authenticates itself (gets a secret)
+              <input
+                type="radio"
+                name="clientType"
+                value="confidential"
+                checked={values.clientType === 'confidential'}
+              />
+              Confidential: authenticates itself with a secret (client credentials)
             </label>
           </fieldset>
           <div class="field wide">

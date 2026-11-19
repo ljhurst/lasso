@@ -5,52 +5,70 @@ import {
   removeClient,
   updateClient,
 } from '#src/clients/register.ts';
-import { makeClient, makeMachineClient } from '#test/support/clients.ts';
 import { fakeClientServices } from '#test/support/client-services.ts';
+import { makeClient, makeConfidentialClient } from '#test/support/clients.ts';
 
 const SCOPES = ['victoria:read', 'victoria:write'];
 
-const appInput: NewClientInput = {
+const publicInput: NewClientInput = {
   clientId: 'my-app',
   name: 'My App',
-  kind: 'app',
+  clientType: 'public',
   applicationType: 'web',
   redirectUris: ['https://app.example.com/callback'],
   postLogoutRedirectUris: [],
   scopes: [],
 };
 
-const serviceInput: NewClientInput = {
-  ...appInput,
+const confidentialInput: NewClientInput = {
+  ...publicInput,
   clientId: 'my-service',
   name: 'My Service',
-  kind: 'service',
+  clientType: 'confidential',
   redirectUris: [],
   scopes: ['victoria:read'],
 };
 
 describe('registerClient', () => {
-  it('stores a public sign-in client and creates no secret', async () => {
+  it('stores a public client as standard metadata and creates no secret', async () => {
     const services = fakeClientServices();
 
-    const result = await registerClient(services, appInput, SCOPES);
+    await registerClient(services, publicInput, SCOPES, new Date('2026-02-03T04:05:06Z'));
 
-    expect(result).toMatchObject({
-      client: {
-        clientId: 'my-app',
-        authMethod: 'none',
-        grantTypes: ['authorization_code', 'refresh_token'],
-        redirectUris: ['https://app.example.com/callback'],
+    expect(services.rows.get('my-app')).toEqual({
+      clientId: 'my-app',
+      createdAt: '2026-02-03T04:05:06.000Z',
+      metadata: {
+        client_id: 'my-app',
+        client_name: 'My App',
+        token_endpoint_auth_method: 'none',
+        grant_types: ['authorization_code', 'refresh_token'],
+        response_types: ['code'],
+        redirect_uris: ['https://app.example.com/callback'],
+        application_type: 'web',
       },
     });
-    expect(services.rows.get('my-app')?.secretSsmParam).toBeUndefined();
     expect(services.secrets.values.size).toBe(0);
   });
 
-  it('gives a service client a generated secret, stored in SSM and returned once', async () => {
+  it('stores post-logout uris only when given', async () => {
     const services = fakeClientServices();
 
-    const result = await registerClient(services, serviceInput, SCOPES);
+    await registerClient(
+      services,
+      { ...publicInput, postLogoutRedirectUris: ['https://app.example.com/'] },
+      SCOPES,
+    );
+
+    expect(services.rows.get('my-app')?.metadata.post_logout_redirect_uris).toEqual([
+      'https://app.example.com/',
+    ]);
+  });
+
+  it('gives a confidential client a generated secret, stored in SSM and returned once', async () => {
+    const services = fakeClientServices();
+
+    const result = await registerClient(services, confidentialInput, SCOPES);
 
     if ('error' in result) {
       throw new Error(result.error);
@@ -58,26 +76,28 @@ describe('registerClient', () => {
     expect(result.secret).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(services.secrets.values.get('/lasso/client/my-service-secret')).toBe(result.secret);
     expect(JSON.stringify(services.rows.get('my-service'))).not.toContain(result.secret ?? '');
-    expect(services.rows.get('my-service')).toMatchObject({
-      authMethod: 'client_secret_basic',
-      grantTypes: ['client_credentials'],
+    expect(services.rows.get('my-service')?.metadata).toEqual({
+      client_id: 'my-service',
+      client_name: 'My Service',
+      token_endpoint_auth_method: 'client_secret_basic',
+      grant_types: ['client_credentials'],
+      response_types: [],
       scope: 'victoria:read',
-      redirectUris: [],
     });
   });
 
-  it('ignores redirect URIs for a service and scopes for an app', async () => {
+  it('ignores redirect URIs for a confidential client and scopes for a public one', async () => {
     const services = fakeClientServices();
 
     await registerClient(
       services,
-      { ...serviceInput, redirectUris: ['https://a.example.com/'] },
+      { ...confidentialInput, redirectUris: ['https://a.example.com/'] },
       SCOPES,
     );
-    await registerClient(services, { ...appInput, scopes: ['victoria:read'] }, SCOPES);
+    await registerClient(services, { ...publicInput, scopes: ['victoria:read'] }, SCOPES);
 
-    expect(services.rows.get('my-service')?.redirectUris).toEqual([]);
-    expect(services.rows.get('my-app')?.scope).toBeUndefined();
+    expect(services.rows.get('my-service')?.metadata.redirect_uris).toBeUndefined();
+    expect(services.rows.get('my-app')?.metadata.scope).toBeUndefined();
   });
 
   it('reports a problem and writes nothing', async () => {
@@ -85,7 +105,7 @@ describe('registerClient', () => {
 
     const result = await registerClient(
       services,
-      { ...appInput, redirectUris: ['http://evil.example.com/cb'] },
+      { ...publicInput, redirectUris: ['http://evil.example.com/cb'] },
       SCOPES,
     );
 
@@ -93,12 +113,12 @@ describe('registerClient', () => {
     expect(services.rows.size).toBe(0);
   });
 
-  it('refuses an unknown scope for a service', async () => {
+  it('refuses a scope Lasso does not offer a confidential client', async () => {
     const services = fakeClientServices();
 
     const result = await registerClient(
       services,
-      { ...serviceInput, scopes: ['lasso:admin'] },
+      { ...confidentialInput, scopes: ['lasso:admin'] },
       SCOPES,
     );
 
@@ -107,10 +127,10 @@ describe('registerClient', () => {
   });
 
   it('refuses an id that is taken and leaves its secret alone', async () => {
-    const services = fakeClientServices([makeMachineClient({ clientId: 'my-service' })]);
+    const services = fakeClientServices([makeConfidentialClient()]);
     services.secrets.values.set('/lasso/client/my-service-secret', 'original');
 
-    const result = await registerClient(services, serviceInput, SCOPES);
+    const result = await registerClient(services, confidentialInput, SCOPES);
 
     expect(result).toEqual({ error: 'A client with that ID already exists.' });
     expect(services.secrets.values.get('/lasso/client/my-service-secret')).toBe('original');
@@ -122,7 +142,7 @@ describe('registerClient', () => {
       throw new Error('ssm down');
     };
 
-    await expect(registerClient(services, serviceInput, SCOPES)).rejects.toThrow('ssm down');
+    await expect(registerClient(services, confidentialInput, SCOPES)).rejects.toThrow('ssm down');
     expect(services.rows.size).toBe(0);
   });
 });
@@ -140,26 +160,51 @@ describe('updateClient', () => {
 
     const result = await updateClient(services, 'my-app', edits, SCOPES);
 
-    expect(result).toMatchObject({
+    expect(result).toEqual({
       client: {
         clientId: 'my-app',
-        name: 'Renamed',
-        redirectUris: ['https://new.example.com/cb'],
-        authMethod: 'none',
         createdAt: '2026-01-01T00:00:00.000Z',
+        metadata: {
+          client_id: 'my-app',
+          client_name: 'Renamed',
+          token_endpoint_auth_method: 'none',
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          redirect_uris: ['https://new.example.com/cb'],
+          post_logout_redirect_uris: ['https://new.example.com/'],
+          application_type: 'web',
+        },
       },
     });
-    expect(services.rows.get('my-app')?.scope).toBeUndefined();
   });
 
-  it('changes the scopes of a service and keeps its secret parameter', async () => {
-    const services = fakeClientServices([makeMachineClient()]);
+  it('drops post-logout uris that were cleared, and keeps a client without refresh as it is', async () => {
+    const services = fakeClientServices([
+      makeClient({
+        grant_types: ['authorization_code'],
+        post_logout_redirect_uris: ['https://app.example.com/'],
+      }),
+    ]);
 
-    await updateClient(services, 'my-service', { ...edits, redirectUris: [] }, SCOPES);
+    await updateClient(services, 'my-app', { ...edits, postLogoutRedirectUris: [] }, SCOPES);
 
-    expect(services.rows.get('my-service')).toMatchObject({
+    const { metadata } = services.rows.get('my-app') ?? makeClient();
+    expect(metadata.post_logout_redirect_uris).toBeUndefined();
+    expect(metadata.grant_types).toEqual(['authorization_code']);
+  });
+
+  it('changes the scopes of a confidential client and nothing else', async () => {
+    const services = fakeClientServices([makeConfidentialClient()]);
+
+    await updateClient(services, 'my-service', edits, SCOPES);
+
+    expect(services.rows.get('my-service')?.metadata).toEqual({
+      client_id: 'my-service',
+      client_name: 'Renamed',
+      token_endpoint_auth_method: 'client_secret_basic',
+      grant_types: ['client_credentials'],
+      response_types: [],
       scope: 'victoria:write',
-      secretSsmParam: '/lasso/client/my-service-secret',
     });
   });
 
@@ -169,7 +214,7 @@ describe('updateClient', () => {
     const result = await updateClient(services, 'my-app', { ...edits, redirectUris: [] }, SCOPES);
 
     expect(result).toEqual({ error: expect.stringContaining('at least one') });
-    expect(services.rows.get('my-app')?.name).toBe('My App');
+    expect(services.rows.get('my-app')?.metadata.client_name).toBe('My App');
   });
 
   it('says so when the client is gone', async () => {
@@ -180,14 +225,23 @@ describe('updateClient', () => {
 });
 
 describe('removeClient', () => {
-  it('deletes the client and its secret', async () => {
-    const services = fakeClientServices([makeMachineClient()]);
+  it('deletes a confidential client and its secret', async () => {
+    const services = fakeClientServices([makeConfidentialClient()]);
     services.secrets.values.set('/lasso/client/my-service-secret', 's3cret');
 
     await removeClient(services, 'my-service');
 
     expect(services.rows.size).toBe(0);
     expect(services.secrets.values.size).toBe(0);
+  });
+
+  it('leaves unrelated secrets alone when deleting a public client', async () => {
+    const services = fakeClientServices([makeClient()]);
+    services.secrets.values.set('/lasso/client/other-secret', 'keep');
+
+    await removeClient(services, 'my-app');
+
+    expect(services.secrets.values.size).toBe(1);
   });
 
   it('does nothing for an unknown client', async () => {

@@ -1,4 +1,5 @@
-import type { ClientRecord } from '#src/clients/types.ts';
+import { type ClientRecord, clientTypeOf } from '#src/clients/types.ts';
+import { CLIENT_TYPE_LABEL } from '#src/portal/admin/clients/views/client-type.ts';
 import { resources } from '#src/config/resources.ts';
 import { Empty } from '#src/portal/views/components/empty.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
@@ -9,11 +10,12 @@ import { adminUrl } from '#src/portal/paths.ts';
 function clientRow(client: ClientRecord) {
   return [
     <a class="name-link" href={adminUrl.client(client.clientId)} safe>
-      {client.name}
+      {client.metadata.client_name}
     </a>,
     <code safe>{client.clientId}</code>,
-    <List items={client.redirectUris} mono />,
-    <List items={client.grantTypes} />,
+    <span safe>{CLIENT_TYPE_LABEL[clientTypeOf(client.metadata)]}</span>,
+    <List items={client.metadata.redirect_uris ?? []} mono />,
+    <List items={client.metadata.grant_types} />,
   ];
 }
 
@@ -34,7 +36,7 @@ export async function DashboardPage(props: { clients: ClientRecord[] }) {
           <Empty>No clients registered.</Empty>
         ) : (
           <Table
-            columns={['Name', 'Client ID', 'Redirect URIs', 'Grant types']}
+            columns={['Name', 'Client ID', 'Type', 'Redirect URIs', 'Grant types']}
             rows={clients.map(clientRow)}
           />
         )}

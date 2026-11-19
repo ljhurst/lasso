@@ -1,14 +1,15 @@
-import type { ApplicationType } from '#src/clients/types.ts';
-import type { ClientEdits, ClientKind, NewClientInput } from '#src/clients/register.ts';
+import type { ApplicationType, ClientType } from '#src/clients/types.ts';
+import type { ClientEdits, NewClientInput } from '#src/clients/register.ts';
 
-/** Reads the new-client form. Anything unrecognised falls back to the safer option and is then validated. */
+/** Reads the new-client form. Anything unrecognised falls back to a public web client and is then validated. */
 export function parseNewClient(form: URLSearchParams): NewClientInput {
-  const kind: ClientKind = form.get('kind') === 'service' ? 'service' : 'app';
+  const clientType: ClientType =
+    form.get('clientType') === 'confidential' ? 'confidential' : 'public';
   const applicationType: ApplicationType =
     form.get('applicationType') === 'native' ? 'native' : 'web';
   return {
     clientId: (form.get('clientId') ?? '').trim(),
-    kind,
+    clientType,
     applicationType,
     ...parseClientEdits(form),
   };

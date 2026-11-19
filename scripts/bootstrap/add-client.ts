@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Command-line client registration, for when the admin portal can't be
 // reached; the portal's Clients page covers everyday adds. It runs the same
-// code as the portal. A service client's secret is generated, written to SSM
+// code as the portal. A confidential client's secret is generated, written to SSM
 // and printed once. Scopes are not checked against Lasso's registered
 // resources here, so pass only scopes a resource defines. Run with an AWS
 // profile that can write the clients table and the /lasso/client/ parameters.
@@ -18,7 +18,7 @@ const { values } = parseArgs({
   options: {
     id: { type: 'string' },
     name: { type: 'string' },
-    kind: { type: 'string', default: 'app' },
+    type: { type: 'string', default: 'public' },
     'redirect-uri': { type: 'string', multiple: true, default: [] },
     'post-logout-uri': { type: 'string', multiple: true, default: [] },
     scope: { type: 'string', multiple: true, default: [] },
@@ -33,8 +33,8 @@ async function main(): Promise<void> {
   if (!values.id || !values.name) {
     throw new Error('--id and --name are required');
   }
-  if (values.kind !== 'app' && values.kind !== 'service') {
-    throw new Error('--kind must be "app" or "service"');
+  if (values.type !== 'public' && values.type !== 'confidential') {
+    throw new Error('--type must be "public" or "confidential"');
   }
 
   process.env.AWS_PROFILE ??= values.profile;
@@ -48,7 +48,7 @@ async function main(): Promise<void> {
     {
       clientId: values.id,
       name: values.name,
-      kind: values.kind,
+      clientType: values.type,
       applicationType: values.native ? 'native' : 'web',
       redirectUris: values['redirect-uri'],
       postLogoutRedirectUris: values['post-logout-uri'],

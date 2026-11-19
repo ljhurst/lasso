@@ -1,8 +1,10 @@
-import type { ClientRecord } from '#src/clients/types.ts';
+import { secretParamFor } from '#src/clients/secret-param.ts';
+import { type ClientRecord, clientTypeOf } from '#src/clients/types.ts';
 import {
   ClientFields,
   type ClientFieldValues,
 } from '#src/portal/admin/clients/views/client-fields.tsx';
+import { CLIENT_TYPE_DESCRIPTION } from '#src/portal/admin/clients/views/client-type.ts';
 import { adminUrl } from '#src/portal/paths.ts';
 import { Facts } from '#src/portal/views/components/facts.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
@@ -18,26 +20,24 @@ export function ClientDetailPage(props: {
   values?: ClientFieldValues;
 }) {
   const { client } = props;
-  const kind = client.secretSsmParam ? 'service' : 'app';
+  const { metadata } = client;
+  const clientType = clientTypeOf(metadata);
   return (
     <Layout
-      title={client.name}
+      title={metadata.client_name}
       active={adminUrl.dashboard()}
       isAdmin={true}
       crumbs={[{ label: 'Clients & resources', href: adminUrl.dashboard() }]}
     >
       <section>
-        <h2 safe>{client.name}</h2>
+        <h2 safe>{metadata.client_name}</h2>
         <Facts
           items={[
             { label: 'Client ID', value: <code safe>{client.clientId}</code> },
-            {
-              label: 'Kind',
-              value: kind === 'service' ? 'Service (client secret)' : 'App (sign-in with PKCE)',
-            },
-            { label: 'Grant types', value: <List items={client.grantTypes} /> },
-            ...(client.secretSsmParam
-              ? [{ label: 'Secret', value: <code safe>{client.secretSsmParam}</code> }]
+            { label: 'Type', value: CLIENT_TYPE_DESCRIPTION[clientType] },
+            { label: 'Grant types', value: <List items={metadata.grant_types} /> },
+            ...(clientType === 'confidential'
+              ? [{ label: 'Secret', value: <code safe>{secretParamFor(client.clientId)}</code> }]
               : []),
             {
               label: 'Created',
@@ -57,14 +57,14 @@ export function ClientDetailPage(props: {
           ) : null}
           <form class="form-grid" method="post" action={adminUrl.client(client.clientId)} data-once>
             <ClientFields
-              kind={kind}
+              clientType={clientType}
               scopeChoices={props.scopeChoices}
               values={
                 props.values ?? {
-                  name: client.name,
-                  redirectUris: client.redirectUris,
-                  postLogoutRedirectUris: client.postLogoutRedirectUris,
-                  scopes: client.scope?.split(' ') ?? [],
+                  name: metadata.client_name,
+                  redirectUris: metadata.redirect_uris ?? [],
+                  postLogoutRedirectUris: metadata.post_logout_redirect_uris ?? [],
+                  scopes: metadata.scope?.split(' ') ?? [],
                 }
               }
             />
@@ -84,7 +84,7 @@ export function ClientDetailPage(props: {
           <p class="empty">
             Lasso signs admins in through this client, so it can only be changed in code.
           </p>
-          <List items={client.redirectUris} mono />
+          <List items={metadata.redirect_uris ?? []} mono />
         </section>
       )}
     </Layout>

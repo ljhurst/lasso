@@ -149,12 +149,16 @@ Lambda Web Adapter passes on, never from `X-Forwarded-For`, which a client
 controls. A locked account gets the same "Invalid email or password" as a
 wrong password, so lockout doesn't reveal which emails exist.
 
-Registered clients live in `lj-lasso-clients`, keyed by `client_id`.
+Registered clients live in `lj-lasso-clients`, keyed by `clientId`. Each row
+holds the client's metadata as the OAuth and OIDC registration specs name it
+(`client_name`, `redirect_uris`, `grant_types`, `token_endpoint_auth_method`,
+`application_type`, `scope`), which is exactly what oidc-provider expects.
 oidc-provider asks the adapter for any client it doesn't already know, and the
 adapter answers from that table, so a new client works on its next request.
-A confidential client's secret stays in SSM under `/lasso/client/`; the row
-only names the parameter, because oidc-provider compares secrets in plaintext
-and so they can't be hashed like passwords. Admins add, edit and delete
+Public clients sign users in with PKCE and hold no secret; confidential
+clients use `client_credentials` with a secret. That secret stays in SSM at
+`/lasso/client/<client_id>-secret`, never in the row, because oidc-provider
+compares secrets in plaintext and so they can't be hashed like passwords. Admins add, edit and delete
 clients in the portal or with `npm run add-client`; both run the same code.
 
 Emails are trimmed and lowercased on creation and on every lookup, so a phone

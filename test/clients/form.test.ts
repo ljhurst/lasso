@@ -6,7 +6,7 @@ describe('parseNewClient', () => {
     const form = new URLSearchParams({
       clientId: ' my-app ',
       name: ' My App ',
-      kind: 'service',
+      clientType: 'confidential',
       applicationType: 'native',
       redirectUris:
         'https://a.example.com/\r\n\n  https://b.example.com/  \nhttps://a.example.com/',
@@ -19,7 +19,7 @@ describe('parseNewClient', () => {
     expect(parseNewClient(form)).toEqual({
       clientId: 'my-app',
       name: 'My App',
-      kind: 'service',
+      clientType: 'confidential',
       applicationType: 'native',
       redirectUris: ['https://a.example.com/', 'https://b.example.com/'],
       postLogoutRedirectUris: ['https://a.example.com/'],
@@ -27,10 +27,10 @@ describe('parseNewClient', () => {
     });
   });
 
-  it('treats anything unrecognised as a web app', () => {
+  it('treats anything unrecognised as a public web client', () => {
     expect(
-      parseNewClient(new URLSearchParams({ kind: 'admin', applicationType: 'x' })),
-    ).toMatchObject({ kind: 'app', applicationType: 'web', clientId: '', name: '' });
+      parseNewClient(new URLSearchParams({ clientType: 'admin', applicationType: 'x' })),
+    ).toMatchObject({ clientType: 'public', applicationType: 'web', clientId: '', name: '' });
   });
 });
 
