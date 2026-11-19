@@ -38,16 +38,16 @@ describe('DynamoAdapter for the Client model', () => {
     expect(payload).toMatchObject({ client_secret: 's3cret' });
   });
 
-  it('hands oidc-provider exactly the standard metadata, nothing of ours', async () => {
+  it('hands oidc-provider the standard metadata plus the id from the key, nothing of ours', async () => {
     const record = makeClient();
     ddbMock.on(GetCommand).resolves({ Item: record });
 
     const payload = await new DynamoAdapter('Client').find('my-app');
 
-    expect(payload).toEqual(record.metadata);
+    expect(payload).toEqual({ ...record.metadata, client_id: 'my-app' });
   });
 
-  it('trusts the id it was asked for, not one written inside the row', async () => {
+  it('trusts the id it was asked for, not one an older row repeats inside its metadata', async () => {
     const record = makeConfidentialClient();
     ddbMock.on(GetCommand).resolves({
       Item: { ...record, metadata: { ...record.metadata, client_id: 'someone-else' } },

@@ -31,6 +31,17 @@ const confidentialInput: NewClientInput = {
 };
 
 describe('registerClient', () => {
+  it('stores the id once, as the key, and not again inside the metadata', async () => {
+    const services = fakeClientServices();
+
+    await registerClient(services, publicInput, SCOPES);
+    await registerClient(services, confidentialInput, SCOPES);
+
+    for (const record of services.rows.values()) {
+      expect(record.metadata).not.toHaveProperty('client_id');
+    }
+  });
+
   it('stores a public client as standard metadata and creates no secret', async () => {
     const services = fakeClientServices();
 
@@ -40,7 +51,6 @@ describe('registerClient', () => {
       clientId: 'my-app',
       createdAt: '2026-02-03T04:05:06.000Z',
       metadata: {
-        client_id: 'my-app',
         client_name: 'My App',
         token_endpoint_auth_method: 'none',
         grant_types: ['authorization_code', 'refresh_token'],
@@ -78,7 +88,6 @@ describe('registerClient', () => {
     expect(services.secrets.values.get('/lasso/client/my-service-secret')).toBe(result.secret);
     expect(JSON.stringify(services.rows.get('my-service'))).not.toContain(result.secret ?? '');
     expect(services.rows.get('my-service')?.metadata).toEqual({
-      client_id: 'my-service',
       client_name: 'My Service',
       token_endpoint_auth_method: 'client_secret_basic',
       grant_types: ['client_credentials'],
@@ -166,7 +175,6 @@ describe('updateClient', () => {
         clientId: 'my-app',
         createdAt: '2026-01-01T00:00:00.000Z',
         metadata: {
-          client_id: 'my-app',
           client_name: 'Renamed',
           token_endpoint_auth_method: 'none',
           grant_types: ['authorization_code', 'refresh_token'],
@@ -200,7 +208,6 @@ describe('updateClient', () => {
     await updateClient(services, 'my-service', edits, SCOPES);
 
     expect(services.rows.get('my-service')?.metadata).toEqual({
-      client_id: 'my-service',
       client_name: 'Renamed',
       token_endpoint_auth_method: 'client_secret_basic',
       grant_types: ['client_credentials'],
@@ -232,7 +239,6 @@ describe('changeClientScopes', () => {
     await changeClientScopes(services, 'my-service', ['victoria:read', 'victoria:write'], SCOPES);
 
     expect(services.rows.get('my-service')?.metadata).toEqual({
-      client_id: 'my-service',
       client_name: 'Kept',
       token_endpoint_auth_method: 'client_secret_basic',
       grant_types: ['client_credentials'],

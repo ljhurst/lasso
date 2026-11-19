@@ -7,10 +7,11 @@ const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 /** The first problem with a client, or undefined when it is safe to store. `knownScopes` are the scopes Lasso issues. */
 export function validateClient(
+  clientId: string,
   client: RegisteredClient,
   knownScopes: readonly string[],
 ): string | undefined {
-  if (!CLIENT_ID_SHAPE.test(client.client_id)) {
+  if (!CLIENT_ID_SHAPE.test(clientId)) {
     return 'Client ID must be 2-63 lowercase letters, digits or hyphens, starting with a letter or digit.';
   }
   if (client.client_name.length === 0 || client.client_name.length > MAX_CLIENT_NAME_LENGTH) {
