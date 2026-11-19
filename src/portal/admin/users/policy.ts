@@ -1,5 +1,4 @@
-import { allResourceScopes } from '#src/config/resources.ts';
-import { LASSO_ADMIN_SCOPE } from '#src/config/scopes.ts';
+import { LASSO_ADMIN_SCOPE } from '#src/resources/scopes.ts';
 import type { HeldRole } from '#src/portal/admin/users/types.ts';
 import type { User } from '#src/users/types.ts';
 
@@ -9,8 +8,13 @@ import type { User } from '#src/users/types.ts';
  * once gone so a revocation that failed partway can be retried. Admins can't
  * drop their own admin role.
  */
-export function canRemoveRole(target: User, role: string, actorSub: string): boolean {
-  const isKnown = target.roles.includes(role) || allResourceScopes.includes(role);
+export function canRemoveRole(
+  target: User,
+  role: string,
+  actorSub: string,
+  knownScopes: readonly string[],
+): boolean {
+  const isKnown = target.roles.includes(role) || knownScopes.includes(role);
   const isSelfLockout = target.sub === actorSub && role === LASSO_ADMIN_SCOPE;
   return isKnown && !isSelfLockout;
 }
@@ -20,11 +24,15 @@ export function canManageUser(target: User, actorSub: string): boolean {
   return target.sub !== actorSub;
 }
 
-export function buildHeldRoles(user: User, actorSub: string): HeldRole[] {
+export function buildHeldRoles(
+  user: User,
+  actorSub: string,
+  knownScopes: readonly string[],
+): HeldRole[] {
   return user.roles.toSorted().map((role) => ({
     role,
-    registered: allResourceScopes.includes(role),
-    blockedReason: canRemoveRole(user, role, actorSub)
+    registered: knownScopes.includes(role),
+    blockedReason: canRemoveRole(user, role, actorSub, knownScopes)
       ? undefined
       : "Can't remove your own admin role",
   }));

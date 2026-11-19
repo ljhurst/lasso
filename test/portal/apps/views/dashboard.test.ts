@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppType } from '#src/config/resources.ts';
+import { AppType } from '#src/resources/types.ts';
 import { DashboardPage } from '#src/portal/apps/views/dashboard.tsx';
 
 const HOSTILE = '<img src=x onerror=alert(1)>';
@@ -12,7 +12,16 @@ describe('apps DashboardPage', () => {
     const html = await DashboardPage({
       isAdmin: false,
       apps: [
-        { indicator: 'https://app.example.com/', resource: { name: HOSTILE, scope: '', app } },
+        {
+          indicator: 'https://app.example.com/',
+          resource: {
+            indicator: 'https://app.example.com/',
+            name: HOSTILE,
+            scopes: [],
+            app,
+            builtIn: false,
+          },
+        },
       ],
     });
 

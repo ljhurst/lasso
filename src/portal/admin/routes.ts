@@ -2,6 +2,7 @@ import Router from '@koa/router';
 import type Provider from 'oidc-provider';
 import { requireSameOrigin } from '#src/auth/same-origin.ts';
 import { clientServices } from '#src/clients/services.ts';
+import { resourceRegistry } from '#src/resources/services.ts';
 import { addClientRoutes } from '#src/portal/admin/clients/routes.ts';
 import { addUserRoutes } from '#src/portal/admin/users/routes.ts';
 import { DashboardPage } from '#src/portal/admin/views/dashboard.tsx';
@@ -16,7 +17,10 @@ export function buildAdminRouter(provider: Provider): Router {
 
   router.get(ROUTE.dashboard, async (ctx) => {
     ctx.type = 'html';
-    ctx.body = await DashboardPage({ clients: await clientServices.store.list() });
+    ctx.body = await DashboardPage({
+      clients: await clientServices.store.list(),
+      resources: await resourceRegistry.list(),
+    });
   });
 
   addClientRoutes(router, provider);

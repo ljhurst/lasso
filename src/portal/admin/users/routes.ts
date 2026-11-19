@@ -2,7 +2,6 @@ import type Router from '@koa/router';
 import type { RouterContext } from '@koa/router';
 import type Provider from 'oidc-provider';
 import { listAccessTokens, listGrants, listSessions } from '#src/adapter/records.ts';
-import { allResourceScopes } from '#src/config/resources.ts';
 import { readForm } from '#src/form-body.ts';
 import { logEvent } from '#src/observability/events.ts';
 import { revokeAllAccess, revokeGrantsWithScope } from '#src/portal/admin/revocation.ts';
@@ -20,6 +19,7 @@ import { TemporaryPasswordPage } from '#src/portal/admin/users/views/temporary-p
 import { UserDetailPage } from '#src/portal/admin/users/views/user-detail.tsx';
 import { UsersListPage } from '#src/portal/admin/users/views/users.tsx';
 import { adminUrl, ROUTE } from '#src/portal/paths.ts';
+import { resourceRegistry } from '#src/resources/services.ts';
 import { buildNewUser, issueTemporaryPassword, parseNewUser } from '#src/users/provision.ts';
 import {
   createUser,
@@ -88,22 +88,24 @@ export function addUserRoutes(router: Router, provider: Provider): void {
       listAccessTokens(),
     ]);
 
+    const knownScopes = await resourceRegistry.scopes();
+
     ctx.type = 'html';
     ctx.body = await UserDetailPage({
       user,
       sessions: sessions.filter((s) => s.accountId === user.sub).sort(byLatestExpiry),
       grants: grants.filter((g) => g.accountId === user.sub).sort(byLatestExpiry),
       accessTokens: accessTokens.filter((t) => t.accountId === user.sub).sort(byLatestExpiry),
-      roles: buildHeldRoles(user, ctx.state.user.sub),
+      roles: buildHeldRoles(user, ctx.state.user.sub, knownScopes),
       canManage: canManageUser(user, ctx.state.user.sub),
-      grantableRoles: allResourceScopes.filter((role) => !user.roles.includes(role)),
+      grantableRoles: knownScopes.filter((role) => !user.roles.includes(role)),
     });
   });
 
   router.post(ROUTE.addRole, async (ctx) => {
     const { sub } = ctx.params;
     const role = (await readForm(ctx)).get('role');
-    if (sub && role && allResourceScopes.includes(role)) {
+    if (sub && role && (await resourceRegistry.scopes()).includes(role)) {
       await assignRole(provider, sub, role);
     }
     ctx.redirect(adminUrl.user(sub ?? ''));
@@ -117,7 +119,7 @@ export function addUserRoutes(router: Router, provider: Provider): void {
     }
 
     const role = (await readForm(ctx)).get('role');
-    if (role && canRemoveRole(user, role, ctx.state.user.sub)) {
+    if (role && canRemoveRole(user, role, ctx.state.user.sub, await resourceRegistry.scopes())) {
       await removeRole(user.sub, role);
       await revokeGrantsWithScope(provider, user.sub, role);
     }

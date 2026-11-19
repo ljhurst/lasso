@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { allResourceScopes, getResourceServerInfo, resources } from '#src/config/resources.ts';
 import { getUserApps } from '#src/portal/apps/apps.ts';
+import { registryWithBuiltIns } from '#test/support/resources.ts';
+
+const registry = registryWithBuiltIns();
 
 const PORTO = 'https://porto.bylukehurst.com/';
 
@@ -28,11 +30,10 @@ describe('custom domain resources', () => {
     ],
   ])(
     'serves %s with its scopes and a portal link to the endpoint',
-    (indicator, name, scope, url) => {
-      expect(getResourceServerInfo(indicator)).toMatchObject({
+    async (indicator, name, scope, url) => {
+      expect(await registry.get(indicator)).toMatchObject({
         name,
-        scope,
-        accessTokenFormat: 'jwt',
+        scopes: scope.split(' '),
         app: { url },
       });
     },
@@ -42,41 +43,44 @@ describe('custom domain resources', () => {
     'https://dpuc6r44q5s4rn2kj24rmgrxga0uxwgr.lambda-url.us-east-1.on.aws/',
     'https://diozeathy56roah5fxesmhji640ugrkn.lambda-url.us-east-1.on.aws/',
     'https://s4wndhtrbjoflmoqeb4zvvmeim0cyodv.lambda-url.us-east-1.on.aws/',
-  ])('no longer accepts the retired Function URL %s', (indicator) => {
-    expect(() => getResourceServerInfo(indicator)).toThrow('unknown resource indicator');
+  ])('no longer accepts the retired Function URL %s', async (indicator) => {
+    expect(await registry.get(indicator)).toBeUndefined();
   });
 
-  it('still rejects an unknown resource', () => {
-    expect(() => getResourceServerInfo('https://unknown.example.com/')).toThrow(
-      'unknown resource indicator',
-    );
+  it('still rejects an unknown resource', async () => {
+    expect(await registry.get('https://unknown.example.com/')).toBeUndefined();
   });
 });
 
 describe('portal listings', () => {
-  it('lists each app once', () => {
-    const names = getUserApps([...allResourceScopes]).map((app) => app.resource.name);
+  it('lists each app once', async () => {
+    const names = (await getUserApps(registry, await registry.scopes())).map(
+      (app) => app.resource.name,
+    );
 
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it('links porto to its MCP endpoint, not its resource indicator', () => {
-    const porto = getUserApps([...allResourceScopes]).find((app) => app.indicator === PORTO);
+  it('links porto to its MCP endpoint, not its resource indicator', async () => {
+    const apps = await getUserApps(registry, await registry.scopes());
+    const porto = apps.find((app) => app.indicator === PORTO);
 
     expect(porto?.resource.app?.url).toBe(`${PORTO}mcp`);
   });
 });
 
 describe('fife', () => {
-  it('links the portal to its own hostname', () => {
+  it('links the portal to its own hostname', async () => {
     expect(
-      getResourceServerInfo('https://fi37z0j9pg.execute-api.us-east-1.amazonaws.com/prod'),
+      await registry.get('https://fi37z0j9pg.execute-api.us-east-1.amazonaws.com/prod'),
     ).toMatchObject({ name: 'Fife', app: { url: 'https://fife.bylukehurst.com/' } });
   });
 });
 
 describe('lasso issuer', () => {
-  it('names no Lambda URL in any resource', () => {
-    expect(Object.keys(resources).filter((uri) => uri.includes('.lambda-url.'))).toEqual([]);
+  it('names no Lambda URL in any resource', async () => {
+    const indicators = (await registry.list()).map((resource) => resource.indicator);
+
+    expect(indicators.filter((uri) => uri.includes('.lambda-url.'))).toEqual([]);
   });
 });

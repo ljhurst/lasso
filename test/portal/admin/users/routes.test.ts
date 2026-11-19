@@ -29,6 +29,11 @@ vi.mock('#src/adapter/records.ts', async (importOriginal) => ({
   ...data,
 }));
 
+vi.mock('#src/resources/services.ts', async () => {
+  const { registryWithBuiltIns } = await import('#test/support/resources.ts');
+  return { resourceRegistry: registryWithBuiltIns() };
+});
+
 vi.mock('#src/observability/events.ts', () => ({ logEvent: vi.fn() }));
 
 vi.mock('#src/portal/admin/revocation.ts', () => ({

@@ -11,6 +11,7 @@ export const env = {
   oidcTableName: required('LASSO_OIDC_TABLE_NAME'),
   usersTableName: required('LASSO_USERS_TABLE_NAME'),
   clientsTableName: required('LASSO_CLIENTS_TABLE_NAME'),
+  resourcesTableName: required('LASSO_RESOURCES_TABLE_NAME'),
   throttleTableName: required('LASSO_THROTTLE_TABLE_NAME'),
   jwksSsmParam: required('LASSO_JWKS_SSM_PARAM'),
   cookieKeySsmParam: required('LASSO_COOKIE_KEY_SSM_PARAM'),

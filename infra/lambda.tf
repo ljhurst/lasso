@@ -10,6 +10,10 @@ resource "aws_lambda_function" "lasso" {
   architectures = ["arm64"]
   layers        = [var.lwa_layer_arn]
 
+  # The function reads the resources table when it starts, so its role must
+  # be allowed to before a new version can run.
+  depends_on = [aws_iam_role_policy.lambda]
+
   memory_size = 512
   timeout     = 15
 
@@ -21,6 +25,7 @@ resource "aws_lambda_function" "lasso" {
       LASSO_OIDC_TABLE_NAME         = aws_dynamodb_table.lasso.name
       LASSO_USERS_TABLE_NAME        = aws_dynamodb_table.lasso_users.name
       LASSO_CLIENTS_TABLE_NAME      = aws_dynamodb_table.lasso_clients.name
+      LASSO_RESOURCES_TABLE_NAME    = aws_dynamodb_table.lasso_resources.name
       LASSO_THROTTLE_TABLE_NAME     = aws_dynamodb_table.lasso_throttle.name
       LASSO_JWKS_SSM_PARAM          = local.jwks_ssm_param
       LASSO_COOKIE_KEY_SSM_PARAM    = local.cookie_key_ssm_param

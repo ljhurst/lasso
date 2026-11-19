@@ -161,6 +161,17 @@ clients use `client_credentials` with a secret. That secret stays in SSM at
 compares secrets in plaintext and so they can't be hashed like passwords. Admins add, edit and delete
 clients in the portal or with `npm run add-client`; both run the same code.
 
+Protected resources (the APIs and apps that accept Lasso's tokens) live in
+`lj-lasso-resources`, keyed by the resource indicator (RFC 8707). A row holds
+the resource's metadata as OAuth Protected Resource Metadata (RFC 9728) names it
+(`resource`, `resource_name`, `scopes_supported`) plus the app link the portal
+shows. Lasso's own resource and its admin scope are built in and cannot be
+replaced. The scope list is also what a client may hold, what discovery
+advertises and what a client's own scope allow-list is checked against, and
+oidc-provider reads it once when it starts. So each instance checks the
+registered scopes every few seconds and builds a new provider when they
+change; resource changes take effect within seconds, with no restart.
+
 Emails are trimmed and lowercased on creation and on every lookup, so a phone
 keyboard's capitalization can't lock someone out.
 

@@ -1,13 +1,13 @@
-import type { Account, Configuration } from 'oidc-provider';
+import { type Account, type Configuration, errors } from 'oidc-provider';
 import { DynamoAdapter } from '#src/adapter/dynamo-adapter.ts';
 import { ErrorPage } from '#src/interactions/views/error.tsx';
 import { LogoutPage } from '#src/interactions/views/logout.tsx';
 import { PostLogoutPage } from '#src/interactions/views/post-logout.tsx';
 import { getUserBySub } from '#src/users/storage/store.ts';
 import { getJwks } from '#src/config/jwks.ts';
-import { allResourceScopes, getResourceServerInfo } from '#src/config/resources.ts';
 import { getParameter, getParameters } from '#src/aws/ssm.ts';
 import { env } from '#src/env.ts';
+import type { ResourceRegistry } from '#src/resources/registry.ts';
 
 interface AccountClaims {
   [key: string]: unknown;
@@ -42,7 +42,15 @@ async function findAccount(_ctx: unknown, sub: string): Promise<Account> {
 const ONE_HOUR = 60 * 60;
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60;
 
-export async function buildConfiguration(): Promise<Configuration> {
+/**
+ * The provider's configuration. `resourceScopes` is fixed for the life of the
+ * provider, because it also decides which scopes a client may hold and which
+ * discovery lists, so a change to the resources needs a new provider.
+ */
+export async function buildConfiguration(
+  registry: ResourceRegistry,
+  resourceScopes: readonly string[],
+): Promise<Configuration> {
   // Fetch every secret the config reads in one round trip up front, since
   // each sequential network call at startup adds directly to cold-start time.
   await getParameters([env.jwksSsmParam, env.cookieKeySsmParam]);
@@ -52,7 +60,7 @@ export async function buildConfiguration(): Promise<Configuration> {
     findAccount,
     jwks: await getJwks(),
     cookies: { keys: [await getParameter(env.cookieKeySsmParam)] },
-    scopes: ['openid', 'profile', 'email', 'offline_access', ...allResourceScopes],
+    scopes: ['openid', 'profile', 'email', 'offline_access', ...resourceScopes],
     claims: {
       profile: ['given_name', 'family_name', 'name'],
       email: ['email', 'email_verified'],
@@ -69,8 +77,13 @@ export async function buildConfiguration(): Promise<Configuration> {
       resourceIndicators: {
         enabled: true,
         defaultResource: () => '',
-        getResourceServerInfo: (_ctx, resourceIndicator) =>
-          getResourceServerInfo(resourceIndicator),
+        getResourceServerInfo: async (_ctx, resourceIndicator) => {
+          const resource = await registry.get(resourceIndicator);
+          if (!resource) {
+            throw new errors.InvalidTarget();
+          }
+          return { scope: resource.scopes.join(' '), accessTokenFormat: 'jwt' };
+        },
       },
       clientCredentials: { enabled: true },
       rpInitiatedLogout: {

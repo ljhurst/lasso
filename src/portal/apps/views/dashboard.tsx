@@ -1,5 +1,5 @@
 import { buildMcpAddCommand, buildMcpInspectorCommand } from '#src/config/mcp-command.ts';
-import { AppType } from '#src/config/resources.ts';
+import { AppType } from '#src/resources/types.ts';
 import { CopyButton } from '#src/portal/views/components/copy-button.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
 import type { UserApp } from '#src/portal/apps/apps.ts';

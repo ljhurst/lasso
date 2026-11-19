@@ -8,7 +8,7 @@
 // (src/interactions/routes.ts) before they reach consent.
 import { parseArgs } from 'node:util';
 
-import { LASSO_ADMIN_SCOPE } from '../../src/config/scopes.ts';
+import { LASSO_ADMIN_SCOPE } from '../../src/resources/scopes.ts';
 import { normalizeEmail } from '../../src/users/email.ts';
 import { buildNewUser, issueTemporaryPassword } from '../../src/users/provision.ts';
 import { createUserStore, type UserStore } from '../../src/users/storage/user-store.ts';

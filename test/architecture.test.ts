@@ -17,6 +17,7 @@ const FORBIDDEN: Record<string, string[]> = {
   ],
   views: ['adapter', 'clients', 'config', 'interactions', 'observability', 'portal', 'users'],
   clients: ['adapter', 'config', 'interactions', 'portal'],
+  resources: ['adapter', 'config', 'interactions', 'portal'],
   users: ['adapter', 'config', 'interactions', 'portal'],
   adapter: ['config', 'interactions', 'portal'],
   interactions: ['portal'],

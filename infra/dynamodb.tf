@@ -101,6 +101,17 @@ resource "aws_dynamodb_table" "lasso_users" {
   }
 }
 
+resource "aws_dynamodb_table" "lasso_resources" {
+  name         = "lj-lasso-resources"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "resource"
+
+  attribute {
+    name = "resource"
+    type = "S"
+  }
+}
+
 resource "aws_dynamodb_table" "lasso_clients" {
   name         = "lj-lasso-clients"
   billing_mode = "PAY_PER_REQUEST"
