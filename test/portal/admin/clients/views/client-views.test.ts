@@ -22,7 +22,67 @@ describe('NewClientPage', () => {
     ]) {
       expect(html).toContain(`name="${name}"`);
     }
-    expect(html).toContain('name="scope" value="victoria:read"');
+    expect(html).toContain('<option value="victoria:read">victoria:read</option>');
+  });
+
+  it('picks scopes from a dropdown, not checkboxes', async () => {
+    const html = await NewClientPage({ scopeChoices: CHOICES });
+
+    expect(html).not.toMatch(/<input[^>]*type="checkbox"/);
+    expect(html).toContain('data-scope-add');
+    expect(html).toContain('<option value="">Choose a scope…</option>');
+    expect(html).toContain('<ul class="roles" data-scope-list></ul>');
+  });
+
+  it('shows chosen scopes as removable rows and leaves them out of the dropdown', async () => {
+    const html = await NewClientPage({
+      scopeChoices: CHOICES,
+      values: {
+        clientId: '',
+        name: '',
+        clientType: 'confidential',
+        applicationType: 'web',
+        redirectUris: [],
+        postLogoutRedirectUris: [],
+        scopes: ['victoria:write'],
+      },
+    });
+
+    const list = html.slice(html.indexOf('data-scope-list'), html.indexOf('data-scope-select'));
+    expect(list).toContain('<input type="hidden" name="scope" value="victoria:write"/>');
+    expect(list).toContain('aria-label="Remove victoria:write"');
+    expect(html).not.toContain('<option value="victoria:write">');
+    expect(html).toContain('<option value="victoria:read">');
+  });
+
+  it('carries an inert template the script copies for each added scope', async () => {
+    const html = await NewClientPage({ scopeChoices: CHOICES });
+
+    const template = html.slice(
+      html.indexOf('<template data-scope-template>'),
+      html.indexOf('</template>'),
+    );
+    expect(template).toContain('data-scope-remove');
+    expect(template).toContain('name="scope"');
+  });
+
+  it('escapes a hostile scope in the rows, the options and the dropdown', async () => {
+    const html = await NewClientPage({
+      scopeChoices: [HOSTILE, 'ok:read'],
+      values: {
+        clientId: '',
+        name: '',
+        clientType: 'confidential',
+        applicationType: 'web',
+        redirectUris: [],
+        postLogoutRedirectUris: [],
+        scopes: [HOSTILE],
+      },
+    });
+    const withOption = await NewClientPage({ scopeChoices: [HOSTILE] });
+
+    expect(html).not.toContain(HOSTILE);
+    expect(withOption).not.toContain(HOSTILE);
   });
 
   it('puts the type first and groups the fields that belong to each type', async () => {
@@ -62,7 +122,7 @@ describe('NewClientPage', () => {
     expect(html).not.toContain(HOSTILE);
     expect(html).toContain('role="alert"');
     expect(html).toMatch(/value="confidential"[^>]*checked/);
-    expect(html).toMatch(/name="scope" value="victoria:write" checked/);
+    expect(html).toContain('<input type="hidden" name="scope" value="victoria:write"/>');
   });
 });
 

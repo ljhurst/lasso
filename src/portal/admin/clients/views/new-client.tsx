@@ -1,7 +1,7 @@
 import {
   NameField,
   RedirectUriFields,
-  ScopeChoices,
+  ScopePicker,
 } from '#src/portal/admin/clients/views/client-fields.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
 import { Layout } from '#src/portal/views/layout.tsx';
@@ -93,7 +93,7 @@ export function NewClientPage(props: {
             />
           </div>
           <div class="only-confidential">
-            <ScopeChoices choices={props.scopeChoices} selected={values.scopes} />
+            <ScopePicker choices={props.scopeChoices} selected={values.scopes} />
           </div>
           <div class="actions wide">
             <button type="submit" class="primary">

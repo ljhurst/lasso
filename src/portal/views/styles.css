@@ -405,6 +405,10 @@ button.row-action:disabled {
   font-size: 0.875rem;
 }
 
+.roles:empty {
+  display: none;
+}
+
 .roles li {
   display: flex;
   align-items: center;
