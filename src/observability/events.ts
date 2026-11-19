@@ -14,6 +14,7 @@ export type AuthEvent =
   | { event: 'client_created'; clientId: string; by: string }
   | { event: 'client_updated'; clientId: string; by: string }
   | { event: 'client_deleted'; clientId: string; by: string }
+  | { event: 'client_delete_failed'; clientId: string; by: string; error: string }
   | { event: 'token_issued'; clientId?: string; sub?: string; grantType?: string }
   | { event: 'oidc_error'; kind: string; clientId?: string; message: string };
 

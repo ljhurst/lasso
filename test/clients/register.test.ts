@@ -271,6 +271,66 @@ describe('removeClient', () => {
     expect(services.secrets.values.size).toBe(0);
   });
 
+  it('removes the secret before the row', async () => {
+    const services = fakeClientServices([makeConfidentialClient()]);
+    const calls: string[] = [];
+    const removeRow = services.store.remove;
+    const removeSecret = services.secrets.remove;
+    services.store.remove = async (id) => {
+      calls.push('row');
+      await removeRow(id);
+    };
+    services.secrets.remove = async (name) => {
+      calls.push('secret');
+      await removeSecret(name);
+    };
+
+    await removeClient(services, 'my-service');
+
+    expect(calls).toEqual(['secret', 'row']);
+  });
+
+  it('changes nothing when the secret cannot be deleted', async () => {
+    const services = fakeClientServices([makeConfidentialClient()]);
+    services.secrets.values.set('/lasso/client/my-service-secret', 's3cret');
+    services.secrets.remove = async () => {
+      throw new Error('AccessDenied');
+    };
+
+    await expect(removeClient(services, 'my-service')).rejects.toThrow('AccessDenied');
+
+    expect(services.rows.has('my-service')).toBe(true);
+    expect(services.secrets.values.get('/lasso/client/my-service-secret')).toBe('s3cret');
+  });
+
+  it('can be retried when the row fails after the secret is gone', async () => {
+    const services = fakeClientServices([makeConfidentialClient()]);
+    services.secrets.values.set('/lasso/client/my-service-secret', 's3cret');
+    const removeRow = services.store.remove;
+    services.store.remove = async () => {
+      throw new Error('dynamo down');
+    };
+
+    await expect(removeClient(services, 'my-service')).rejects.toThrow('dynamo down');
+    expect(services.secrets.values.size).toBe(0);
+
+    services.store.remove = removeRow;
+    await removeClient(services, 'my-service');
+
+    expect(services.rows.size).toBe(0);
+  });
+
+  it('never touches secrets when deleting a public client', async () => {
+    const services = fakeClientServices([makeClient()]);
+    services.secrets.remove = async () => {
+      throw new Error('should not be called');
+    };
+
+    await removeClient(services, 'my-app');
+
+    expect(services.rows.size).toBe(0);
+  });
+
   it('leaves unrelated secrets alone when deleting a public client', async () => {
     const services = fakeClientServices([makeClient()]);
     services.secrets.values.set('/lasso/client/other-secret', 'keep');

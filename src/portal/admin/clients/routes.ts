@@ -20,6 +20,9 @@ import { assignableClientScopes, canManageClient } from '#src/portal/admin/polic
 import { revokeClientAccess } from '#src/portal/admin/revocation.ts';
 import { adminUrl, ROUTE } from '#src/portal/paths.ts';
 
+const DELETE_FAILED =
+  "Couldn't delete this client. Nothing that can't be retried was removed; try again.";
+
 /** Adds the client pages to the admin router, so they sit behind its session and admin checks. */
 export function addClientRoutes(router: Router, provider: Provider): void {
   router.get(ROUTE.newClient, async (ctx) => {
@@ -152,9 +155,23 @@ export function addClientRoutes(router: Router, provider: Provider): void {
       return;
     }
 
-    await removeClient(clientServices, client.clientId);
-    await revokeClientAccess(provider, client.clientId);
+    try {
+      await removeClient(clientServices, client.clientId);
+    } catch (error) {
+      logEvent({
+        event: 'client_delete_failed',
+        clientId: client.clientId,
+        by: ctx.state.user.sub,
+        error: error instanceof Error ? error.name : 'unknown',
+      });
+      ctx.status = 500;
+      ctx.type = 'html';
+      ctx.body = await DeleteClientPage({ client, error: DELETE_FAILED });
+      return;
+    }
+
     logEvent({ event: 'client_deleted', clientId: client.clientId, by: ctx.state.user.sub });
+    await revokeClientAccess(provider, client.clientId);
     ctx.redirect(adminUrl.dashboard());
   });
 }

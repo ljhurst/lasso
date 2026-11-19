@@ -140,16 +140,20 @@ export async function changeClientScopes(
   );
 }
 
-/** Deletes the client first so no new token can be issued, then its secret. */
+/**
+ * Deletes the secret before the row: if the secret cannot be deleted nothing
+ * has changed, and if the row then fails the client has no secret to
+ * authenticate with and the delete can be retried.
+ */
 export async function removeClient(services: ClientServices, clientId: string): Promise<void> {
   const existing = await services.store.get(clientId);
   if (!existing) {
     return;
   }
-  await services.store.remove(clientId);
   if (clientTypeOf(existing.metadata) === 'confidential') {
     await services.secrets.remove(secretParamFor(clientId));
   }
+  await services.store.remove(clientId);
 }
 
 function buildMetadata(input: NewClientInput): RegisteredClient {

@@ -3,11 +3,12 @@ import { ConfirmPage } from '#src/portal/admin/views/components/confirm-page.tsx
 import { adminUrl } from '#src/portal/paths.ts';
 import { Facts } from '#src/portal/views/components/facts.tsx';
 
-export function DeleteClientPage(props: { client: ClientRecord }) {
+export function DeleteClientPage(props: { client: ClientRecord; error?: string }) {
   const { client } = props;
   return (
     <ConfirmPage
       title="Delete client"
+      error={props.error}
       heading="Delete this client?"
       active={adminUrl.dashboard()}
       crumbs={[

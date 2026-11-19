@@ -2,7 +2,7 @@ import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import Koa from 'koa';
 import type Provider from 'oidc-provider';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clientServices } from '#src/clients/services.ts';
 import { logEvent } from '#src/observability/events.ts';
 import { revokeClientAccess } from '#src/portal/admin/revocation.ts';
@@ -246,6 +246,49 @@ describe('deleting a client', () => {
       event: 'client_deleted',
       clientId: 'my-service',
       by: 'admin',
+    });
+  });
+
+  it('logs the deletion before it revokes access', async () => {
+    await post('/admin/clients/my-service/delete', {});
+
+    const logged = vi.mocked(logEvent).mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY;
+    const revoked = vi.mocked(revokeClientAccess).mock.invocationCallOrder[0] ?? 0;
+    expect(logged).toBeLessThan(revoked);
+  });
+
+  describe('when the secret cannot be deleted', () => {
+    const removeSecret = services.secrets.remove;
+
+    afterEach(() => {
+      services.secrets.remove = removeSecret;
+    });
+
+    it('keeps the client, says so, and records the failure without its message', async () => {
+      services.secrets.remove = async () => {
+        throw Object.assign(new Error('not authorized on arn:aws:ssm:us-east-1:1:parameter/x'), {
+          name: 'AccessDeniedException',
+        });
+      };
+
+      const response = await post('/admin/clients/my-service/delete', {});
+      const html = await response.text();
+
+      expect(response.status).toBe(500);
+      expect(html).toContain('role="alert"');
+      expect(html).toContain('Couldn&#39;t delete this client');
+      expect(services.rows.has('my-service')).toBe(true);
+      expect(revokeClientAccess).not.toHaveBeenCalled();
+      expect(logEvent).toHaveBeenCalledWith({
+        event: 'client_delete_failed',
+        clientId: 'my-service',
+        by: 'admin',
+        error: 'AccessDeniedException',
+      });
+      expect(logEvent).not.toHaveBeenCalledWith(
+        expect.objectContaining({ event: 'client_deleted' }),
+      );
+      expect(JSON.stringify(vi.mocked(logEvent).mock.calls)).not.toContain('arn:aws');
     });
   });
 

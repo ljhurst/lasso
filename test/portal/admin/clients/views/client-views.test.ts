@@ -272,6 +272,15 @@ describe('DeleteClientPage', () => {
     expect(html).toContain('href="/admin/clients/my-app"');
   });
 
+  it('shows a failed delete as an alert, escaped', async () => {
+    const failed = await DeleteClientPage({ client: makeClient(), error: HOSTILE });
+    const fine = await DeleteClientPage({ client: makeClient() });
+
+    expect(failed).toContain('role="alert"');
+    expect(failed).not.toContain(HOSTILE);
+    expect(fine).not.toContain('role="alert"');
+  });
+
   it('mentions the secret only for a service', async () => {
     const app = await DeleteClientPage({ client: makeClient() });
     const service = await DeleteClientPage({ client: makeConfidentialClient() });

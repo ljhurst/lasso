@@ -13,6 +13,7 @@ export function ConfirmPage(props: {
   active: string;
   crumbs: Crumb[];
   facts: Children;
+  error?: string;
   action: string;
   cancelHref: string;
   submitLabel: string;
@@ -27,6 +28,11 @@ export function ConfirmPage(props: {
       </section>
       <section>
         <h2>What happens</h2>
+        {props.error ? (
+          <p class="form-error" role="alert" safe>
+            {props.error}
+          </p>
+        ) : null}
         <ul class="consequences">{props.children}</ul>
         <form class="actions" method="post" action={props.action} data-once>
           <button type="submit" class={`row-action ${props.tone}`} safe>

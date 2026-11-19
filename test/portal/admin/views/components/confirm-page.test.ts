@@ -18,6 +18,14 @@ function render(overrides: Partial<Parameters<typeof ConfirmPage>[0]> = {}) {
 }
 
 describe('ConfirmPage', () => {
+  it('shows an error as an alert only when given one', async () => {
+    const hostile = '<img src=x onerror=alert(1)>';
+
+    expect(await render({ error: hostile })).toContain('role="alert"');
+    expect(await render({ error: hostile })).not.toContain(hostile);
+    expect(await render()).not.toContain('role="alert"');
+  });
+
   it('shows whatever facts and breadcrumbs it is given', async () => {
     const html = await render({
       facts: '<dl>The facts</dl>',
