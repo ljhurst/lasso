@@ -8,7 +8,7 @@ import { Facts } from '#src/portal/views/components/facts.tsx';
 import { Empty } from '#src/portal/views/components/empty.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
 import { Time } from '#src/portal/views/components/time.tsx';
-import { Layout } from '#src/portal/views/layout.tsx';
+import { AdminLayout } from '#src/portal/admin/views/components/admin-layout.tsx';
 
 export interface ClientFormValues {
   name: string;
@@ -33,12 +33,7 @@ export function ClientDetailPage(props: {
     postLogoutRedirectUris: metadata.post_logout_redirect_uris ?? [],
   };
   return (
-    <Layout
-      title={metadata.client_name}
-      active={adminUrl.dashboard()}
-      isAdmin={true}
-      crumbs={[{ label: 'Clients & resources', href: adminUrl.dashboard() }]}
-    >
+    <AdminLayout section="clients" title={metadata.client_name}>
       <section>
         <h2 safe>{metadata.client_name}</h2>
         <Facts
@@ -95,7 +90,7 @@ export function ClientDetailPage(props: {
           <List items={metadata.redirect_uris ?? []} mono />
         </section>
       )}
-    </Layout>
+    </AdminLayout>
   );
 }
 

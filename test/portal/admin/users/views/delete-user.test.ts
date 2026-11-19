@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DeleteUserPage } from '#src/portal/admin/views/delete-user.tsx';
+import { DeleteUserPage } from '#src/portal/admin/users/views/delete-user.tsx';
 import { makeUser } from '#test/support/users.ts';
 
 const user = makeUser();

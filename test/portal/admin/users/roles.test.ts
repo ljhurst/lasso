@@ -6,8 +6,8 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { assignRole } from '#src/portal/admin/roles.ts';
-import { grantRow, PORTO, stubGrant, stubProvider } from './support.ts';
+import { assignRole } from '#src/portal/admin/users/roles.ts';
+import { grantRow, PORTO, stubGrant, stubProvider } from '../support.ts';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 

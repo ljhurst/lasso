@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emailFact, PersonFacts } from '#src/portal/admin/views/components/person-facts.tsx';
+import { emailFact, PersonFacts } from '#src/portal/admin/users/views/person-facts.tsx';
 import { makeUser } from '#test/support/users.ts';
 
 const HOSTILE = '<img src=x onerror=alert(1)>';

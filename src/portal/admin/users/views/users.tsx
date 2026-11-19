@@ -3,13 +3,13 @@ import type { User } from '#src/users/types.ts';
 import { Empty } from '#src/portal/views/components/empty.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
 import { Table } from '#src/portal/views/components/table.tsx';
-import { Layout } from '#src/portal/views/layout.tsx';
+import { AdminLayout } from '#src/portal/admin/views/components/admin-layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
 import { fullName } from '#src/users/name.ts';
 
 export function UsersListPage(props: { users: User[] }) {
   return (
-    <Layout title="Users" active={adminUrl.users()} isAdmin={true}>
+    <AdminLayout section="users" title="Users" index>
       <section>
         <div class="heading-row">
           <h2>Users ({props.users.length})</h2>
@@ -33,7 +33,7 @@ export function UsersListPage(props: { users: User[] }) {
           />
         )}
       </section>
-    </Layout>
+    </AdminLayout>
   );
 }
 

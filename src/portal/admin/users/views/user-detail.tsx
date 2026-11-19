@@ -1,16 +1,16 @@
-import { emailFact } from '#src/portal/admin/views/components/person-facts.tsx';
+import { emailFact } from '#src/portal/admin/users/views/person-facts.tsx';
 import { accountStatus, STATUS_LABEL } from '#src/users/status.ts';
 import type { User } from '#src/users/types.ts';
 import type { AccessTokenRow, GrantRow, SessionRow } from '#src/adapter/records.ts';
 import { RemovableItem } from '#src/portal/admin/views/components/removable-item.tsx';
-import type { HeldRole } from '#src/portal/admin/types.ts';
+import type { HeldRole } from '#src/portal/admin/users/types.ts';
 import { Empty } from '#src/portal/views/components/empty.tsx';
 import { Facts } from '#src/portal/views/components/facts.tsx';
 import { Help } from '#src/portal/views/components/help.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
 import { Table } from '#src/portal/views/components/table.tsx';
 import { Time } from '#src/portal/views/components/time.tsx';
-import { Layout } from '#src/portal/views/layout.tsx';
+import { AdminLayout } from '#src/portal/admin/views/components/admin-layout.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
 import { fullName } from '#src/users/name.ts';
 
@@ -24,12 +24,7 @@ export function UserDetailPage(props: {
   canManage: boolean;
 }) {
   return (
-    <Layout
-      title={props.user.email}
-      active={adminUrl.users()}
-      isAdmin={true}
-      crumbs={[{ label: 'Users', href: adminUrl.users() }]}
-    >
+    <AdminLayout section="users" title={props.user.email}>
       <section>
         <h2 safe>{fullName(props.user)}</h2>
         <Facts
@@ -163,7 +158,7 @@ export function UserDetailPage(props: {
           </a>
         </section>
       ) : null}
-    </Layout>
+    </AdminLayout>
   );
 }
 

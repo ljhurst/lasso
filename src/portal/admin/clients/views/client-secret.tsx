@@ -2,17 +2,12 @@ import type { ClientRecord } from '#src/clients/types.ts';
 import { adminUrl } from '#src/portal/paths.ts';
 import { CopyButton } from '#src/portal/views/components/copy-button.tsx';
 import { Facts } from '#src/portal/views/components/facts.tsx';
-import { Layout } from '#src/portal/views/layout.tsx';
+import { AdminLayout } from '#src/portal/admin/views/components/admin-layout.tsx';
 
 export function ClientSecretPage(props: { client: ClientRecord; secret: string }) {
   const { client } = props;
   return (
-    <Layout
-      title="Client secret"
-      active={adminUrl.dashboard()}
-      isAdmin={true}
-      crumbs={[{ label: 'Clients & resources', href: adminUrl.dashboard() }]}
-    >
+    <AdminLayout section="clients" title="Client secret">
       <section>
         <h2 safe>Created {client.metadata.client_name}</h2>
         <Facts items={[{ label: 'Client ID', value: <code safe>{client.clientId}</code> }]} />
@@ -34,6 +29,6 @@ export function ClientSecretPage(props: { client: ClientRecord; secret: string }
           </a>
         </div>
       </section>
-    </Layout>
+    </AdminLayout>
   );
 }

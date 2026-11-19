@@ -4,7 +4,7 @@ import {
   ScopePicker,
 } from '#src/portal/admin/clients/views/client-fields.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
-import { Layout } from '#src/portal/views/layout.tsx';
+import { AdminLayout } from '#src/portal/admin/views/components/admin-layout.tsx';
 import type { NewClientInput } from '#src/clients/register.ts';
 import { MAX_CLIENT_NAME_LENGTH } from '#src/clients/validate.ts';
 
@@ -25,12 +25,7 @@ export function NewClientPage(props: {
 }) {
   const values = props.values ?? EMPTY_FORM;
   return (
-    <Layout
-      title="Add a client"
-      active={adminUrl.dashboard()}
-      isAdmin={true}
-      crumbs={[{ label: 'Clients & resources', href: adminUrl.dashboard() }]}
-    >
+    <AdminLayout section="clients" title="Add a client">
       <section>
         <h2>Add a client</h2>
         {props.error ? (
@@ -105,6 +100,6 @@ export function NewClientPage(props: {
           </div>
         </form>
       </section>
-    </Layout>
+    </AdminLayout>
   );
 }

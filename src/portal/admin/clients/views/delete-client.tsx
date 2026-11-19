@@ -10,11 +10,8 @@ export function DeleteClientPage(props: { client: ClientRecord; error?: string }
       title="Delete client"
       error={props.error}
       heading="Delete this client?"
-      active={adminUrl.dashboard()}
-      crumbs={[
-        { label: 'Clients & resources', href: adminUrl.dashboard() },
-        { label: client.metadata.client_name, href: adminUrl.client(client.clientId) },
-      ]}
+      section="clients"
+      crumbs={[{ label: client.metadata.client_name, href: adminUrl.client(client.clientId) }]}
       facts={
         <Facts
           items={[
