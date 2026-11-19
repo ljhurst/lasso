@@ -26,6 +26,11 @@ export interface ClientRecord {
   metadata: RegisteredClient;
 }
 
+/** The scopes a client may ask for; empty for a client that holds none. */
+export function scopesOf(metadata: Pick<RegisteredClient, 'scope'>): string[] {
+  return metadata.scope?.split(' ').filter(Boolean) ?? [];
+}
+
 export function clientTypeOf(
   metadata: Pick<RegisteredClient, 'token_endpoint_auth_method'>,
 ): ClientType {

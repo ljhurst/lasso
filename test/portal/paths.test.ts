@@ -17,6 +17,12 @@ describe('adminUrl', () => {
     ['clients', adminUrl.clients(), '/admin/clients'],
     ['client', adminUrl.client('my-app'), '/admin/clients/my-app'],
     ['deleteClient', adminUrl.deleteClient('my-app'), '/admin/clients/my-app/delete'],
+    ['addClientScope', adminUrl.addClientScope('my-app'), '/admin/clients/my-app/scopes'],
+    [
+      'removeClientScope',
+      adminUrl.removeClientScope('my-app'),
+      '/admin/clients/my-app/scopes/remove',
+    ],
   ])('builds the %s address', (_name, url, expected) => {
     expect(url).toBe(expected);
   });

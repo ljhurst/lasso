@@ -115,6 +115,31 @@ export async function updateClient(
   return { client };
 }
 
+/** Replaces a confidential client's scopes, keeping everything else as it is. */
+export async function changeClientScopes(
+  services: ClientServices,
+  clientId: string,
+  scopes: string[],
+  knownScopes: readonly string[],
+): Promise<ClientResult> {
+  const existing = await services.store.get(clientId);
+  if (!existing) {
+    return { error: CLIENT_NOT_FOUND };
+  }
+  const { metadata } = existing;
+  return updateClient(
+    services,
+    clientId,
+    {
+      name: metadata.client_name,
+      redirectUris: metadata.redirect_uris ?? [],
+      postLogoutRedirectUris: metadata.post_logout_redirect_uris ?? [],
+      scopes,
+    },
+    knownScopes,
+  );
+}
+
 /** Deletes the client first so no new token can be issued, then its secret. */
 export async function removeClient(services: ClientServices, clientId: string): Promise<void> {
   const existing = await services.store.get(clientId);

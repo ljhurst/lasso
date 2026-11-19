@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  changeClientScopes,
   type NewClientInput,
   registerClient,
   removeClient,
@@ -221,6 +222,41 @@ describe('updateClient', () => {
     const result = await updateClient(fakeClientServices(), 'ghost', edits, SCOPES);
 
     expect(result).toEqual({ error: 'That client no longer exists.' });
+  });
+});
+
+describe('changeClientScopes', () => {
+  it('replaces the scopes and keeps everything else', async () => {
+    const services = fakeClientServices([makeConfidentialClient({ client_name: 'Kept' })]);
+
+    await changeClientScopes(services, 'my-service', ['victoria:read', 'victoria:write'], SCOPES);
+
+    expect(services.rows.get('my-service')?.metadata).toEqual({
+      client_id: 'my-service',
+      client_name: 'Kept',
+      token_endpoint_auth_method: 'client_secret_basic',
+      grant_types: ['client_credentials'],
+      response_types: [],
+      scope: 'victoria:read victoria:write',
+    });
+  });
+
+  it('refuses no scopes and unknown scopes, leaving the client as it was', async () => {
+    const services = fakeClientServices([makeConfidentialClient()]);
+
+    expect(await changeClientScopes(services, 'my-service', [], SCOPES)).toEqual({
+      error: expect.stringContaining('scopes'),
+    });
+    expect(await changeClientScopes(services, 'my-service', ['lasso:admin'], SCOPES)).toEqual({
+      error: expect.stringContaining('scopes'),
+    });
+    expect(services.rows.get('my-service')?.metadata.scope).toBe('victoria:read');
+  });
+
+  it('says so when the client is gone', async () => {
+    expect(
+      await changeClientScopes(fakeClientServices(), 'ghost', ['victoria:read'], SCOPES),
+    ).toEqual({ error: 'That client no longer exists.' });
   });
 });
 

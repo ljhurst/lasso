@@ -1,27 +1,37 @@
 import { secretParamFor } from '#src/clients/secret-param.ts';
-import { type ClientRecord, clientTypeOf } from '#src/clients/types.ts';
-import {
-  ClientFields,
-  type ClientFieldValues,
-} from '#src/portal/admin/clients/views/client-fields.tsx';
+import { type ClientRecord, clientTypeOf, scopesOf } from '#src/clients/types.ts';
+import { NameField, RedirectUriFields } from '#src/portal/admin/clients/views/client-fields.tsx';
+import { RemovableItem } from '#src/portal/admin/views/components/removable-item.tsx';
 import { CLIENT_TYPE_DESCRIPTION } from '#src/portal/admin/clients/views/client-type.ts';
 import { adminUrl } from '#src/portal/paths.ts';
 import { Facts } from '#src/portal/views/components/facts.tsx';
+import { Empty } from '#src/portal/views/components/empty.tsx';
 import { List } from '#src/portal/views/components/list.tsx';
 import { Time } from '#src/portal/views/components/time.tsx';
 import { Layout } from '#src/portal/views/layout.tsx';
 
+export interface ClientFormValues {
+  name: string;
+  redirectUris: string[];
+  postLogoutRedirectUris: string[];
+}
+
 export function ClientDetailPage(props: {
   client: ClientRecord;
-  scopeChoices: readonly string[];
+  grantableScopes: string[];
   canManage: boolean;
   error?: string;
   saved?: boolean;
-  values?: ClientFieldValues;
+  values?: ClientFormValues;
 }) {
   const { client } = props;
   const { metadata } = client;
   const clientType = clientTypeOf(metadata);
+  const values = props.values ?? {
+    name: metadata.client_name,
+    redirectUris: metadata.redirect_uris ?? [],
+    postLogoutRedirectUris: metadata.post_logout_redirect_uris ?? [],
+  };
   return (
     <Layout
       title={metadata.client_name}
@@ -46,6 +56,9 @@ export function ClientDetailPage(props: {
           ]}
         />
       </section>
+      {props.canManage && clientType === 'confidential' ? (
+        <ScopesSection client={client} grantable={props.grantableScopes} />
+      ) : null}
       {props.canManage ? (
         <section>
           <h2>Settings</h2>
@@ -56,18 +69,13 @@ export function ClientDetailPage(props: {
             </p>
           ) : null}
           <form class="form-grid" method="post" action={adminUrl.client(client.clientId)} data-once>
-            <ClientFields
-              clientType={clientType}
-              scopeChoices={props.scopeChoices}
-              values={
-                props.values ?? {
-                  name: metadata.client_name,
-                  redirectUris: metadata.redirect_uris ?? [],
-                  postLogoutRedirectUris: metadata.post_logout_redirect_uris ?? [],
-                  scopes: metadata.scope?.split(' ') ?? [],
-                }
-              }
-            />
+            <NameField value={values.name} />
+            {clientType === 'public' ? (
+              <RedirectUriFields
+                redirectUris={values.redirectUris}
+                postLogoutRedirectUris={values.postLogoutRedirectUris}
+              />
+            ) : null}
             <div class="actions wide">
               <button type="submit" class="primary">
                 Save
@@ -88,5 +96,44 @@ export function ClientDetailPage(props: {
         </section>
       )}
     </Layout>
+  );
+}
+
+function ScopesSection(props: { client: ClientRecord; grantable: string[] }) {
+  const { client } = props;
+  const scopes = scopesOf(client.metadata);
+  const onlyOne = scopes.length === 1;
+  return (
+    <section>
+      <h2>Scopes ({scopes.length})</h2>
+      <ul class="roles">
+        {scopes.map((scope) => (
+          <RemovableItem
+            label={scope}
+            notes={onlyOne ? ['A confidential client needs at least one scope'] : []}
+            action={adminUrl.removeClientScope(client.clientId)}
+            field="scope"
+            blocked={onlyOne}
+          />
+        ))}
+      </ul>
+      {props.grantable.length === 0 ? (
+        <Empty>This client already has every scope.</Empty>
+      ) : (
+        <form class="add-role" method="post" action={adminUrl.addClientScope(client.clientId)}>
+          <select name="scope" required aria-label="Scope to add" class="control">
+            <option value="">Choose a scope…</option>
+            {props.grantable.toSorted().map((scope) => (
+              <option value={scope} safe>
+                {scope}
+              </option>
+            ))}
+          </select>
+          <button type="submit" class="primary">
+            Add
+          </button>
+        </form>
+      )}
+    </section>
   );
 }

@@ -2,6 +2,7 @@ import { emailFact } from '#src/portal/admin/views/components/person-facts.tsx';
 import { accountStatus, STATUS_LABEL } from '#src/users/status.ts';
 import type { User } from '#src/users/types.ts';
 import type { AccessTokenRow, GrantRow, SessionRow } from '#src/adapter/records.ts';
+import { RemovableItem } from '#src/portal/admin/views/components/removable-item.tsx';
 import type { HeldRole } from '#src/portal/admin/types.ts';
 import { Empty } from '#src/portal/views/components/empty.tsx';
 import { Facts } from '#src/portal/views/components/facts.tsx';
@@ -180,36 +181,16 @@ function ClientLabel(props: { clientId: string | undefined }) {
 function RoleRow(props: { held: HeldRole; sub: string }) {
   const { held, sub } = props;
   return (
-    <li>
-      <div class="role-name">
-        <code safe>{held.role}</code>
-        {held.registered ? null : <span class="note">no longer registered</span>}
-        {held.blockedReason ? (
-          <span class="note" safe>
-            {held.blockedReason}
-          </span>
-        ) : null}
-      </div>
-      <form method="post" action={adminUrl.removeRole(sub)}>
-        <input type="hidden" name="role" value={held.role} />
-        <button
-          type="submit"
-          class="icon-button caution"
-          aria-label={`Remove ${held.role}`}
-          title={`Remove ${held.role}`}
-          disabled={Boolean(held.blockedReason)}
-        >
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path
-              d="M3.5 3.5L12.5 12.5M12.5 3.5L3.5 12.5"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
-      </form>
-    </li>
+    <RemovableItem
+      label={held.role}
+      notes={[
+        ...(held.registered ? [] : ['no longer registered']),
+        ...(held.blockedReason ? [held.blockedReason] : []),
+      ]}
+      action={adminUrl.removeRole(sub)}
+      field="role"
+      blocked={Boolean(held.blockedReason)}
+    />
   );
 }
 

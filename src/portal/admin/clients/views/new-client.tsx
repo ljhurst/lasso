@@ -1,4 +1,8 @@
-import { ClientFields } from '#src/portal/admin/clients/views/client-fields.tsx';
+import {
+  NameField,
+  RedirectUriFields,
+  ScopeChoices,
+} from '#src/portal/admin/clients/views/client-fields.tsx';
 import { adminUrl } from '#src/portal/paths.ts';
 import { Layout } from '#src/portal/views/layout.tsx';
 import type { NewClientInput } from '#src/clients/register.ts';
@@ -35,20 +39,6 @@ export function NewClientPage(props: {
           </p>
         ) : null}
         <form class="form-grid" method="post" action={adminUrl.clients()} data-once>
-          <div class="field wide">
-            <label for="clientId">Client ID</label>
-            <input
-              class="control mono"
-              id="clientId"
-              name="clientId"
-              type="text"
-              required
-              maxlength={MAX_CLIENT_NAME_LENGTH}
-              autocomplete="off"
-              value={values.clientId}
-            />
-            <span class="note">Lowercase letters, digits and hyphens. Can't be changed later.</span>
-          </div>
           <fieldset class="field wide checks">
             <legend>Client type</legend>
             <label class="check">
@@ -71,17 +61,40 @@ export function NewClientPage(props: {
             </label>
           </fieldset>
           <div class="field wide">
-            <label for="applicationType">App type</label>
-            <select class="control" id="applicationType" name="applicationType">
-              <option value="web" selected={values.applicationType === 'web'}>
-                Web
-              </option>
-              <option value="native" selected={values.applicationType === 'native'}>
-                Native (desktop or CLI, loopback redirect)
-              </option>
-            </select>
+            <label for="clientId">Client ID</label>
+            <input
+              class="control mono"
+              id="clientId"
+              name="clientId"
+              type="text"
+              required
+              maxlength={MAX_CLIENT_NAME_LENGTH}
+              autocomplete="off"
+              value={values.clientId}
+            />
+            <span class="note">Lowercase letters, digits and hyphens. Can't be changed later.</span>
           </div>
-          <ClientFields values={values} scopeChoices={props.scopeChoices} />
+          <NameField value={values.name} />
+          <div class="only-public">
+            <div class="field wide">
+              <label for="applicationType">App type</label>
+              <select class="control" id="applicationType" name="applicationType">
+                <option value="web" selected={values.applicationType === 'web'}>
+                  Web
+                </option>
+                <option value="native" selected={values.applicationType === 'native'}>
+                  Native (desktop or CLI, loopback redirect)
+                </option>
+              </select>
+            </div>
+            <RedirectUriFields
+              redirectUris={values.redirectUris}
+              postLogoutRedirectUris={values.postLogoutRedirectUris}
+            />
+          </div>
+          <div class="only-confidential">
+            <ScopeChoices choices={props.scopeChoices} selected={values.scopes} />
+          </div>
           <div class="actions wide">
             <button type="submit" class="primary">
               Add client

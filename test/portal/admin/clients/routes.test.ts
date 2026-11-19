@@ -264,3 +264,110 @@ describe('deleting a client', () => {
     expect(services.rows.has('my-app')).toBe(true);
   });
 });
+
+describe('adding a scope to a confidential client', () => {
+  const scopeOf = () => services.rows.get('my-service')?.metadata.scope;
+
+  it('adds it, logs it, and goes back to the client', async () => {
+    const response = await post('/admin/clients/my-service/scopes', { scope: 'victoria:write' });
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('/admin/clients/my-service');
+    expect(scopeOf()).toBe('victoria:read victoria:write');
+    expect(logEvent).toHaveBeenCalledWith({
+      event: 'client_updated',
+      clientId: 'my-service',
+      by: 'admin',
+    });
+  });
+
+  it.each([
+    ['the admin scope', 'lasso:admin'],
+    ['a scope nothing offers', 'nope:everything'],
+    ['a scope it already has', 'victoria:read'],
+    ['nothing', ''],
+  ])('ignores %s', async (_name, scope) => {
+    const response = await post('/admin/clients/my-service/scopes', { scope });
+
+    expect(response.status).toBe(302);
+    expect(scopeOf()).toBe('victoria:read');
+    expect(logEvent).not.toHaveBeenCalled();
+  });
+
+  it('never gives a public client a scope', async () => {
+    await post('/admin/clients/my-app/scopes', { scope: 'victoria:read' });
+
+    expect(services.rows.get('my-app')?.metadata.scope).toBeUndefined();
+  });
+
+  it('never changes the portal client', async () => {
+    await post('/admin/clients/lasso-portal/scopes', { scope: 'victoria:read' });
+
+    expect(services.rows.get('lasso-portal')).toEqual(PORTAL);
+  });
+
+  it('refuses a request from another site', async () => {
+    const response = await post(
+      '/admin/clients/my-service/scopes',
+      { scope: 'victoria:write' },
+      'cross-site',
+    );
+
+    expect(response.status).toBe(403);
+    expect(scopeOf()).toBe('victoria:read');
+  });
+});
+
+describe('removing a scope from a confidential client', () => {
+  const scopeOf = () => services.rows.get('my-service')?.metadata.scope;
+
+  beforeEach(() => {
+    services.rows.set(
+      'my-service',
+      makeConfidentialClient({ scope: 'victoria:read victoria:write' }),
+    );
+  });
+
+  it('removes it and ends the access the client already holds', async () => {
+    const response = await post('/admin/clients/my-service/scopes/remove', {
+      scope: 'victoria:write',
+    });
+
+    expect(response.status).toBe(302);
+    expect(scopeOf()).toBe('victoria:read');
+    expect(revokeClientAccess).toHaveBeenCalledWith(expect.anything(), 'my-service');
+    expect(logEvent).toHaveBeenCalledWith({
+      event: 'client_updated',
+      clientId: 'my-service',
+      by: 'admin',
+    });
+  });
+
+  it('keeps the last scope', async () => {
+    services.rows.set('my-service', makeConfidentialClient());
+
+    await post('/admin/clients/my-service/scopes/remove', { scope: 'victoria:read' });
+
+    expect(scopeOf()).toBe('victoria:read');
+    expect(revokeClientAccess).not.toHaveBeenCalled();
+  });
+
+  it('ignores a scope the client does not hold', async () => {
+    await post('/admin/clients/my-service/scopes/remove', { scope: 'fife:read' });
+
+    expect(scopeOf()).toBe('victoria:read victoria:write');
+    expect(revokeClientAccess).not.toHaveBeenCalled();
+  });
+
+  it('refuses a request from another site', async () => {
+    const response = await post(
+      '/admin/clients/my-service/scopes/remove',
+      { scope: 'victoria:write' },
+      'cross-site',
+    );
+
+    expect(response.status).toBe(403);
+    expect(scopeOf()).toBe('victoria:read victoria:write');
+    expect(revokeClientAccess).not.toHaveBeenCalled();
+  });
+});

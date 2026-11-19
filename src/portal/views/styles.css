@@ -194,6 +194,17 @@ code {
   overflow-wrap: anywhere;
 }
 
+td code,
+.facts code {
+  display: inline-block;
+  max-width: min(100%, 28rem);
+  margin-left: calc(var(--code-pad) * -1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
 time {
   white-space: nowrap;
 }
@@ -352,6 +363,7 @@ button.row-action:disabled {
   color: var(--accent);
   font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .name-link:hover {
@@ -531,6 +543,16 @@ textarea.control {
   color: var(--text);
   font-size: 0.875rem;
   font-weight: 400;
+}
+
+.only-public,
+.only-confidential {
+  display: contents;
+}
+
+.form-grid:has(input[name="clientType"][value="confidential"]:checked) .only-public,
+.form-grid:has(input[name="clientType"][value="public"]:checked) .only-confidential {
+  display: none;
 }
 
 .form-error {
@@ -835,13 +857,7 @@ dialog.connect-modal h2 {
 
   td code,
   .facts code {
-    display: inline-block;
     max-width: 100%;
-    margin-left: calc(var(--code-pad) * -1);
-    overflow-x: auto;
-    overflow-y: hidden;
-    vertical-align: top;
-    white-space: nowrap;
   }
 
   td .row-action {
@@ -863,6 +879,7 @@ dialog.connect-modal h2 {
     align-items: center;
     display: inline-flex;
     min-height: 44px;
+    white-space: normal;
   }
   .icon-button {
     min-width: 44px;

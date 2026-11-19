@@ -3,8 +3,13 @@ import type { RouterContext } from '@koa/router';
 import type Provider from 'oidc-provider';
 import { clientServices } from '#src/clients/services.ts';
 import { parseClientEdits, parseNewClient } from '#src/clients/form.ts';
-import { registerClient, removeClient, updateClient } from '#src/clients/register.ts';
-import type { ClientRecord } from '#src/clients/types.ts';
+import {
+  changeClientScopes,
+  registerClient,
+  removeClient,
+  updateClient,
+} from '#src/clients/register.ts';
+import { type ClientRecord, clientTypeOf, scopesOf } from '#src/clients/types.ts';
 import { readForm } from '#src/form-body.ts';
 import { logEvent } from '#src/observability/events.ts';
 import { ClientDetailPage } from '#src/portal/admin/clients/views/client-detail.tsx';
@@ -56,7 +61,7 @@ export function addClientRoutes(router: Router, provider: Provider): void {
     ctx.type = 'html';
     ctx.body = await ClientDetailPage({
       client,
-      scopeChoices: assignableClientScopes,
+      grantableScopes: grantableScopes(client),
       canManage: canManageClient(client.clientId),
     });
   });
@@ -79,7 +84,7 @@ export function addClientRoutes(router: Router, provider: Provider): void {
       ctx.type = 'html';
       ctx.body = await ClientDetailPage({
         client,
-        scopeChoices: assignableClientScopes,
+        grantableScopes: grantableScopes(client),
         canManage: true,
         error: result.error,
         values: edits,
@@ -91,10 +96,44 @@ export function addClientRoutes(router: Router, provider: Provider): void {
     ctx.type = 'html';
     ctx.body = await ClientDetailPage({
       client: result.client,
-      scopeChoices: assignableClientScopes,
+      grantableScopes: grantableScopes(result.client),
       canManage: true,
       saved: true,
     });
+  });
+
+  router.post(ROUTE.addClientScope, async (ctx) => {
+    const client = await findManagedClient(ctx);
+    if (!client) {
+      return;
+    }
+
+    const scope = (await readForm(ctx)).get('scope');
+    if (scope && grantableScopes(client).includes(scope)) {
+      await saveScopes(ctx, client, [...scopesOf(client.metadata), scope]);
+    }
+    ctx.redirect(adminUrl.client(client.clientId));
+  });
+
+  router.post(ROUTE.removeClientScope, async (ctx) => {
+    const client = await findManagedClient(ctx);
+    if (!client) {
+      return;
+    }
+
+    const held = scopesOf(client.metadata);
+    const scope = (await readForm(ctx)).get('scope');
+    if (scope && held.length > 1 && held.includes(scope)) {
+      const saved = await saveScopes(
+        ctx,
+        client,
+        held.filter((item) => item !== scope),
+      );
+      if (saved) {
+        await revokeClientAccess(provider, client.clientId);
+      }
+    }
+    ctx.redirect(adminUrl.client(client.clientId));
   });
 
   router.get(ROUTE.deleteClient, async (ctx) => {
@@ -118,6 +157,33 @@ export function addClientRoutes(router: Router, provider: Provider): void {
     logEvent({ event: 'client_deleted', clientId: client.clientId, by: ctx.state.user.sub });
     ctx.redirect(adminUrl.dashboard());
   });
+}
+
+/** Scopes a confidential client could still be given; none for a public client. */
+function grantableScopes(client: ClientRecord): string[] {
+  if (clientTypeOf(client.metadata) === 'public') {
+    return [];
+  }
+  const held = scopesOf(client.metadata);
+  return assignableClientScopes.filter((scope) => !held.includes(scope));
+}
+
+async function saveScopes(
+  ctx: RouterContext,
+  client: ClientRecord,
+  scopes: string[],
+): Promise<boolean> {
+  const result = await changeClientScopes(
+    clientServices,
+    client.clientId,
+    scopes,
+    assignableClientScopes,
+  );
+  if ('error' in result) {
+    return false;
+  }
+  logEvent({ event: 'client_updated', clientId: client.clientId, by: ctx.state.user.sub });
+  return true;
 }
 
 /** Loads the client in the URL, or redirects to the dashboard and returns nothing when it doesn't exist. */

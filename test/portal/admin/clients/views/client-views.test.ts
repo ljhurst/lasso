@@ -25,6 +25,25 @@ describe('NewClientPage', () => {
     expect(html).toContain('name="scope" value="victoria:read"');
   });
 
+  it('puts the type first and groups the fields that belong to each type', async () => {
+    const html = await NewClientPage({ scopeChoices: CHOICES });
+
+    const typeAt = html.indexOf('name="clientType"');
+    const publicAt = html.indexOf('class="only-public"');
+    const confidentialAt = html.indexOf('class="only-confidential"');
+    expect(typeAt).toBeGreaterThan(-1);
+    expect(typeAt).toBeLessThan(html.indexOf('name="clientId"'));
+    expect(publicAt).toBeLessThan(confidentialAt);
+
+    const publicGroup = html.slice(publicAt, confidentialAt);
+    const confidentialGroup = html.slice(confidentialAt, html.indexOf('Add client</button>'));
+    expect(publicGroup).toContain('name="redirectUris"');
+    expect(publicGroup).toContain('name="applicationType"');
+    expect(publicGroup).not.toContain('name="scope"');
+    expect(confidentialGroup).toContain('name="scope"');
+    expect(confidentialGroup).not.toContain('name="redirectUris"');
+  });
+
   it('shows the error and keeps typed values, escaped', async () => {
     const html = await NewClientPage({
       scopeChoices: CHOICES,
@@ -48,58 +67,120 @@ describe('NewClientPage', () => {
 });
 
 describe('ClientDetailPage', () => {
-  it('lets an admin edit an app and delete it, without scopes', async () => {
+  it('lets an admin edit a public client and delete it, with no scopes', async () => {
     const html = await ClientDetailPage({
       client: makeClient({ client_name: HOSTILE, redirect_uris: [HOSTILE] }),
-      scopeChoices: CHOICES,
+      grantableScopes: [],
       canManage: true,
     });
 
     expect(html).not.toContain(HOSTILE);
     expect(html).toContain('name="redirectUris"');
     expect(html).not.toContain('name="scope"');
+    expect(html).not.toContain('Scopes (');
     expect(html).toContain('href="/admin/clients/my-app/delete"');
   });
 
-  it('shows a service its scopes and secret parameter, never a secret', async () => {
+  it('lists a confidential clients scopes with remove buttons, and leaves only its name to edit', async () => {
     const html = await ClientDetailPage({
-      client: makeConfidentialClient(),
-      scopeChoices: CHOICES,
+      client: makeConfidentialClient({ scope: 'victoria:read victoria:write' }),
+      grantableScopes: ['fife:read'],
       canManage: true,
     });
 
-    expect(html).toMatch(/name="scope" value="victoria:read" checked/);
+    expect(html).toContain('Scopes (2)');
+    expect(html).toContain('action="/admin/clients/my-service/scopes/remove"');
+    expect(html).toContain('aria-label="Remove victoria:write"');
     expect(html).toContain('/lasso/client/my-service-secret');
     expect(html).not.toContain('name="redirectUris"');
+    expect(html).not.toMatch(/<input[^>]*type="checkbox"/);
   });
 
-  it('hides the form for a client that can only be changed in code', async () => {
+  it('offers only the scopes it can still be given', async () => {
     const html = await ClientDetailPage({
-      client: makeClient(),
-      scopeChoices: CHOICES,
+      client: makeConfidentialClient(),
+      grantableScopes: ['victoria:write', 'fife:read'],
+      canManage: true,
+    });
+
+    expect(html).toContain('action="/admin/clients/my-service/scopes"');
+    expect(html).toContain('<option value="">Choose a scope…</option>');
+    expect(html).toContain('<option value="fife:read">fife:read</option>');
+    expect(html).not.toContain('<option value="victoria:read">');
+  });
+
+  it('says so when it already has every scope', async () => {
+    const html = await ClientDetailPage({
+      client: makeConfidentialClient(),
+      grantableScopes: [],
+      canManage: true,
+    });
+
+    expect(html).toContain('This client already has every scope.');
+    expect(html).not.toContain('Choose a scope');
+  });
+
+  it('will not remove the last scope and says why', async () => {
+    const html = await ClientDetailPage({
+      client: makeConfidentialClient(),
+      grantableScopes: [],
+      canManage: true,
+    });
+
+    expect(html).toMatch(/<button[^>]*aria-label="Remove victoria:read"[^>]*disabled/);
+    expect(html).toContain('A confidential client needs at least one scope');
+  });
+
+  it('keeps removal enabled while more than one scope is held', async () => {
+    const html = await ClientDetailPage({
+      client: makeConfidentialClient({ scope: 'victoria:read victoria:write' }),
+      grantableScopes: [],
+      canManage: true,
+    });
+
+    expect(html).not.toMatch(/<button[^>]*aria-label="Remove victoria:read"[^>]*disabled/);
+  });
+
+  it('escapes a hostile scope', async () => {
+    const html = await ClientDetailPage({
+      client: makeConfidentialClient({ scope: HOSTILE }),
+      grantableScopes: [HOSTILE],
+      canManage: true,
+    });
+
+    expect(html).not.toContain(HOSTILE);
+  });
+
+  it('hides everything editable for a client that can only be changed in code', async () => {
+    const html = await ClientDetailPage({
+      client: makeConfidentialClient(),
+      grantableScopes: ['fife:read'],
       canManage: false,
     });
 
     expect(html).not.toContain('<form class="form-grid"');
+    expect(html).not.toContain('Scopes (');
     expect(html).not.toContain('/delete');
   });
 
-  it('reports a save and an error', async () => {
+  it('reports a save and an error, keeping what was typed', async () => {
     const saved = await ClientDetailPage({
       client: makeClient(),
-      scopeChoices: CHOICES,
+      grantableScopes: [],
       canManage: true,
       saved: true,
     });
     const failed = await ClientDetailPage({
       client: makeClient(),
-      scopeChoices: CHOICES,
+      grantableScopes: [],
       canManage: true,
       error: 'Nope',
+      values: { name: 'Typed', redirectUris: [], postLogoutRedirectUris: [] },
     });
 
     expect(saved).toContain('Saved.');
     expect(failed).toContain('role="alert"');
+    expect(failed).toContain('value="Typed"');
   });
 });
 
