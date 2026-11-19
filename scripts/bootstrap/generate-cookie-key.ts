@@ -2,12 +2,11 @@
 // One-time bootstrap: generates the key that signs Lasso's cookies and writes
 // it to SSM Parameter Store. Rotating it invalidates every signed cookie, so
 // all users log in again.
-import { randomBytes } from 'node:crypto';
 import { parseArgs } from 'node:util';
 
-import { PutParameterCommand } from '@aws-sdk/client-ssm';
-
-import { createSsmClient, getExistingValue } from './ssm.ts';
+import { randomToken } from '../../src/auth/random.ts';
+import { createSsmSecretStore } from '../../src/clients/secrets.ts';
+import { assertCanWrite, createSsmClient } from './ssm.ts';
 
 const { values } = parseArgs({
   options: {
@@ -23,25 +22,16 @@ async function main(): Promise<void> {
   const paramName = values['param-name'] as string;
   const client = createSsmClient(values.profile as string, values.region as string);
 
-  if (!values['dry-run'] && !values.force && (await getExistingValue(client, paramName))) {
-    throw new Error(`${paramName} already holds a real value — pass --force to overwrite.`);
-  }
+  await assertCanWrite(client, paramName, { dryRun: values['dry-run'], force: values.force });
 
-  const key = randomBytes(32).toString('base64url');
+  const key = randomToken();
 
   if (values['dry-run']) {
     console.log(key);
     return;
   }
 
-  await client.send(
-    new PutParameterCommand({
-      Name: paramName,
-      Value: key,
-      Type: 'SecureString',
-      Overwrite: true,
-    }),
-  );
+  await createSsmSecretStore(client).put(paramName, key);
   console.log(`Stored a new cookie signing key in ${paramName}.`);
 }
 

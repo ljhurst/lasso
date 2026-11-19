@@ -95,6 +95,15 @@ describe('listUsers', () => {
 });
 
 describe('addRole', () => {
+  it('returns every user across the pages of the scan', async () => {
+    ddbMock
+      .on(ScanCommand)
+      .resolvesOnce({ Items: [makeUser({ sub: 'a' })], LastEvaluatedKey: { sub: 'a' } })
+      .resolvesOnce({ Items: [makeUser({ sub: 'b' })] });
+
+    expect((await listUsers()).map((u) => u.sub)).toEqual(['a', 'b']);
+  });
+
   it('does nothing when the user already has the role', async () => {
     ddbMock.on(GetCommand).resolves({ Item: { ...user, roles: ['porto:read'] } });
 

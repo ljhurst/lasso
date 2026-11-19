@@ -1,11 +1,10 @@
-import { createServer, type Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import Provider from 'oidc-provider';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DynamoAdapter } from '#src/adapter/dynamo-adapter.ts';
 import { makeClient, makeConfidentialClient } from '#test/support/clients.ts';
+import { serve, type TestServer } from '#test/support/http.ts';
 
 vi.mock('#src/aws/ssm.ts', () => ({ getParameter: vi.fn(async () => 'table-secret') }));
 
@@ -15,7 +14,7 @@ const records = new Map([
   ['my-service', makeConfidentialClient()],
 ]);
 
-let server: Server;
+let server: TestServer;
 let base: string;
 
 beforeAll(async () => {
@@ -26,9 +25,8 @@ beforeAll(async () => {
     features: { clientCredentials: { enabled: true } },
   });
   provider.proxy = true;
-  server = createServer(provider.callback());
-  await new Promise<void>((resolve) => server.listen(0, resolve));
-  base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  server = await serve(provider.callback());
+  base = server.baseUrl;
 });
 
 afterAll(() => server.close());

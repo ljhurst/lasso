@@ -1,11 +1,10 @@
-import type { Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import Koa from 'koa';
 import type Provider from 'oidc-provider';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logEvent } from '#src/observability/events.ts';
 import { buildAdminRouter } from '#src/portal/admin/routes.ts';
 import { revokeAllAccess } from '#src/portal/admin/revocation.ts';
+import { serve, type TestServer } from '#test/support/http.ts';
 import { makeUser } from '#test/support/users.ts';
 
 const store = vi.hoisted(() => ({
@@ -52,14 +51,14 @@ function user(sub: string, roles: string[]) {
 }
 
 describe('admin role changes', () => {
-  let server: Server;
+  let server: TestServer;
   let baseUrl: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const app = new Koa();
     app.use(buildAdminRouter({} as Provider).routes());
-    server = app.listen(0);
-    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    server = await serve(app.callback());
+    baseUrl = server.baseUrl;
   });
 
   afterAll(() => {
@@ -110,14 +109,14 @@ describe('admin role changes', () => {
 });
 
 describe('admin user page', () => {
-  let server: Server;
+  let server: TestServer;
   let baseUrl: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const app = new Koa();
     app.use(buildAdminRouter({} as Provider).routes());
-    server = app.listen(0);
-    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    server = await serve(app.callback());
+    baseUrl = server.baseUrl;
   });
 
   afterAll(() => {
@@ -170,14 +169,14 @@ describe('admin user page', () => {
 });
 
 describe('admin user deletion', () => {
-  let server: Server;
+  let server: TestServer;
   let baseUrl: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const app = new Koa();
     app.use(buildAdminRouter({} as Provider).routes());
-    server = app.listen(0);
-    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    server = await serve(app.callback());
+    baseUrl = server.baseUrl;
   });
 
   afterAll(() => {
@@ -260,14 +259,14 @@ describe('admin user deletion', () => {
 });
 
 describe('admin add user', () => {
-  let server: Server;
+  let server: TestServer;
   let baseUrl: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const app = new Koa();
     app.use(buildAdminRouter({} as Provider).routes());
-    server = app.listen(0);
-    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    server = await serve(app.callback());
+    baseUrl = server.baseUrl;
   });
 
   afterAll(() => {
@@ -372,14 +371,14 @@ describe('admin add user', () => {
 });
 
 describe('admin password reset', () => {
-  let server: Server;
+  let server: TestServer;
   let baseUrl: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const app = new Koa();
     app.use(buildAdminRouter({} as Provider).routes());
-    server = app.listen(0);
-    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    server = await serve(app.callback());
+    baseUrl = server.baseUrl;
   });
 
   afterAll(() => {

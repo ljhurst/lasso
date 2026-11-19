@@ -4,12 +4,12 @@
 // Store. src/config/clients.ts reads it at startup and hands it
 // to oidc-provider verbatim for client_secret_basic comparison — unlike
 // the login credential, this is not hashed.
-import { randomBytes } from 'node:crypto';
 import { parseArgs } from 'node:util';
 
-import { PutParameterCommand } from '@aws-sdk/client-ssm';
-
-import { createSsmClient, getExistingValue } from './ssm.ts';
+import { randomToken } from '../../src/auth/random.ts';
+import { secretParamFor } from '../../src/clients/secret-param.ts';
+import { createSsmSecretStore } from '../../src/clients/secrets.ts';
+import { assertCanWrite, createSsmClient } from './ssm.ts';
 
 const { values } = parseArgs({
   options: {
@@ -26,28 +26,19 @@ async function main(): Promise<void> {
   if (!values.client) {
     throw new Error('--client is required, e.g. --client porto-victoria');
   }
-  const paramName = values['param-name'] ?? `/lasso/client/${values.client}-secret`;
+  const paramName = values['param-name'] ?? secretParamFor(values.client);
   const client = createSsmClient(values.profile, values.region);
 
-  if (!values['dry-run'] && !values.force && (await getExistingValue(client, paramName))) {
-    throw new Error(`${paramName} already holds a real value — pass --force to overwrite.`);
-  }
+  await assertCanWrite(client, paramName, { dryRun: values['dry-run'], force: values.force });
 
-  const secret = randomBytes(32).toString('base64url');
+  const secret = randomToken();
 
   if (values['dry-run']) {
     console.log(secret);
     return;
   }
 
-  await client.send(
-    new PutParameterCommand({
-      Name: paramName,
-      Value: secret,
-      Type: 'SecureString',
-      Overwrite: true,
-    }),
-  );
+  await createSsmSecretStore(client).put(paramName, secret);
   console.log(`Stored a new client secret for "${values.client}" in ${paramName}.`);
 }
 

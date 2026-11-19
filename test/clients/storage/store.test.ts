@@ -48,6 +48,18 @@ describe('client store', () => {
     expect((await store.list()).map((c) => c.metadata.client_name)).toEqual(['Alpha', 'Beta']);
   });
 
+  it('lists clients across every page of the scan', async () => {
+    ddbMock
+      .on(ScanCommand)
+      .resolvesOnce({
+        Items: [makeClient({ client_id: 'a' })],
+        LastEvaluatedKey: { clientId: 'a' },
+      })
+      .resolvesOnce({ Items: [makeClient({ client_id: 'b' })] });
+
+    expect((await store.list()).map((c) => c.clientId)).toEqual(['a', 'b']);
+  });
+
   it('creates only when the id is free', async () => {
     ddbMock.on(PutCommand).resolves({});
 

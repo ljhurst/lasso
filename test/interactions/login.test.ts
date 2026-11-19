@@ -1,10 +1,9 @@
-import type { Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import Koa from 'koa';
 import type Provider from 'oidc-provider';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildInteractionRouter } from '#src/interactions/routes.ts';
 import { hashPassword, rejectPassword } from '#src/users/password.ts';
+import { postForm, serve, type TestServer } from '#test/support/http.ts';
 
 const store = vi.hoisted(() => ({
   getUserByEmail: vi.fn(),
@@ -34,7 +33,7 @@ const provider = {
   interactionFinished,
 } as unknown as Provider;
 
-let server: Server;
+let server: TestServer;
 let baseUrl: string;
 
 async function userRecord(mustChangePassword: boolean, extra: Record<string, unknown> = {}) {
@@ -59,11 +58,7 @@ function post(
   fields: Record<string, string>,
   headers: Record<string, string> = {},
 ): Promise<Response> {
-  return fetch(`${baseUrl}${path}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded', ...headers },
-    body: new URLSearchParams(fields),
-  });
+  return postForm(`${baseUrl}${path}`, fields, { headers });
 }
 
 function changePassword(
@@ -81,8 +76,8 @@ beforeAll(async () => {
   const app = new Koa();
   const router = buildInteractionRouter(provider);
   app.use(router.routes());
-  server = app.listen(0);
-  baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  server = await serve(app.callback());
+  baseUrl = server.baseUrl;
 });
 
 afterAll(() => {

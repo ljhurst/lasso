@@ -1,5 +1,3 @@
-import type { Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import Koa from 'koa';
 import type Provider from 'oidc-provider';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,6 +7,7 @@ import { revokeClientAccess } from '#src/portal/admin/revocation.ts';
 import { buildAdminRouter } from '#src/portal/admin/routes.ts';
 import type { FakeClientServices } from '#test/support/client-services.ts';
 import { makeClient, makeConfidentialClient } from '#test/support/clients.ts';
+import { postForm, serve, type TestServer } from '#test/support/http.ts';
 
 vi.mock('#src/clients/services.ts', async () => {
   const { fakeClientServices } = await import('#test/support/client-services.ts');
@@ -36,14 +35,14 @@ vi.mock('#src/portal/auth/session.ts', () => ({
 const services = clientServices as FakeClientServices;
 const PORTAL = makeClient({ client_id: 'lasso-portal', client_name: 'Lasso Portal' });
 
-let server: Server;
+let server: TestServer;
 let baseUrl: string;
 
-beforeAll(() => {
+beforeAll(async () => {
   const app = new Koa();
   app.use(buildAdminRouter({} as Provider).routes());
-  server = app.listen(0);
-  baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  server = await serve(app.callback());
+  baseUrl = server.baseUrl;
 });
 
 afterAll(() => {
@@ -60,17 +59,9 @@ beforeEach(() => {
 });
 
 function post(path: string, fields: Record<string, string | string[]>, site = 'same-origin') {
-  const body = new URLSearchParams();
-  for (const [key, value] of Object.entries(fields)) {
-    for (const item of [value].flat()) {
-      body.append(key, item);
-    }
-  }
-  return fetch(`${baseUrl}${path}`, {
-    method: 'POST',
+  return postForm(`${baseUrl}${path}`, fields, {
     redirect: 'manual',
-    headers: { 'content-type': 'application/x-www-form-urlencoded', 'sec-fetch-site': site },
-    body,
+    headers: { 'sec-fetch-site': site },
   });
 }
 

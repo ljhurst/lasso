@@ -8,10 +8,10 @@
 // collision-resistant, the standard approach rather than a random id.
 import { parseArgs } from 'node:util';
 
-import { PutParameterCommand } from '@aws-sdk/client-ssm';
 import { calculateJwkThumbprint, exportJWK, generateKeyPair } from 'jose';
 
-import { createSsmClient, getExistingValue } from './ssm.ts';
+import { createSsmSecretStore } from '../../src/clients/secrets.ts';
+import { assertCanWrite, createSsmClient } from './ssm.ts';
 
 const { values } = parseArgs({
   options: {
@@ -26,15 +26,11 @@ const { values } = parseArgs({
 async function main(): Promise<void> {
   const client = createSsmClient(values.profile, values.region);
 
-  if (
-    !values['dry-run'] &&
-    !values.force &&
-    (await getExistingValue(client, values['param-name']))
-  ) {
-    throw new Error(
-      `${values['param-name']} already holds a real value — pass --force to overwrite (this invalidates every token signed with the current key).`,
-    );
-  }
+  await assertCanWrite(client, values['param-name'], {
+    dryRun: values['dry-run'],
+    force: values.force,
+    consequence: 'this invalidates every token signed with the current key',
+  });
 
   const { privateKey } = await generateKeyPair('RS256', { modulusLength: 2048, extractable: true });
   const jwk = await exportJWK(privateKey);
@@ -47,14 +43,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  await client.send(
-    new PutParameterCommand({
-      Name: values['param-name'],
-      Value: JSON.stringify(jwks),
-      Type: 'SecureString',
-      Overwrite: true,
-    }),
-  );
+  await createSsmSecretStore(client).put(values['param-name'], JSON.stringify(jwks));
   console.log(`Stored a new RS256 signing key (kid ${kid}) in ${values['param-name']}.`);
 }
 
